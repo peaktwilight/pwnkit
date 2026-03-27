@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -57,13 +57,13 @@ function installPackage(
 
   try {
     // Initialize a minimal package.json so npm install works cleanly
-    execSync('npm init -y --silent 2>/dev/null || true', {
+    execFileSync("npm", ["init", "-y", "--silent"], {
       cwd: tempDir,
       timeout: 15_000,
       stdio: "pipe",
     });
 
-    execSync(`npm install ${spec} --ignore-scripts --no-audit --no-fund`, {
+    execFileSync("npm", ["install", spec, "--ignore-scripts", "--no-audit", "--no-fund"], {
       cwd: tempDir,
       timeout: 120_000,
       stdio: "pipe",
@@ -116,29 +116,43 @@ function runSemgrepScan(
     message: "Running semgrep security scan...",
   });
 
-  const outputFile = join(tmpdir(), `nightfang-semgrep-${randomUUID().slice(0, 8)}.json`);
+  let rawOutput = "";
 
   try {
-    // Run semgrep with auto config (includes security rules)
-    // Use --json for structured output
-    execSync(
-      `semgrep scan --config auto --json --no-git-ignore --timeout 60 --max-target-bytes 1000000 "${packagePath}" > "${outputFile}" 2>/dev/null`,
+    rawOutput = execFileSync(
+      "semgrep",
+      [
+        "scan",
+        "--config",
+        "auto",
+        "--json",
+        "--no-git-ignore",
+        "--timeout",
+        "60",
+        "--max-target-bytes",
+        "1000000",
+        packagePath,
+      ],
       {
         timeout: 300_000, // 5 min max for semgrep
         stdio: "pipe",
+        encoding: "utf-8",
         env: { ...process.env, SEMGREP_SEND_METRICS: "off" },
       },
     );
-  } catch {
-    // Semgrep returns non-zero when it finds issues — that's fine
-    // Also may not be installed — handle gracefully
+  } catch (err) {
+    const stdout =
+      err && typeof err === "object" && "stdout" in err
+        ? (err.stdout as Buffer | string | undefined)
+        : undefined;
+    rawOutput = bufferToString(stdout);
   }
 
   let findings: SemgrepFinding[] = [];
 
-  if (existsSync(outputFile)) {
+  if (rawOutput.trim()) {
     try {
-      const raw = JSON.parse(readFileSync(outputFile, "utf-8"));
+      const raw = JSON.parse(rawOutput);
       const results = (raw.results ?? []) as Array<{
         check_id: string;
         extra: {
@@ -164,13 +178,6 @@ function runSemgrepScan(
       }));
     } catch {
       // JSON parse failed — semgrep output was malformed
-    }
-
-    // Clean up temp file
-    try {
-      rmSync(outputFile, { force: true });
-    } catch {
-      // ignore cleanup errors
     }
   }
 
@@ -389,6 +396,7 @@ async function runAuditAgent(
       maxTurns,
       target: `npm:${pkg.name}@${pkg.version}`,
       scanId,
+      scopePath: pkg.path,
     },
     runtime,
     db,

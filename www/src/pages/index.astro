@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Nightfang - AI agents that hack your AI before attackers do">
+<Layout title="Nightfang - Open-source pentesting toolkit for AI, code, and supply chain">
 
   <!-- Nav -->
   <nav class="fixed top-0 w-full z-50 bg-night/80 backdrop-blur-md border-b border-white/5">
@@ -11,7 +11,8 @@ import Layout from '../layouts/Layout.astro';
         <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> nightfang
       </a>
       <div class="flex items-center gap-6 text-sm text-smoke">
-        <a href="#how-it-works" class="hover:text-white transition-colors">How it works</a>
+        <a href="#commands" class="hover:text-white transition-colors hidden sm:block">Commands</a>
+        <a href="#pipeline" class="hover:text-white transition-colors hidden sm:block">Pipeline</a>
         <a href="#comparison" class="hover:text-white transition-colors hidden sm:block">Compare</a>
         <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md px-3 py-1.5 text-white transition-colors">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -25,9 +26,7 @@ import Layout from '../layouts/Layout.astro';
 
     <!-- Hero -->
     <section class="relative min-h-screen flex items-center justify-center pt-14 overflow-hidden">
-      <!-- Background grid -->
       <div class="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
-      <!-- Radial glow -->
       <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-crimson/5 rounded-full blur-[120px]"></div>
 
       <div class="relative max-w-4xl mx-auto px-6 text-center">
@@ -37,11 +36,11 @@ import Layout from '../layouts/Layout.astro';
             Open source &middot; MIT licensed
           </p>
           <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
-            AI agents that hack your AI<br/>
-            <span class="text-crimson">before attackers do</span>
+            Pentest your AI, code,<br/>and supply chain<br/>
+            <span class="text-crimson">with autonomous agents</span>
           </h1>
           <p class="text-lg sm:text-xl text-smoke max-w-2xl mx-auto mb-10 leading-relaxed">
-            Four autonomous agents probe your LLM apps, MCP servers, and AI pipelines for real vulnerabilities &mdash; then prove they're exploitable.
+            Five commands. Four AI agents. Scan LLM endpoints, audit npm packages, review source code, test MCP servers &mdash; then prove every finding is exploitable.
           </p>
         </div>
 
@@ -61,7 +60,6 @@ import Layout from '../layouts/Layout.astro';
         <!-- Terminal demo -->
         <div class="animate-fade-up max-w-2xl mx-auto" style="animation-delay: 0.4s">
           <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
-            <!-- Terminal title bar -->
             <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
               <div class="flex gap-1.5">
                 <div class="w-3 h-3 rounded-full bg-white/10"></div>
@@ -70,7 +68,6 @@ import Layout from '../layouts/Layout.astro';
               </div>
               <span class="text-xs text-ash font-mono ml-2">Terminal</span>
             </div>
-            <!-- Terminal content -->
             <div class="bg-night-light p-5 font-mono text-sm text-left leading-relaxed space-y-1">
               <div class="text-ash terminal-line">$ npx nightfang scan --target https://demo.app/api/chat</div>
               <div class="terminal-line">&nbsp;</div>
@@ -141,7 +138,158 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </section>
 
-    <!-- One command pitch -->
+    <!-- What you can scan -->
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">One toolkit. Five attack surfaces.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">From LLM endpoints to npm packages to git repos &mdash; nightfang finds what scanners miss.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="text-2xl mb-3">&#128274;</div>
+            <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
+            <p class="text-xs text-ash">ChatGPT, Claude, Llama APIs, custom chatbots</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="text-2xl mb-3">&#128268;</div>
+            <h3 class="font-semibold text-sm mb-1">MCP Servers</h3>
+            <p class="text-xs text-ash">Tool schemas, validation, auth, poisoning</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="text-2xl mb-3">&#128230;</div>
+            <h3 class="font-semibold text-sm mb-1">npm Packages</h3>
+            <p class="text-xs text-ash">Supply chain, malicious code, dependency risk</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="text-2xl mb-3">&#128193;</div>
+            <h3 class="font-semibold text-sm mb-1">Source Code</h3>
+            <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="text-2xl mb-3">&#127760;</div>
+            <h3 class="font-semibold text-sm mb-1">Web Apps</h3>
+            <p class="text-xs text-ash">AI copilots, RAG pipelines, agent APIs</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 Commands -->
+    <section id="commands" class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Five commands. Full coverage.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">Each command is purpose-built for a different attack surface. Zero config, instant results.</p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- scan -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-crimson bg-crimson/10 px-2 py-0.5 rounded uppercase tracking-wider">scan</span>
+                  <h3 class="font-semibold text-lg">Probe LLM endpoints &amp; MCP servers</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Discovers vulnerabilities in AI endpoints with 47+ test cases across prompt injection, jailbreaks, tool poisoning, data exfiltration, and more. Supports probe, deep, and MCP modes.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--agentic</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang scan --target &lt;url&gt;</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- audit -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded uppercase tracking-wider">audit</span>
+                  <h3 class="font-semibold text-lg">Audit npm packages for malicious code</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Installs a package in a sandbox, runs semgrep static analysis plus AI-powered code review. Catches supply chain attacks, backdoors, and dependency vulnerabilities.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--version &lt;ver&gt;</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang audit &lt;package&gt;</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- review -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded uppercase tracking-wider">review</span>
+                  <h3 class="font-semibold text-lg">Deep security audit of source code</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Security-focused code review of local repos or GitHub URLs. Multiple AI runtimes analyze your entire codebase and output SARIF, Markdown, and JSON reports.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--runtime api|claude|codex|gemini|auto</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang review &lt;repo&gt;</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- findings -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded uppercase tracking-wider">findings</span>
+                  <h3 class="font-semibold text-lg">Query and inspect verified findings</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Filter findings by severity, category, and status. Inspect individual findings with full evidence chains and proof artifacts. Track the lifecycle from discovered to confirmed.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">list --severity critical</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">show NF-001</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang findings list</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- history -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase tracking-wider">history</span>
+                  <h3 class="font-semibold text-lg">Browse past scan results</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Query the local SQLite database for previous scans. See status, depth, findings count, and duration for every run. Track your security posture over time.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--limit 20</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--db-path ./custom.db</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang history</code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Value props -->
     <section class="py-24 border-t border-white/5">
       <div class="max-w-6xl mx-auto px-6">
         <div class="grid md:grid-cols-3 gap-8">
@@ -164,71 +312,81 @@ import Layout from '../layouts/Layout.astro';
       </div>
     </section>
 
-    <!-- How it works: 4-agent pipeline -->
-    <section id="how-it-works" class="py-24 border-t border-white/5">
+    <!-- 4-agent pipeline -->
+    <section id="pipeline" class="py-24 border-t border-white/5">
       <div class="max-w-6xl mx-auto px-6">
         <div class="text-center mb-16">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Four agents. One pipeline.</h2>
           <p class="text-smoke text-lg max-w-xl mx-auto">Each agent is specialized for a phase of the security audit. They work in sequence, building on each other's output.</p>
         </div>
 
+        <!-- Pipeline visual -->
+        <div class="flex items-center justify-center gap-2 sm:gap-4 mb-12 font-mono text-xs sm:text-sm overflow-x-auto px-4">
+          <div class="flex items-center gap-2 sm:gap-4">
+            <div class="bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">DISCOVER</div>
+              <div class="text-emerald-400/60 text-[10px] sm:text-xs mt-0.5">Recon</div>
+            </div>
+            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
+            <div class="bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">ATTACK</div>
+              <div class="text-amber-400/60 text-[10px] sm:text-xs mt-0.5">Offense</div>
+            </div>
+            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
+            <div class="bg-blue-400/10 border border-blue-400/20 text-blue-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">VERIFY</div>
+              <div class="text-blue-400/60 text-[10px] sm:text-xs mt-0.5">Validate</div>
+            </div>
+            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
+            <div class="bg-purple-400/10 border border-purple-400/20 text-purple-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">REPORT</div>
+              <div class="text-purple-400/60 text-[10px] sm:text-xs mt-0.5">Output</div>
+            </div>
+          </div>
+        </div>
+
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Discover -->
-          <div class="relative group">
-            <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
-              <div class="text-xs font-mono text-emerald-400 mb-3 uppercase tracking-wider">01 &middot; Discover</div>
-              <h3 class="font-semibold text-lg mb-2">Recon</h3>
-              <p class="text-smoke text-sm leading-relaxed">Maps endpoints, model cards, system prompts, MCP tool schemas, and auth flows.</p>
-              <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
-                <div>&#8226; API surface mapping</div>
-                <div>&#8226; System prompt extraction</div>
-                <div>&#8226; MCP tool enumeration</div>
-              </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-emerald-400 mb-3 uppercase tracking-wider">01 &middot; Discover</div>
+            <h3 class="font-semibold text-lg mb-2">Recon</h3>
+            <p class="text-smoke text-sm leading-relaxed">Maps endpoints, model cards, system prompts, MCP tool schemas, and auth flows.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; API surface mapping</div>
+              <div>&#8226; System prompt extraction</div>
+              <div>&#8226; MCP tool enumeration</div>
             </div>
-            <div class="hidden lg:block absolute top-1/2 -right-3 text-white/20 text-lg">&#8594;</div>
           </div>
 
-          <!-- Attack -->
-          <div class="relative group">
-            <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
-              <div class="text-xs font-mono text-amber-400 mb-3 uppercase tracking-wider">02 &middot; Attack</div>
-              <h3 class="font-semibold text-lg mb-2">Offense</h3>
-              <p class="text-smoke text-sm leading-relaxed">Runs prompt injection, jailbreaks, tool poisoning, data exfiltration, and more.</p>
-              <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
-                <div>&#8226; 47+ test cases</div>
-                <div>&#8226; OWASP LLM Top 10</div>
-                <div>&#8226; 6 attack categories</div>
-              </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-amber-400 mb-3 uppercase tracking-wider">02 &middot; Attack</div>
+            <h3 class="font-semibold text-lg mb-2">Offense</h3>
+            <p class="text-smoke text-sm leading-relaxed">Runs prompt injection, jailbreaks, tool poisoning, data exfiltration, and more.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; 47+ test cases</div>
+              <div>&#8226; OWASP LLM Top 10</div>
+              <div>&#8226; 6 attack categories</div>
             </div>
-            <div class="hidden lg:block absolute top-1/2 -right-3 text-white/20 text-lg">&#8594;</div>
           </div>
 
-          <!-- Verify -->
-          <div class="relative group">
-            <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
-              <div class="text-xs font-mono text-blue-400 mb-3 uppercase tracking-wider">03 &middot; Verify</div>
-              <h3 class="font-semibold text-lg mb-2">Validation</h3>
-              <p class="text-smoke text-sm leading-relaxed">Re-exploits each finding to eliminate false positives. Captures proof artifacts.</p>
-              <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
-                <div>&#8226; Re-exploitation</div>
-                <div>&#8226; Proof capture</div>
-                <div>&#8226; Confidence scoring</div>
-              </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-blue-400 mb-3 uppercase tracking-wider">03 &middot; Verify</div>
+            <h3 class="font-semibold text-lg mb-2">Validation</h3>
+            <p class="text-smoke text-sm leading-relaxed">Re-exploits each finding to eliminate false positives. Captures proof artifacts.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; Re-exploitation</div>
+              <div>&#8226; Proof capture</div>
+              <div>&#8226; Confidence scoring</div>
             </div>
-            <div class="hidden lg:block absolute top-1/2 -right-3 text-white/20 text-lg">&#8594;</div>
           </div>
 
-          <!-- Report -->
-          <div class="relative group">
-            <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
-              <div class="text-xs font-mono text-purple-400 mb-3 uppercase tracking-wider">04 &middot; Report</div>
-              <h3 class="font-semibold text-lg mb-2">Output</h3>
-              <p class="text-smoke text-sm leading-relaxed">Generates SARIF, Markdown, and JSON reports with severity and remediation.</p>
-              <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
-                <div>&#8226; SARIF for GitHub Security tab</div>
-                <div>&#8226; Markdown reports</div>
-                <div>&#8226; Remediation guidance</div>
-              </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-purple-400 mb-3 uppercase tracking-wider">04 &middot; Report</div>
+            <h3 class="font-semibold text-lg mb-2">Output</h3>
+            <p class="text-smoke text-sm leading-relaxed">Generates SARIF, Markdown, and JSON reports with severity and remediation.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; SARIF for GitHub Security tab</div>
+              <div>&#8226; Markdown reports</div>
+              <div>&#8226; Remediation guidance</div>
             </div>
           </div>
         </div>
@@ -245,11 +403,11 @@ import Layout from '../layouts/Layout.astro';
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { id: "LLM01", name: "Prompt Injection", covered: true, detail: "Direct + indirect" },
+            { id: "LLM01", name: "Prompt Injection", covered: true, detail: "Direct + indirect + encoding" },
             { id: "LLM02", name: "Insecure Output Handling", covered: true, detail: "XSS, code exec" },
             { id: "LLM03", name: "Training Data Poisoning", covered: false, detail: "Detection only" },
             { id: "LLM04", name: "Model Denial of Service", covered: true, detail: "Resource exhaustion" },
-            { id: "LLM05", name: "Supply Chain Vulns", covered: true, detail: "MCP tool poisoning" },
+            { id: "LLM05", name: "Supply Chain Vulns", covered: true, detail: "MCP + npm audit" },
             { id: "LLM06", name: "Sensitive Info Disclosure", covered: true, detail: "PII/secret extraction" },
             { id: "LLM07", name: "Insecure Plugin Design", covered: true, detail: "Tool schema abuse, SSRF" },
             { id: "LLM08", name: "Excessive Agency", covered: true, detail: "Privilege escalation" },
@@ -275,10 +433,10 @@ import Layout from '../layouts/Layout.astro';
 
     <!-- Comparison -->
     <section id="comparison" class="py-24 border-t border-white/5">
-      <div class="max-w-5xl mx-auto px-6">
+      <div class="max-w-6xl mx-auto px-6">
         <div class="text-center mb-12">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">How it compares</h2>
-          <p class="text-smoke text-lg">The only tool with autonomous multi-agent testing and verification.</p>
+          <p class="text-smoke text-lg">The only open-source tool with autonomous multi-agent testing, verification, and full-stack coverage.</p>
         </div>
 
         <div class="overflow-x-auto">
@@ -286,53 +444,93 @@ import Layout from '../layouts/Layout.astro';
             <thead>
               <tr class="border-b border-white/10">
                 <th class="text-left py-3 pr-4 text-smoke font-medium">Feature</th>
-                <th class="py-3 px-4 text-crimson font-bold">Nightfang</th>
-                <th class="py-3 px-4 text-ash font-medium">promptfoo</th>
-                <th class="py-3 px-4 text-ash font-medium">garak</th>
+                <th class="py-3 px-3 text-crimson font-bold">Nightfang</th>
+                <th class="py-3 px-3 text-ash font-medium">promptfoo</th>
+                <th class="py-3 px-3 text-ash font-medium">garak</th>
+                <th class="py-3 px-3 text-ash font-medium">nuclei</th>
+                <th class="py-3 px-3 text-ash font-medium">Semgrep</th>
               </tr>
             </thead>
             <tbody class="text-smoke">
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">Autonomous multi-agent</td>
-                <td class="py-3 px-4 text-center text-emerald-400">4 specialized agents</td>
-                <td class="py-3 px-4 text-center text-ash">Single runner</td>
-                <td class="py-3 px-4 text-center text-ash">Single runner</td>
+                <td class="py-3 px-3 text-center text-emerald-400">4 agents</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">Verification (no false positives)</td>
-                <td class="py-3 px-4 text-center text-emerald-400">Re-exploits to confirm</td>
-                <td class="py-3 px-4 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-4 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">Re-exploits</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">LLM endpoint scanning</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">MCP server security</td>
-                <td class="py-3 px-4 text-center text-emerald-400">Tool poisoning, schema abuse</td>
-                <td class="py-3 px-4 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-4 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">npm package audit</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">Rules</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Source code review</td>
+                <td class="py-3 px-3 text-center text-emerald-400">AI-powered</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">Rules</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Web/API scanning</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">OWASP LLM Top 10</td>
-                <td class="py-3 px-4 text-center text-emerald-400">8/10 covered</td>
-                <td class="py-3 px-4 text-center text-ash">Partial</td>
-                <td class="py-3 px-4 text-center text-ash">Partial</td>
-              </tr>
-              <tr class="border-b border-white/5">
-                <td class="py-3 pr-4">SARIF output</td>
-                <td class="py-3 px-4 text-center text-emerald-400">&check;</td>
-                <td class="py-3 px-4 text-center text-emerald-400">&check;</td>
-                <td class="py-3 px-4 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">8/10</td>
+                <td class="py-3 px-3 text-center text-ash">Partial</td>
+                <td class="py-3 px-3 text-center text-ash">Partial</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">Zero config</td>
-                <td class="py-3 px-4 text-center text-emerald-400">npx nightfang scan</td>
-                <td class="py-3 px-4 text-center text-ash">YAML config required</td>
-                <td class="py-3 px-4 text-center text-ash">Python setup</td>
+                <td class="py-3 px-3 text-center text-emerald-400">npx</td>
+                <td class="py-3 px-3 text-center text-ash">YAML</td>
+                <td class="py-3 px-3 text-center text-ash">Python</td>
+                <td class="py-3 px-3 text-center text-ash">Templates</td>
+                <td class="py-3 px-3 text-center text-ash">Config</td>
               </tr>
               <tr>
                 <td class="py-3 pr-4">Open source</td>
-                <td class="py-3 px-4 text-center text-emerald-400">MIT</td>
-                <td class="py-3 px-4 text-center text-ash">Acquired by OpenAI</td>
-                <td class="py-3 px-4 text-center text-emerald-400">Open source</td>
+                <td class="py-3 px-3 text-center text-emerald-400">MIT</td>
+                <td class="py-3 px-3 text-center text-ash">OpenAI</td>
+                <td class="py-3 px-3 text-center text-emerald-400">OSS</td>
+                <td class="py-3 px-3 text-center text-emerald-400">MIT</td>
+                <td class="py-3 px-3 text-center text-ash">LGPL</td>
               </tr>
             </tbody>
           </table>
@@ -377,6 +575,7 @@ import Layout from '../layouts/Layout.astro';
       <div class="max-w-4xl mx-auto px-6">
         <div class="text-center mb-12">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Costs less than coffee</h2>
+          <p class="text-smoke text-lg">AI-powered security testing at a fraction of manual pentesting costs.</p>
         </div>
 
         <div class="grid sm:grid-cols-3 gap-6">
@@ -429,7 +628,7 @@ import Layout from '../layouts/Layout.astro';
         <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
           Stop guessing.<br/>Start <span class="text-crimson">proving</span>.
         </h2>
-        <p class="text-smoke text-lg mb-10">One command. Real vulnerabilities. Proof of exploitability.</p>
+        <p class="text-smoke text-lg mb-10">Five commands. Real vulnerabilities. Proof of exploitability.</p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
           <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
             npx nightfang scan --target &lt;url&gt;

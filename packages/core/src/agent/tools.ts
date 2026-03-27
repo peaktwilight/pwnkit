@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
+import { isAbsolute, resolve } from "node:path";
 import type { Finding, AttackResult, TargetInfo } from "@nightfang/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
@@ -132,7 +133,7 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   run_command: {
     name: "run_command",
     description:
-      "Run a shell command. Use for tools like semgrep, grep, curl, etc. Commands are sandboxed to read-only operations.",
+      "Run a read-only local command. Use for tools like rg, find, semgrep, and npm audit. Shell operators are not supported.",
     parameters: {
       command: { type: "string", description: "Shell command to execute" },
       cwd: { type: "string", description: "Working directory (optional)" },
@@ -171,7 +172,7 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
 
 // ── Allowed commands for run_command (safety) ──
 
-const ALLOWED_COMMAND_PREFIXES = [
+const ALLOWED_COMMANDS = new Set([
   "grep",
   "rg",
   "find",
@@ -182,18 +183,105 @@ const ALLOWED_COMMAND_PREFIXES = [
   "wc",
   "semgrep",
   "codeql",
-  "curl",
   "jq",
   "file",
   "stat",
   "npm",
-];
+]);
 
-function isCommandAllowed(cmd: string): boolean {
-  const trimmed = cmd.trim();
-  return ALLOWED_COMMAND_PREFIXES.some(
-    (prefix) => trimmed.startsWith(prefix + " ") || trimmed === prefix
-  );
+const DISALLOWED_SHELL_CHARS = /[|&;<>`$\n\r]/;
+const ALLOWED_NPM_SUBCOMMANDS = new Set(["audit", "view", "ls", "list"]);
+
+function tokenizeCommand(command: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let quote: "'" | '"' | null = null;
+  let escaping = false;
+
+  for (const ch of command) {
+    if (escaping) {
+      current += ch;
+      escaping = false;
+      continue;
+    }
+
+    if (ch === "\\") {
+      escaping = true;
+      continue;
+    }
+
+    if (quote) {
+      if (ch === quote) {
+        quote = null;
+      } else {
+        current += ch;
+      }
+      continue;
+    }
+
+    if (ch === "'" || ch === "\"") {
+      quote = ch;
+      continue;
+    }
+
+    if (/\s/.test(ch)) {
+      if (current) {
+        tokens.push(current);
+        current = "";
+      }
+      continue;
+    }
+
+    current += ch;
+  }
+
+  if (escaping || quote) {
+    throw new Error("Command contains unmatched quotes or escapes");
+  }
+
+  if (current) {
+    tokens.push(current);
+  }
+
+  return tokens;
+}
+
+function isCommandAllowed(tokens: string[]): boolean {
+  const executable = tokens[0];
+  if (!executable || !ALLOWED_COMMANDS.has(executable)) {
+    return false;
+  }
+
+  if (executable === "npm") {
+    const subcommand = tokens[1];
+    return !!subcommand && ALLOWED_NPM_SUBCOMMANDS.has(subcommand);
+  }
+
+  return true;
+}
+
+function resolveScopedPath(scopePath: string, inputPath: string): string {
+  const root = resolve(scopePath);
+  const candidate = isAbsolute(inputPath)
+    ? resolve(inputPath)
+    : resolve(root, inputPath);
+
+  if (candidate !== root && !candidate.startsWith(root + "/")) {
+    throw new Error(`Path escapes the allowed scope: ${inputPath}`);
+  }
+
+  return candidate;
+}
+
+function validateScopedCommand(tokens: string[]): void {
+  for (const token of tokens.slice(1)) {
+    if (isAbsolute(token)) {
+      throw new Error(`Absolute paths are not allowed in scoped commands: ${token}`);
+    }
+    if (/(^|\/)\.\.(\/|$)/.test(token)) {
+      throw new Error(`Parent-path traversal is not allowed in scoped commands: ${token}`);
+    }
+  }
 }
 
 // ── Tool Executor ──
@@ -343,8 +431,11 @@ export class ToolExecutor {
   }
 
   private readFile(args: Record<string, unknown>): ToolResult {
-    const path = args.path as string;
+    const requestedPath = args.path as string;
     const maxLines = (args.max_lines as number) ?? 500;
+    const path = this.ctx.scopePath
+      ? resolveScopedPath(this.ctx.scopePath, requestedPath)
+      : requestedPath;
 
     const content = readFileSync(path, "utf-8");
     const lines = content.split("\n");
@@ -359,24 +450,66 @@ export class ToolExecutor {
 
   private runCommand(args: Record<string, unknown>): ToolResult {
     const command = args.command as string;
-    const cwd = args.cwd as string | undefined;
-    const timeout = (args.timeout as number) ?? 30_000;
-
-    if (!isCommandAllowed(command)) {
+    if (DISALLOWED_SHELL_CHARS.test(command)) {
       return {
         success: false,
         output: null,
-        error: `Command not allowed. Permitted prefixes: ${ALLOWED_COMMAND_PREFIXES.join(", ")}`,
+        error: "Shell operators are not allowed. Run a single read-only command only.",
       };
     }
 
+    let tokens: string[];
     try {
-      const output = execSync(command, {
+      tokens = tokenizeCommand(command);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, output: null, error: msg };
+    }
+
+    if (!isCommandAllowed(tokens)) {
+      return {
+        success: false,
+        output: null,
+        error: `Command not allowed. Permitted commands: ${[...ALLOWED_COMMANDS].join(", ")}`,
+      };
+    }
+
+    if (this.ctx.scopePath) {
+      try {
+        validateScopedCommand(tokens);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, output: null, error: msg };
+      }
+    }
+
+    const requestedCwd = args.cwd as string | undefined;
+    const timeout = (args.timeout as number) ?? 30_000;
+    const cwd = this.ctx.scopePath
+      ? resolveScopedPath(this.ctx.scopePath, requestedCwd ?? ".")
+      : requestedCwd;
+
+    try {
+      const result = spawnSync(tokens[0], tokens.slice(1), {
         cwd,
         timeout,
         maxBuffer: 1024 * 1024, // 1MB
         encoding: "utf-8",
       });
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+      if (result.status !== 0) {
+        return {
+          success: false,
+          output: null,
+          error: output.slice(0, 2_000) || `Command exited with status ${result.status}`,
+        };
+      }
+
       return { success: true, output: output.slice(0, 10_000) };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

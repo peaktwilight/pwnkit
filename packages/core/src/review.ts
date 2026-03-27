@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join, resolve, basename } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -60,7 +60,7 @@ function resolveRepo(
   });
 
   try {
-    execSync(`git clone --depth 1 ${repo} "${tempDir}/repo"`, {
+    execFileSync("git", ["clone", "--depth", "1", repo, `${tempDir}/repo`], {
       timeout: 120_000,
       stdio: "pipe",
     });
@@ -94,26 +94,42 @@ function runSemgrepScan(
     message: "Running semgrep security scan...",
   });
 
-  const outputFile = join(tmpdir(), `nightfang-semgrep-${randomUUID().slice(0, 8)}.json`);
+  let rawOutput = "";
 
   try {
-    execSync(
-      `semgrep scan --config auto --json --timeout 60 --max-target-bytes 1000000 "${repoPath}" > "${outputFile}" 2>/dev/null`,
+    rawOutput = execFileSync(
+      "semgrep",
+      [
+        "scan",
+        "--config",
+        "auto",
+        "--json",
+        "--timeout",
+        "60",
+        "--max-target-bytes",
+        "1000000",
+        repoPath,
+      ],
       {
         timeout: 300_000,
         stdio: "pipe",
+        encoding: "utf-8",
         env: { ...process.env, SEMGREP_SEND_METRICS: "off" },
       },
     );
-  } catch {
-    // Semgrep returns non-zero when it finds issues — that's fine
+  } catch (err) {
+    const stdout =
+      err && typeof err === "object" && "stdout" in err
+        ? (err.stdout as Buffer | string | undefined)
+        : undefined;
+    rawOutput = bufferToString(stdout);
   }
 
   let findings: SemgrepFinding[] = [];
 
-  if (existsSync(outputFile)) {
+  if (rawOutput.trim()) {
     try {
-      const raw = JSON.parse(readFileSync(outputFile, "utf-8"));
+      const raw = JSON.parse(rawOutput);
       const results = (raw.results ?? []) as Array<{
         check_id: string;
         extra: {
@@ -140,12 +156,6 @@ function runSemgrepScan(
     } catch {
       // JSON parse failed
     }
-
-    try {
-      rmSync(outputFile, { force: true });
-    } catch {
-      // ignore
-    }
   }
 
   emit({
@@ -168,6 +178,12 @@ function mapSemgrepSeverity(level: string): string {
     default:
       return "info";
   }
+}
+
+function bufferToString(value: Buffer | string | undefined): string {
+  if (typeof value === "string") return value;
+  if (Buffer.isBuffer(value)) return value.toString("utf-8");
+  return "";
 }
 
 /**
@@ -215,6 +231,7 @@ async function runReviewAgent(
       maxTurns,
       target: `repo:${repoPath}`,
       scanId,
+      scopePath: repoPath,
     },
     runtime,
     db,
