@@ -89,6 +89,10 @@ export const NightfangIcon: React.FC = () => {
     [0.8, 1.0],
   );
 
+  // ── Leg wobble: bottom points shift side to side ──
+  const wobble = Math.sin((2 * Math.PI * t) / 0.8) * 1.2; // fast little waddle
+  const legPath = `M8 12 L16 6 L24 12 L24 22 L${20 + wobble} 26 L16 ${22 + Math.abs(wobble) * 0.3} L${12 - wobble} 26 L8 22Z`;
+
   return (
     <AbsoluteFill
       style={{
@@ -114,8 +118,8 @@ export const NightfangIcon: React.FC = () => {
       {/* SVG fang icon */}
       <svg
         viewBox="6 5 20 22"
-        width={180}
-        height={180}
+        width={260}
+        height={260}
         style={{
           transform: `scale(${breathe})`,
           overflow: "visible",
@@ -130,7 +134,7 @@ export const NightfangIcon: React.FC = () => {
 
         {/* Glow outline (behind the main shape) */}
         <path
-          d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z"
+          d={legPath}
           fill="none"
           stroke={CRIMSON}
           strokeWidth="3"
@@ -141,7 +145,7 @@ export const NightfangIcon: React.FC = () => {
 
         {/* Main outline */}
         <path
-          d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z"
+          d={legPath}
           fill="none"
           stroke={CRIMSON}
           strokeWidth="2"
