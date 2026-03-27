@@ -7,6 +7,7 @@ const SECTIONS = [
   { id: "pipeline", label: "Pipeline" },
   { id: "comparison", label: "Compare" },
   { id: "ci", label: "CI" },
+  { id: "docs", label: "Docs", href: "https://nightfang.dev" },
 ];
 
 const NIGHTFANG_ICON = (
