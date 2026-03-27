@@ -90,6 +90,15 @@ async function executeApiAttack(
   const res = await sendPrompt(ctx.config.target, prompt, {
     timeout: ctx.config.timeout,
   });
+
+  // Treat HTTP error responses as failures so the scanner can warn the user
+  // instead of silently reporting "no vulnerabilities found".
+  if (res.status >= 400) {
+    throw new Error(
+      `HTTP ${res.status} from target — the endpoint may be invalid or unreachable`
+    );
+  }
+
   return {
     responseText: extractResponseText(res.body),
     latencyMs: res.latencyMs,

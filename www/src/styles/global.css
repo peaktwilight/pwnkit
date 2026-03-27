@@ -2,29 +2,99 @@
 
 @theme {
   --color-night: #0a0a0a;
-  --color-night-light: #141414;
-  --color-night-lighter: #1e1e1e;
+  --color-night-light: #111111;
+  --color-night-lighter: #1a1a1a;
   --color-crimson: #DC2626;
   --color-crimson-dark: #991B1B;
   --color-crimson-light: #EF4444;
   --color-smoke: #a3a3a3;
   --color-ash: #737373;
   --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Terminal typing animation */
+/* ─── Base ─── */
+@layer base {
+  * {
+    @apply border-white/5;
+  }
+  html {
+    scroll-behavior: smooth;
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-night text-white antialiased;
+  }
+}
+
+/* ─── Grid pattern background (from rapitranslate) ─── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* Crimson-tinted grid for hero/CTA sections */
+.grid-bg-crimson {
+  background-image:
+    linear-gradient(rgba(220, 38, 38, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(220, 38, 38, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+/* ─── Spotlight / glow effects ─── */
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1);
+  }
+}
+
+.animate-spotlight {
+  animation: spotlight 2s ease 0.5s 1 forwards;
+  opacity: 0;
+}
+
+.hero-glow {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 600px;
+  background: radial-gradient(ellipse at center, rgba(220, 38, 38, 0.08) 0%, rgba(220, 38, 38, 0.03) 40%, transparent 70%);
+  pointer-events: none;
+  filter: blur(40px);
+}
+
+/* ─── Noise texture overlay for depth ─── */
+.noise-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 100;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* ─── Animations ─── */
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
 
-@keyframes typeIn {
-  from { width: 0; }
-  to { width: 100%; }
-}
-
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -33,18 +103,27 @@
   to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .cursor-blink::after {
-  content: "█";
+  content: "\u2588";
   animation: blink 1s step-end infinite;
   color: var(--color-crimson);
 }
 
 .animate-fade-up {
-  animation: fadeUp 0.6s ease-out both;
+  animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .animate-slide-in {
-  animation: slideIn 0.4s ease-out both;
+  animation: slideIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease both;
 }
 
 /* Terminal line reveal */
@@ -68,12 +147,20 @@
 .terminal-line:nth-child(12) { animation-delay: 8.2s; }
 .terminal-line:nth-child(13) { animation-delay: 8.6s; }
 
-/* Glow effect for crimson accent */
+/* ─── Glow effects ─── */
 .glow-crimson {
-  box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 0 60px rgba(220, 38, 38, 0.05);
+  box-shadow:
+    0 0 20px rgba(220, 38, 38, 0.12),
+    0 0 60px rgba(220, 38, 38, 0.04);
 }
 
-/* Pipeline connector line */
+.glow-crimson-hover:hover {
+  box-shadow:
+    0 0 30px rgba(220, 38, 38, 0.15),
+    0 0 80px rgba(220, 38, 38, 0.06);
+}
+
+/* ─── Pipeline connector line ─── */
 .pipeline-connector {
   position: relative;
 }
@@ -89,3 +176,32 @@
 .pipeline-connector:last-child::after {
   display: none;
 }
+
+/* ─── Custom scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+}
+
+/* ─── Section divider with fade ─── */
+.section-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
+
