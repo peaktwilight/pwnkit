@@ -12,7 +12,10 @@ await build({
   bundle: true,
   format: "esm",
   platform: "node",
-  target: "node20",
+  target: "node18",
+  banner: {
+    js: '#!/usr/bin/env node\nimport { createRequire as __nightfangCreateRequire } from "node:module";\nconst require = __nightfangCreateRequire(import.meta.url);',
+  },
   external: [
     "better-sqlite3",
     "drizzle-orm",
