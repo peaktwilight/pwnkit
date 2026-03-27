@@ -1,7 +1,7 @@
 {
   "name": "nightfang",
   "type": "module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-powered agentic security scanner. Scan endpoints, audit packages, review source code. Four autonomous agents discover, attack, verify, and report.",
   "bin": {
     "nightfang": "dist/index.js"
