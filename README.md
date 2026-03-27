@@ -17,6 +17,10 @@
 </p>
 
 <p align="center">
+  <img src="assets/demo.gif" alt="Nightfang Demo" width="700" />
+</p>
+
+<p align="center">
   <a href="#quick-start">Quick Start</a> &middot;
   <a href="#commands">Commands</a> &middot;
   <a href="#how-it-works">How It Works</a> &middot;
