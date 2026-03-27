@@ -89,9 +89,10 @@ export const NightfangIcon: React.FC = () => {
     [0.8, 1.0],
   );
 
-  // ── Leg wobble: bottom points shift side to side ──
-  const wobble = Math.sin((2 * Math.PI * t) / 0.8) * 1.2; // fast little waddle
-  const legPath = `M8 12 L16 6 L24 12 L24 22 L${20 + wobble} 26 L16 ${22 + Math.abs(wobble) * 0.3} L${12 - wobble} 26 L8 22Z`;
+  // ── Leg sway: gentle side-to-side, perfectly loops in 3s (2 full cycles = 1.5s each) ──
+  const sway = Math.sin((2 * Math.PI * t * 2) / duration) * 0.7; // 2 cycles in 3s, subtle
+  const legSpread = Math.sin((2 * Math.PI * t * 4) / duration) * 0.3; // slight open/close
+  const legPath = `M8 12 L16 6 L24 12 L24 22 L${20 + sway + legSpread} ${26} L16 ${22 + Math.abs(sway) * 0.2} L${12 + sway - legSpread} ${26} L8 22Z`;
 
   return (
     <AbsoluteFill
