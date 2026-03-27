@@ -1,63 +1,29 @@
 ---
-import '../styles/global.css'
-
 interface Props {
   title: string;
-  description?: string;
 }
-
-const { title, description = "Open-source pentesting toolkit powered by autonomous AI agents. Scan LLM endpoints, audit npm packages, review source code, test MCP servers. Zero false positives." } = Astro.props;
+const { title } = Astro.props;
 ---
-
 <!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content={description} />
-    <meta name="theme-color" content="#0a0a0a" />
-
-    <!-- Open Graph -->
+    <meta name="description" content="AI-powered security research automation. Scan LLM endpoints, audit npm packages, review source code. Four autonomous agents discover, attack, verify, and report." />
+    <meta name="keywords" content="security scanner, AI pentesting, LLM security, MCP audit, npm vulnerability, code review, nightfang" />
     <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:description" content="AI-powered security research automation. Four autonomous agents pentest your AI before attackers do." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://nightfang.dev" />
-    <meta property="og:image" content="https://nightfang.dev/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:site_name" content="Nightfang" />
-
-    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    <meta name="twitter:image" content="https://nightfang.dev/og-image.png" />
-
-    <!-- SEO -->
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://nightfang.dev" />
-
-    <!-- Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Nightfang",
-      "description": description,
-      "url": "https://nightfang.dev",
-      "applicationCategory": "SecurityApplication",
-      "operatingSystem": "Cross-platform",
-      "license": "https://opensource.org/licenses/MIT",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
-      "author": { "@type": "Person", "name": "peaktwilight" }
-    })} />
-
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
     <title>{title}</title>
   </head>
-  <body class="bg-night text-white antialiased font-sans noise-bg">
+  <body class="bg-night text-white min-h-screen antialiased" style="font-family: 'Outfit', sans-serif;">
     <slot />
   </body>
 </html>

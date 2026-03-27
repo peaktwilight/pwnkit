@@ -33,7 +33,7 @@ import AnimatedSection from '../components/AnimatedSection';
         <!-- CTA -->
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up" style="animation-delay: 0.2s">
           <div class="group relative">
-            <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm sm:text-base text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
+            <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-["Space_Mono"] text-sm sm:text-base text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
               npx nightfang scan --target https://your-app.com/api/chat
             </code>
           </div>
@@ -57,9 +57,9 @@ import AnimatedSection from '../components/AnimatedSection';
                 <div class="w-3 h-3 rounded-full bg-white/10"></div>
                 <div class="w-3 h-3 rounded-full bg-white/10"></div>
               </div>
-              <span class="text-xs text-ash font-mono ml-2">Terminal</span>
+              <span class="text-xs text-ash font-["Space_Mono"] ml-2">Terminal</span>
             </div>
-            <div class="bg-night-light p-5 font-mono text-sm text-left leading-relaxed space-y-1">
+            <div class="bg-night-light p-5 font-["Space_Mono"] text-sm text-left leading-relaxed space-y-1">
               <div class="text-ash terminal-line">$ npx nightfang scan --target https://demo.app/api/chat</div>
               <div class="terminal-line">&nbsp;</div>
               <div class="text-smoke terminal-line">
@@ -192,18 +192,18 @@ import AnimatedSection from '../components/AnimatedSection';
             <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-crimson bg-crimson/10 px-2 py-0.5 rounded uppercase tracking-wider">scan</span>
+                  <span class="text-xs font-["Space_Mono"] text-crimson bg-crimson/10 px-2 py-0.5 rounded uppercase tracking-wider">scan</span>
                   <h3 class="font-semibold text-lg">Probe LLM endpoints &amp; MCP servers</h3>
                 </div>
                 <p class="text-smoke text-sm leading-relaxed mb-3">Discovers vulnerabilities in AI endpoints with 47+ test cases across prompt injection, jailbreaks, tool poisoning, data exfiltration, and more. Supports probe, deep, and MCP modes.</p>
                 <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--agentic</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--agentic</span>
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang scan --target &lt;url&gt;</code>
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-["Space_Mono"] text-xs text-smoke select-all">npx nightfang scan --target &lt;url&gt;</code>
               </div>
             </div>
           </div>
@@ -213,17 +213,17 @@ import AnimatedSection from '../components/AnimatedSection';
             <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded uppercase tracking-wider">audit</span>
+                  <span class="text-xs font-["Space_Mono"] text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded uppercase tracking-wider">audit</span>
                   <h3 class="font-semibold text-lg">Audit npm packages for malicious code</h3>
                 </div>
                 <p class="text-smoke text-sm leading-relaxed mb-3">Installs a package in a sandbox, runs semgrep static analysis plus AI-powered code review. Catches supply chain attacks, backdoors, and dependency vulnerabilities.</p>
                 <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--version &lt;ver&gt;</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--version &lt;ver&gt;</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang audit &lt;package&gt;</code>
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-["Space_Mono"] text-xs text-smoke select-all">npx nightfang audit &lt;package&gt;</code>
               </div>
             </div>
           </div>
@@ -233,17 +233,17 @@ import AnimatedSection from '../components/AnimatedSection';
             <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded uppercase tracking-wider">review</span>
+                  <span class="text-xs font-["Space_Mono"] text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded uppercase tracking-wider">review</span>
                   <h3 class="font-semibold text-lg">Deep security audit of source code</h3>
                 </div>
                 <p class="text-smoke text-sm leading-relaxed mb-3">Security-focused code review of local repos or GitHub URLs. Multiple AI runtimes analyze your entire codebase and output SARIF, Markdown, and JSON reports.</p>
                 <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--runtime api|claude|codex|gemini|auto</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--runtime api|claude|codex|gemini|auto</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang review &lt;repo&gt;</code>
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-["Space_Mono"] text-xs text-smoke select-all">npx nightfang review &lt;repo&gt;</code>
               </div>
             </div>
           </div>
@@ -253,17 +253,17 @@ import AnimatedSection from '../components/AnimatedSection';
             <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded uppercase tracking-wider">findings</span>
+                  <span class="text-xs font-["Space_Mono"] text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded uppercase tracking-wider">findings</span>
                   <h3 class="font-semibold text-lg">Query and inspect verified findings</h3>
                 </div>
                 <p class="text-smoke text-sm leading-relaxed mb-3">Filter findings by severity, category, and status. Inspect individual findings with full evidence chains and proof artifacts. Track the lifecycle from discovered to confirmed.</p>
                 <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">list --severity critical</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">show NF-001</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">list --severity critical</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">show NF-001</span>
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang findings list</code>
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-["Space_Mono"] text-xs text-smoke select-all">npx nightfang findings list</code>
               </div>
             </div>
           </div>
@@ -273,17 +273,17 @@ import AnimatedSection from '../components/AnimatedSection';
             <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase tracking-wider">history</span>
+                  <span class="text-xs font-["Space_Mono"] text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase tracking-wider">history</span>
                   <h3 class="font-semibold text-lg">Browse past scan results</h3>
                 </div>
                 <p class="text-smoke text-sm leading-relaxed mb-3">Query the local SQLite database for previous scans. See status, depth, findings count, and duration for every run. Track your security posture over time.</p>
                 <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--limit 20</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--db-path ./custom.db</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--limit 20</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash bg-white/5 px-2 py-0.5 rounded">--db-path ./custom.db</span>
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang history</code>
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-["Space_Mono"] text-xs text-smoke select-all">npx nightfang history</code>
               </div>
             </div>
           </div>
@@ -329,7 +329,7 @@ import AnimatedSection from '../components/AnimatedSection';
         </div>
 
         <!-- Pipeline visual -->
-        <div class="flex items-center justify-center gap-2 sm:gap-4 mb-12 font-mono text-xs sm:text-sm overflow-x-auto px-4">
+        <div class="flex items-center justify-center gap-2 sm:gap-4 mb-12 font-["Space_Mono"] text-xs sm:text-sm overflow-x-auto px-4">
           <div class="flex items-center gap-2 sm:gap-4">
             <div class="bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
               <div class="font-bold">DISCOVER</div>
@@ -355,10 +355,10 @@ import AnimatedSection from '../components/AnimatedSection';
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
-            <div class="text-xs font-mono text-emerald-400 mb-3 uppercase tracking-wider">01 &middot; Discover</div>
+            <div class="text-xs font-["Space_Mono"] text-emerald-400 mb-3 uppercase tracking-wider">01 &middot; Discover</div>
             <h3 class="font-semibold text-lg mb-2">Recon</h3>
             <p class="text-smoke text-sm leading-relaxed">Maps endpoints, model cards, system prompts, MCP tool schemas, and auth flows.</p>
-            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-["Space_Mono"] space-y-1">
               <div>&#8226; API surface mapping</div>
               <div>&#8226; System prompt extraction</div>
               <div>&#8226; MCP tool enumeration</div>
@@ -366,10 +366,10 @@ import AnimatedSection from '../components/AnimatedSection';
           </div>
 
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
-            <div class="text-xs font-mono text-amber-400 mb-3 uppercase tracking-wider">02 &middot; Attack</div>
+            <div class="text-xs font-["Space_Mono"] text-amber-400 mb-3 uppercase tracking-wider">02 &middot; Attack</div>
             <h3 class="font-semibold text-lg mb-2">Offense</h3>
             <p class="text-smoke text-sm leading-relaxed">Runs prompt injection, jailbreaks, tool poisoning, data exfiltration, and more.</p>
-            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-["Space_Mono"] space-y-1">
               <div>&#8226; 47+ test cases</div>
               <div>&#8226; OWASP LLM Top 10</div>
               <div>&#8226; 6 attack categories</div>
@@ -377,10 +377,10 @@ import AnimatedSection from '../components/AnimatedSection';
           </div>
 
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
-            <div class="text-xs font-mono text-blue-400 mb-3 uppercase tracking-wider">03 &middot; Verify</div>
+            <div class="text-xs font-["Space_Mono"] text-blue-400 mb-3 uppercase tracking-wider">03 &middot; Verify</div>
             <h3 class="font-semibold text-lg mb-2">Validation</h3>
             <p class="text-smoke text-sm leading-relaxed">Re-exploits each finding to eliminate false positives. Captures proof artifacts.</p>
-            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-["Space_Mono"] space-y-1">
               <div>&#8226; Re-exploitation</div>
               <div>&#8226; Proof capture</div>
               <div>&#8226; Confidence scoring</div>
@@ -388,10 +388,10 @@ import AnimatedSection from '../components/AnimatedSection';
           </div>
 
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
-            <div class="text-xs font-mono text-purple-400 mb-3 uppercase tracking-wider">04 &middot; Report</div>
+            <div class="text-xs font-["Space_Mono"] text-purple-400 mb-3 uppercase tracking-wider">04 &middot; Report</div>
             <h3 class="font-semibold text-lg mb-2">Output</h3>
             <p class="text-smoke text-sm leading-relaxed">Generates SARIF, Markdown, and JSON reports with severity and remediation.</p>
-            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-["Space_Mono"] space-y-1">
               <div>&#8226; SARIF for GitHub Security tab</div>
               <div>&#8226; Markdown reports</div>
               <div>&#8226; Remediation guidance</div>
@@ -428,7 +428,7 @@ import AnimatedSection from '../components/AnimatedSection';
               </span>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-mono text-ash">{item.id}</span>
+                  <span class="text-xs font-["Space_Mono"] text-ash">{item.id}</span>
                   <span class="text-sm font-medium text-white truncate">{item.name}</span>
                 </div>
               </div>
@@ -556,9 +556,9 @@ import AnimatedSection from '../components/AnimatedSection';
 
         <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
           <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
-            <span class="text-xs text-ash font-mono">.github/workflows/nightfang.yml</span>
+            <span class="text-xs text-ash font-["Space_Mono"]">.github/workflows/nightfang.yml</span>
           </div>
-          <pre class="bg-night-light p-5 font-mono text-sm text-smoke overflow-x-auto leading-relaxed"><code><span class="text-ash">name:</span> <span class="text-amber-300">AI Security Scan</span>
+          <pre class="bg-night-light p-5 font-["Space_Mono"] text-sm text-smoke overflow-x-auto leading-relaxed"><code><span class="text-ash">name:</span> <span class="text-amber-300">AI Security Scan</span>
 <span class="text-ash">on:</span> <span class="text-white">[push, pull_request]</span>
 
 <span class="text-ash">jobs:</span>
@@ -588,20 +588,20 @@ import AnimatedSection from '../components/AnimatedSection';
 
         <div class="grid sm:grid-cols-3 gap-6">
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 text-center">
-            <div class="text-xs font-mono text-ash uppercase tracking-wider mb-3">Quick</div>
+            <div class="text-xs font-["Space_Mono"] text-ash uppercase tracking-wider mb-3">Quick</div>
             <div class="text-3xl font-bold text-white mb-1">$0.05</div>
             <div class="text-sm text-smoke mb-4">~15 tests &middot; 1 min</div>
             <div class="text-xs text-ash">Perfect for CI</div>
           </div>
           <div class="bg-night-lighter border border-crimson/20 rounded-xl p-6 text-center relative">
             <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-medium bg-crimson text-white rounded-full px-3 py-0.5">Popular</div>
-            <div class="text-xs font-mono text-ash uppercase tracking-wider mb-3">Default</div>
+            <div class="text-xs font-["Space_Mono"] text-ash uppercase tracking-wider mb-3">Default</div>
             <div class="text-3xl font-bold text-white mb-1">$0.15</div>
             <div class="text-sm text-smoke mb-4">~50 tests &middot; 3 min</div>
             <div class="text-xs text-ash">Balanced coverage</div>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 text-center">
-            <div class="text-xs font-mono text-ash uppercase tracking-wider mb-3">Deep</div>
+            <div class="text-xs font-["Space_Mono"] text-ash uppercase tracking-wider mb-3">Deep</div>
             <div class="text-3xl font-bold text-white mb-1">$1.00</div>
             <div class="text-sm text-smoke mb-4">~150 tests &middot; 10 min</div>
             <div class="text-xs text-ash">Pre-launch audit</div>
@@ -619,7 +619,7 @@ import AnimatedSection from '../components/AnimatedSection';
         </p>
         <div class="flex flex-wrap justify-center gap-3">
           {["node-forge", "uptime-kuma", "liquidjs", "picomatch", "jspdf", "OpenSOAR", "PhishMind"].map((name) => (
-            <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-night-lighter border border-white/5 text-sm text-smoke font-mono">
+            <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-night-lighter border border-white/5 text-sm text-smoke font-["Space_Mono"]">
               {name}
             </span>
           ))}
@@ -638,7 +638,7 @@ import AnimatedSection from '../components/AnimatedSection';
         </h2>
         <p class="text-smoke text-lg mb-10">Five commands. Real vulnerabilities. Proof of exploitability.</p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
+          <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-["Space_Mono"] text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
             npx nightfang scan --target &lt;url&gt;
           </code>
           <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-6 py-3 transition-colors">
