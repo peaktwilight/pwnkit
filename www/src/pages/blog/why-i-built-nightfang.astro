@@ -1,0 +1,232 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Why I Built Nightfang - From 7 CVEs to Autonomous AI Pentesting" description="The story behind Nightfang: how a security researcher with 7 published CVEs built an open-source toolkit that uses AI agents to pentest AI applications.">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 bg-night/80 backdrop-blur-md border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+        <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> nightfang
+      </a>
+      <div class="flex items-center gap-6 text-sm text-smoke">
+        <a href="/" class="hover:text-white transition-colors hidden sm:block">Home</a>
+        <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md px-3 py-1.5 text-white transition-colors">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-28 pb-24">
+    <article class="max-w-2xl mx-auto px-6">
+
+      <!-- Header -->
+      <header class="mb-12">
+        <div class="flex items-center gap-3 text-sm text-ash mb-4">
+          <time datetime="2026-03-27">March 27, 2026</time>
+          <span>&middot;</span>
+          <span>8 min read</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">
+          Why I Built Nightfang
+        </h1>
+        <p class="text-xl text-smoke leading-relaxed">
+          From 7 CVEs and manual pentesting to autonomous AI agents that prove every vulnerability they find.
+        </p>
+      </header>
+
+      <!-- Body -->
+      <div class="prose prose-invert max-w-none space-y-6 text-smoke leading-relaxed">
+
+        <p>
+          I've spent years breaking software. Seven published CVEs across node-forge, uptime-kuma, liquidjs, picomatch, and jspdf. Built OpenSOAR for security orchestration. Built PhishMind for phishing analysis. The pattern was always the same: find a vulnerability, write the proof of concept, write the report. Repeat.
+        </p>
+
+        <p>
+          Then AI happened to security.
+        </p>
+
+        <p>
+          Suddenly every app had a chatbot. Every developer tool had an AI copilot. MCP servers started popping up everywhere, exposing tool schemas that nobody was auditing. Companies were shipping AI features as fast as they could, and the attack surface was growing faster than anyone could manually test.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">The problem I kept hitting</h2>
+
+        <p>
+          When I started doing AI security assessments, the tooling was... not there. The options were:
+        </p>
+
+        <ul class="list-none space-y-3 pl-0">
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">promptfoo</strong> for red-teaming LLM outputs. Good for eval, but it's a test runner, not a pentester. No verification, no proof of exploit.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">garak</strong> for LLM probing. Solid attack coverage, but Python-heavy setup and no MCP or supply chain coverage.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">semgrep + nuclei</strong> for traditional scanning. Can't see AI-specific attack surfaces at all.</span>
+          </li>
+        </ul>
+
+        <p>
+          None of them did what I actually needed: scan an AI endpoint, attack it systematically, <em>verify</em> that the findings are real, and give me a report I could hand to a client. I was stitching together 4-5 tools for every engagement and still writing manual PoCs for every finding.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">The insight: attackers verify, tools don't</h2>
+
+        <p>
+          The biggest waste of time in security isn't finding vulnerabilities. It's triaging false positives. Every scanner I've used produces a mountain of "possible" findings that turn out to be nothing. You spend 80% of your time proving that things <em>aren't</em> broken.
+        </p>
+
+        <p>
+          Real attackers don't have this problem. They try to exploit something. If it works, it's real. If it doesn't, they move on. That's the workflow I wanted to automate.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">Four agents, one pipeline</h2>
+
+        <p>
+          Nightfang runs four agents in sequence, each specialized for a phase:
+        </p>
+
+        <div class="grid grid-cols-2 gap-4 my-8">
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-emerald-400 mb-1">01 Discover</div>
+            <p class="text-sm text-smoke m-0">Maps the attack surface. Endpoints, system prompts, MCP tool schemas, auth flows.</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-amber-400 mb-1">02 Attack</div>
+            <p class="text-sm text-smoke m-0">47+ test cases. Prompt injection, jailbreaks, tool poisoning, data exfiltration.</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-blue-400 mb-1">03 Verify</div>
+            <p class="text-sm text-smoke m-0">Re-exploits every finding independently. If it can't reproduce, it's killed.</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-purple-400 mb-1">04 Report</div>
+            <p class="text-sm text-smoke m-0">SARIF for GitHub Security tab. Markdown and JSON with full evidence chains.</p>
+          </div>
+        </div>
+
+        <p>
+          The verification agent is what makes this different. It doesn't trust the attack agent's output. It independently re-exploits each finding, captures proof artifacts, and assigns a confidence score. If a "prompt injection" only works with a contrived input that a real user would never send, it gets flagged and downgraded.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">Not just LLMs</h2>
+
+        <p>
+          AI security isn't just about prompt injection. The attack surface includes:
+        </p>
+
+        <ul class="list-none space-y-2 pl-0">
+          <li class="flex items-start gap-3">
+            <span class="text-crimson mt-1 shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <span><strong class="text-white">LLM endpoints</strong> &mdash; ChatGPT, Claude, Llama APIs, custom chatbots</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-crimson mt-1 shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg>
+            </span>
+            <span><strong class="text-white">MCP servers</strong> &mdash; tool schemas, validation, auth, poisoning vectors</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-crimson mt-1 shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            </span>
+            <span><strong class="text-white">npm packages</strong> &mdash; supply chain attacks, malicious code, dependency risk</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-crimson mt-1 shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </span>
+            <span><strong class="text-white">Source code</strong> &mdash; AI-powered deep security review of any repo</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-crimson mt-1 shrink-0">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            </span>
+            <span><strong class="text-white">Web apps</strong> &mdash; AI copilots, RAG pipelines, agent APIs</span>
+          </li>
+        </ul>
+
+        <p>
+          That's why Nightfang has five commands, not one. <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">scan</code> for endpoints, <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">audit</code> for packages, <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">review</code> for source code, plus <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">findings</code> and <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">history</code> to track everything.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">The cost question</h2>
+
+        <p>
+          AI-powered tools have a cost problem. Most teams won't adopt something that burns $50 per scan. Nightfang is designed to be cheap enough for CI/CD:
+        </p>
+
+        <ul class="list-none space-y-2 pl-0">
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">Quick scan:</strong> ~$0.05, under 1 minute. Run it on every PR.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">Default scan:</strong> ~$0.15, 3 minutes. Balanced coverage for staging.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">Deep scan:</strong> ~$1.00, 10 minutes. Pre-launch audit.</span>
+          </li>
+        </ul>
+
+        <p>
+          That's cheaper than one hour of manual pentesting. And it runs every time you push, not once a quarter.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">Try it now</h2>
+
+        <p>
+          Nightfang is live on npm. No config needed. One command:
+        </p>
+
+        <div class="bg-night-lighter border border-white/10 rounded-lg p-4 font-mono text-sm my-6">
+          <code class="text-white select-all">npx nightfang scan --target https://your-app.com/api/chat</code>
+        </div>
+
+        <p>
+          It's MIT licensed, fully open source, and I'm actively building it. If you're shipping AI features and want to know what an attacker would find, give it a shot.
+        </p>
+
+        <div class="flex flex-wrap gap-3 mt-8">
+          <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-5 py-2.5 transition-colors text-sm">
+            Star on GitHub
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          </a>
+          <a href="https://www.npmjs.com/package/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-lg px-5 py-2.5 transition-colors text-sm">
+            View on npm
+          </a>
+        </div>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-8">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ash">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-sm bg-crimson inline-block"></span>
+        <span>nightfang</span>
+        <span>&middot;</span>
+        <span>MIT License</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">GitHub</a>
+        <a href="https://github.com/peaktwilight/nightfang/issues" target="_blank" rel="noopener" class="hover:text-white transition-colors">Issues</a>
+        <a href="https://www.npmjs.com/package/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">npm</a>
+      </div>
+    </div>
+  </footer>
+</Layout>

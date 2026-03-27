@@ -1,0 +1,21 @@
+{
+  "name": "nightfang-demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render DemoVideo out/demo.mp4",
+    "render-gif": "remotion render DemoVideo out/demo.gif --image-format png --codec gif"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.296",
+    "@remotion/google-fonts": "4.0.296",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.296"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
