@@ -14,10 +14,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@clack/prompts": "^1.1.0",
     "@nightfang/core": "workspace:*",
     "@nightfang/db": "workspace:*",
     "@nightfang/shared": "workspace:*",
     "@nightfang/templates": "workspace:*",
+    "@nightfang/test-targets": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "ora": "^8.0.0"

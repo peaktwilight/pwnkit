@@ -13,6 +13,96 @@ import type {
 import { scan, agenticScan, createRuntime, packageAudit, sourceReview } from "@nightfang/core";
 import { formatReport, formatAuditReport, formatReviewReport } from "./formatters/index.js";
 import { renderProgressBar } from "./formatters/terminal.js";
+import { renderReplay, replayDataFromReport, createReplayCollector } from "./formatters/replay.js";
+
+// ── "Holy Shit" First-Run Interactive Menu ──
+async function showInteractiveMenu(): Promise<void> {
+  const { select, text, isCancel, outro } = await import("@clack/prompts");
+
+  console.log("");
+  console.log(
+    chalk.red.bold("  nightfang") +
+    chalk.gray(` v${VERSION}`) +
+    chalk.gray(" — AI-Powered Security Scanner")
+  );
+  console.log("");
+
+  const action = await select({
+    message: "What would you like to do?",
+    options: [
+      { value: "demo",   label: "Scan demo target (30 sec)" },
+      { value: "custom", label: "Scan my target" },
+      { value: "docs",   label: "Read docs" },
+    ],
+  });
+
+  if (isCancel(action)) {
+    outro(chalk.gray("Goodbye."));
+    process.exit(0);
+  }
+
+  if (action === "docs") {
+    const { exec } = await import("child_process");
+    const url = "https://nightfang.dev";
+    const openCmd =
+      process.platform === "darwin" ? `open ${url}` :
+      process.platform === "win32"  ? `start ${url}` :
+      `xdg-open ${url}`;
+    exec(openCmd);
+    outro(chalk.gray(`Opening ${url} in your browser...`));
+    return;
+  }
+
+  if (action === "custom") {
+    const target = await text({
+      message: "Target URL:",
+      placeholder: "http://localhost:4100/v1/chat/completions",
+      validate: (v) => {
+        if (!v || v.trim().length === 0) return "URL is required";
+        try { new URL(v.trim()); } catch { return "Invalid URL"; }
+      },
+    });
+
+    if (isCancel(target)) {
+      outro(chalk.gray("Goodbye."));
+      process.exit(0);
+    }
+
+    process.argv = [process.argv[0], process.argv[1], "scan", "--target", (target as string).trim(), "--depth", "quick"];
+    await program.parseAsync();
+    return;
+  }
+
+  if (action === "demo") {
+    const { createVulnerableApp } = await import("@nightfang/test-targets/vulnerable");
+    const app = createVulnerableApp();
+
+    const server = await new Promise<import("http").Server>((resolve) => {
+      const s = app.listen(0, () => resolve(s));
+    });
+    const address = server.address() as import("net").AddressInfo;
+    const targetUrl = `http://localhost:${address.port}/v1/chat/completions`;
+
+    console.log("");
+    console.log(chalk.gray(`  Demo target running on port ${address.port}`));
+    console.log("");
+
+    process.argv = [process.argv[0], process.argv[1], "scan", "--target", targetUrl, "--depth", "quick"];
+
+    const origExit = process.exit.bind(process);
+    process.exit = ((code?: number) => {
+      server.close();
+      origExit(code);
+    }) as typeof process.exit;
+
+    try {
+      await program.parseAsync();
+    } finally {
+      server.close();
+    }
+    return;
+  }
+}
 
 const program = new Command();
 
@@ -33,13 +123,66 @@ program
   .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
   .option("--agentic", "Use multi-turn agentic scan with tool use and SQLite persistence", false)
   .option("--db-path <path>", "Path to SQLite database (default: ~/.nightfang/nightfang.db)")
-  .option("--verbose", "Show detailed output", false)
+  .option("--verbose", "Show detailed output with live attack replay", false)
+  .option("--replay", "Replay the last scan's results as an animated attack chain", false)
   .action(async (opts) => {
     const depth = opts.depth as ScanDepth;
     const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
     const runtime = opts.runtime as RuntimeMode;
     const mode = opts.mode as ScanMode;
     const verbose = opts.verbose as boolean;
+    const replayMode = opts.replay as boolean;
+
+    // ── Replay last scan (--replay flag) ──
+    if (replayMode) {
+      try {
+        const { NightfangDB } = await import("@nightfang/db");
+        const db = new NightfangDB(opts.dbPath);
+        const scans = db.listScans(1);
+        if (scans.length === 0) {
+          console.error(chalk.red("No scan history found. Run a scan first."));
+          db.close();
+          process.exit(2);
+        }
+        const lastScan = scans[0];
+        const dbFindings = db.getFindings(lastScan.id);
+        db.close();
+
+        const summary = lastScan.summary ? JSON.parse(lastScan.summary) : {
+          totalAttacks: 0, totalFindings: 0,
+          critical: 0, high: 0, medium: 0, low: 0, info: 0,
+        };
+
+        const findings = dbFindings.map((f) => ({
+          id: f.id,
+          templateId: f.templateId,
+          title: f.title,
+          description: f.description,
+          severity: f.severity as import("@nightfang/shared").Severity,
+          category: f.category as import("@nightfang/shared").AttackCategory,
+          status: f.status as import("@nightfang/shared").FindingStatus,
+          evidence: {
+            request: f.evidenceRequest,
+            response: f.evidenceResponse,
+            analysis: f.evidenceAnalysis ?? undefined,
+          },
+          timestamp: f.timestamp,
+        }));
+
+        await renderReplay({
+          target: lastScan.target,
+          findings,
+          summary,
+          durationMs: lastScan.durationMs ?? 0,
+        });
+        return;
+      } catch (err) {
+        console.error(
+          chalk.red("Failed to replay: " + (err instanceof Error ? err.message : String(err)))
+        );
+        process.exit(2);
+      }
+    }
 
     // Validate runtime value
     const validRuntimes = ["api", "claude", "codex", "gemini", "opencode", "auto"];
@@ -105,6 +248,9 @@ program
     let attackTotal = 0;
     let attacksDone = 0;
 
+    // Set up replay collector for --verbose mode
+    const replayCollector = verbose ? createReplayCollector(opts.target) : null;
+
     const scanConfig = {
       target: opts.target,
       depth,
@@ -117,6 +263,11 @@ program
     };
 
     const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
+          // Feed events to replay collector for --verbose post-scan replay
+          if (replayCollector) {
+            replayCollector.onEvent(event);
+          }
+
           if (format !== "terminal") return;
 
           switch (event.type) {
@@ -187,6 +338,11 @@ program
           })
         : await scan(scanConfig, eventHandler, opts.dbPath);
 
+      // In verbose mode, show the animated attack replay before the report
+      if (verbose && format === "terminal") {
+        await renderReplay(replayDataFromReport(report));
+      }
+
       const output = formatReport(report, format);
       console.log(output);
 
@@ -201,6 +357,92 @@ program
       spinner?.fail(`  ${chalk.red("✗ Scan failed")}`);
       console.error(
         chalk.red(err instanceof Error ? err.message : String(err))
+      );
+      process.exit(2);
+    }
+  });
+
+// ── Replay command ──
+program
+  .command("replay")
+  .description("Replay the last scan's attack chain as an animated terminal sequence")
+  .option("--db-path <path>", "Path to SQLite database")
+  .option("--scan <scanId>", "Replay a specific scan by ID (default: last scan)")
+  .action(async (opts) => {
+    try {
+      const { NightfangDB } = await import("@nightfang/db");
+      const db = new NightfangDB(opts.dbPath);
+
+      let scanRecord;
+      if (opts.scan) {
+        scanRecord = db.getScan(opts.scan);
+        if (!scanRecord) {
+          // Try prefix match
+          const all = db.listScans(100);
+          scanRecord = all.find((s) => s.id.startsWith(opts.scan));
+        }
+        if (!scanRecord) {
+          console.error(chalk.red(`Scan '${opts.scan}' not found.`));
+          db.close();
+          process.exit(2);
+        }
+      } else {
+        const scans = db.listScans(1);
+        if (scans.length === 0) {
+          console.error(chalk.red("No scan history found. Run a scan first."));
+          db.close();
+          process.exit(2);
+        }
+        scanRecord = scans[0];
+      }
+
+      const dbFindings = db.getFindings(scanRecord.id);
+      const target = db.getTarget(scanRecord.target);
+      db.close();
+
+      const summary = scanRecord.summary ? JSON.parse(scanRecord.summary) : {
+        totalAttacks: 0, totalFindings: 0,
+        critical: 0, high: 0, medium: 0, low: 0, info: 0,
+      };
+
+      const findings = dbFindings.map((f) => ({
+        id: f.id,
+        templateId: f.templateId,
+        title: f.title,
+        description: f.description,
+        severity: f.severity as import("@nightfang/shared").Severity,
+        category: f.category as import("@nightfang/shared").AttackCategory,
+        status: f.status as import("@nightfang/shared").FindingStatus,
+        evidence: {
+          request: f.evidenceRequest,
+          response: f.evidenceResponse,
+          analysis: f.evidenceAnalysis ?? undefined,
+        },
+        timestamp: f.timestamp,
+      }));
+
+      const targetInfo = target
+        ? {
+            url: target.url,
+            type: target.type as import("@nightfang/shared").TargetInfo["type"],
+            systemPrompt: target.systemPrompt ?? undefined,
+            detectedFeatures: target.detectedFeatures
+              ? JSON.parse(target.detectedFeatures)
+              : undefined,
+            endpoints: target.endpoints ? JSON.parse(target.endpoints) : undefined,
+          }
+        : undefined;
+
+      await renderReplay({
+        target: scanRecord.target,
+        targetInfo,
+        findings,
+        summary,
+        durationMs: scanRecord.durationMs ?? 0,
+      });
+    } catch (err) {
+      console.error(
+        chalk.red("Failed to replay: " + (err instanceof Error ? err.message : String(err)))
       );
       process.exit(2);
     }
@@ -610,4 +852,14 @@ function depthLabel(depth: ScanDepth): string {
   }
 }
 
-program.parse();
+// ── Entry point: interactive menu or standard CLI ──
+const userArgs = process.argv.slice(2);
+
+if (userArgs.length === 0) {
+  showInteractiveMenu().catch((err) => {
+    console.error(chalk.red(err instanceof Error ? err.message : String(err)));
+    process.exit(2);
+  });
+} else {
+  program.parse();
+}

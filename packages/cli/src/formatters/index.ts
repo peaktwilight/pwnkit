@@ -2,6 +2,8 @@ import type { ScanReport, AuditReport, ReviewReport, OutputFormat } from "@night
 import { formatTerminal } from "./terminal.js";
 import { formatJson } from "./json.js";
 import { formatMarkdown } from "./markdown.js";
+export { renderReplay, renderReplayStatic, replayDataFromReport, createReplayCollector } from "./replay.js";
+export type { ReplayData, ReplayCollector } from "./replay.js";
 
 export function formatReport(report: ScanReport, format: OutputFormat): string {
   switch (format) {

@@ -151,13 +151,10 @@ export default function DockNav() {
                 href={section.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`group relative flex items-center h-9 rounded-xl px-2.5 ${
-                  isActive
-                    ? "bg-white/[0.08]"
-                    : "hover:bg-white/[0.04]"
-                }`}
+                className="group relative flex items-center gap-1.5 h-9 rounded-xl px-3 bg-white hover:opacity-90 transition-opacity ml-0.5"
               >
-                {inner}
+                <span className="text-black shrink-0">{section.icon}</span>
+                <span className="text-[11px] font-semibold text-black">{section.label}</span>
               </a>
             );
           }
