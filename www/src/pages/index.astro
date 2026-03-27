@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import PipelineViz from '../components/PipelineViz';
 import DockNav from '../components/DockNav';
-import FluidBackground from '../components/FluidBackground';
+import DataGridBackground from '../components/DataGridBackground';
 ---
 
 <Layout title="Nightfang - Open-source pentesting toolkit for AI, code, and supply chain">
@@ -12,8 +12,8 @@ import FluidBackground from '../components/FluidBackground';
 
     <!-- Hero -->
     <section data-section="hero" class="relative min-h-screen pt-32 pb-16 overflow-hidden">
-      <!-- Fluid animated background -->
-      <FluidBackground client:load />
+      <!-- Data grid animated background -->
+      <DataGridBackground client:load />
 
       <div class="relative max-w-6xl mx-auto px-6 text-center">
         <div class="animate-fade-up">

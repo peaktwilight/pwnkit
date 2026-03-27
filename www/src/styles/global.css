@@ -34,6 +34,12 @@
   box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 0 60px rgba(220, 38, 38, 0.05);
 }
 
+/* Data grid pulse */
+@keyframes grid-pulse {
+  from { opacity: 0.02; }
+  to { opacity: 0.08; }
+}
+
 /* Smooth scroll */
 html {
   scroll-behavior: smooth;
