@@ -49,8 +49,7 @@ export default function DockNav() {
       >
         {/* Logo */}
         <a href="#" className="flex items-center gap-1.5 h-9 rounded-xl px-2.5 mr-0.5 hover:bg-white/[0.04] transition-colors">
-          <svg className="w-4 h-4 shrink-0" viewBox="0 0 32 32">
-            <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
+          <svg className="w-[18px] h-[18px] shrink-0 -mt-px" viewBox="4 3 24 26">
             <path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinejoin="round"/>
             <circle cx="13" cy="16" r="1.5" fill="#DC2626"/>
             <circle cx="19" cy="16" r="1.5" fill="#DC2626"/>
