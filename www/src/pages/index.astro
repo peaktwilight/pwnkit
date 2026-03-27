@@ -2,19 +2,17 @@
 import Layout from '../layouts/Layout.astro';
 import TerminalHero from '../components/TerminalHero';
 import PipelineViz from '../components/PipelineViz';
-import FloatingNav from '../components/FloatingNav';
+import DockNav from '../components/DockNav';
 import AnimatedSection from '../components/AnimatedSection';
 ---
 
 <Layout title="Nightfang - Open-source pentesting toolkit for AI, code, and supply chain">
 
-  <!-- Floating Nav -->
-  <FloatingNav client:load />
 
   <main>
 
     <!-- Hero -->
-    <section class="relative min-h-screen flex items-center justify-center pt-14 overflow-hidden grid-bg">
+    <section data-section="hero" class="relative min-h-screen flex items-center justify-center pt-14 overflow-hidden grid-bg">
       <!-- CSS grid + spotlight background -->
       <div class="absolute top-1/3 left-1/2 w-[800px] h-[600px] bg-crimson/5 rounded-full blur-[120px] opacity-0 animate-spotlight"></div>
 
@@ -41,7 +39,7 @@ import AnimatedSection from '../components/AnimatedSection';
             </code>
           </div>
           <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-6 py-3 transition-colors text-sm sm:text-base">
-            Get started
+            View on GitHub
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
         </div>
@@ -180,7 +178,7 @@ import AnimatedSection from '../components/AnimatedSection';
     </section>
 
     <!-- 5 Commands -->
-    <section id="commands" class="py-24 border-t border-white/5">
+    <section id="commands" data-section="commands" class="py-24 border-t border-white/5">
       <div class="max-w-6xl mx-auto px-6">
         <div class="text-center mb-16">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Five commands. Full coverage.</h2>
@@ -322,7 +320,7 @@ import AnimatedSection from '../components/AnimatedSection';
     </section>
 
     <!-- 4-agent pipeline -->
-    <section id="pipeline" class="py-24 border-t border-white/5">
+    <section id="pipeline" data-section="pipeline" class="py-24 border-t border-white/5">
       <div class="max-w-6xl mx-auto px-6">
         <div class="text-center mb-16">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Four agents. One pipeline.</h2>
@@ -441,7 +439,7 @@ import AnimatedSection from '../components/AnimatedSection';
     </section>
 
     <!-- Comparison -->
-    <section id="comparison" class="py-24 border-t border-white/5">
+    <section id="comparison" data-section="comparison" class="py-24 border-t border-white/5">
       <div class="max-w-6xl mx-auto px-6">
         <div class="text-center mb-12">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">How it compares</h2>
@@ -667,4 +665,5 @@ import AnimatedSection from '../components/AnimatedSection';
       </div>
     </div>
   </footer>
+  <DockNav client:load />
 </Layout>
