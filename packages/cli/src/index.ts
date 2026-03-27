@@ -4,9 +4,15 @@ import { Command } from "commander";
 import chalk from "chalk";
 import ora from "ora";
 import { VERSION } from "@nightfang/shared";
-import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@nightfang/shared";
+import type {
+  ScanDepth,
+  OutputFormat,
+  RuntimeMode,
+  ScanMode,
+} from "@nightfang/shared";
 import { scan, createRuntime } from "@nightfang/core";
 import { formatReport } from "./formatters/index.js";
+import { renderProgressBar } from "./formatters/terminal.js";
 
 const program = new Command();
 
@@ -43,31 +49,50 @@ program
 
     // Check runtime availability
     if (runtime !== "api") {
-      const rt = createRuntime({ type: runtime, timeout: parseInt(opts.timeout, 10) });
+      const rt = createRuntime({
+        type: runtime,
+        timeout: parseInt(opts.timeout, 10),
+      });
       const available = await rt.isAvailable();
       if (!available) {
         console.error(
-          chalk.red(`Runtime '${runtime}' not available. Is ${runtime} installed?`)
+          chalk.red(
+            `Runtime '${runtime}' not available. Is ${runtime} installed?`
+          )
         );
         process.exit(2);
       }
     }
 
-    // Banner
+    // ── Banner ──
     if (format === "terminal") {
       console.log("");
-      console.log(chalk.red.bold("  NIGHTFANG") + chalk.gray(" v" + VERSION));
-      console.log(chalk.gray("  AI Red-Teaming Toolkit"));
+      console.log(
+        chalk.red.bold("  ◆ nightfang") + chalk.gray(` v${VERSION}`)
+      );
+      console.log("");
+      console.log(
+        `  ${chalk.gray("Target:")}  ${chalk.white.bold(opts.target)}`
+      );
+      console.log(
+        `  ${chalk.gray("Depth:")}   ${chalk.white(depth)} ${chalk.gray(`(${depthLabel(depth)})`)}`
+      );
       if (runtime !== "api") {
-        console.log(chalk.gray(`  Runtime: ${runtime}`));
+        console.log(
+          `  ${chalk.gray("Runtime:")} ${chalk.white(runtime)}`
+        );
       }
       if (mode !== "probe") {
-        console.log(chalk.gray(`  Mode: ${mode}`));
+        console.log(
+          `  ${chalk.gray("Mode:")}    ${chalk.white(mode)}`
+        );
       }
       console.log("");
     }
 
-    const spinner = format === "terminal" ? ora() : null;
+    const spinner = format === "terminal" ? ora({ spinner: "dots" }) : null;
+    let attackTotal = 0;
+    let attacksDone = 0;
 
     try {
       const report = await scan(
@@ -86,22 +111,51 @@ program
 
           switch (event.type) {
             case "stage:start":
-              spinner?.start(chalk.gray(event.message));
-              break;
-            case "stage:end":
-              if (event.stage === "attack" || event.stage === "verify") {
-                spinner?.succeed(event.message);
+              if (event.stage === "attack") {
+                // Extract template count from message for progress bar
+                const match = event.message.match(/(\d+)/);
+                if (match) attackTotal = parseInt(match[1], 10);
+                attacksDone = 0;
+                spinner?.start(
+                  `  ${chalk.gray("Running attacks")} ${renderProgressBar(0, attackTotal || 1)}`
+                );
               } else {
-                spinner?.succeed(chalk.gray(event.message));
+                spinner?.start(`  ${chalk.gray(event.message)}`);
               }
               break;
+
+            case "attack:end":
+              attacksDone++;
+              if (spinner && attackTotal > 0) {
+                spinner.text = `  ${chalk.gray("Running attacks")} ${renderProgressBar(attacksDone, attackTotal)}`;
+              }
+              break;
+
+            case "stage:end":
+              if (event.stage === "attack") {
+                spinner?.succeed(
+                  `  ${chalk.gray("Attacks complete")} ${renderProgressBar(attackTotal, attackTotal)}`
+                );
+              } else if (
+                event.stage === "discovery" ||
+                event.stage === "verify"
+              ) {
+                spinner?.succeed(`  ${chalk.green("✓")} ${chalk.gray(event.message)}`);
+              } else {
+                spinner?.succeed(`  ${chalk.gray(event.message)}`);
+              }
+              break;
+
             case "finding":
               if (verbose) {
-                console.log(`  ${chalk.yellow("!")} ${event.message}`);
+                console.log(
+                  `    ${chalk.yellow("⚡")} ${chalk.yellow(event.message)}`
+                );
               }
               break;
+
             case "error":
-              spinner?.fail(chalk.red(event.message));
+              spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
               break;
           }
         }
@@ -115,12 +169,23 @@ program
         process.exit(1);
       }
     } catch (err) {
-      spinner?.fail(chalk.red("Scan failed"));
+      spinner?.fail(`  ${chalk.red("✗ Scan failed")}`);
       console.error(
         chalk.red(err instanceof Error ? err.message : String(err))
       );
       process.exit(2);
     }
   });
+
+function depthLabel(depth: ScanDepth): string {
+  switch (depth) {
+    case "quick":
+      return "~5 probes";
+    case "default":
+      return "~50 probes";
+    case "deep":
+      return "full coverage";
+  }
+}
 
 program.parse();
