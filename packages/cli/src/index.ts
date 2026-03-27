@@ -163,6 +163,8 @@ program
   .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
   .option("--agentic", "Use multi-turn agentic scan with tool use and SQLite persistence", false)
   .option("--db-path <path>", "Path to SQLite database (default: ~/.nightfang/nightfang.db)")
+  .option("--api-key <key>", "API key for LLM provider (or set OPENROUTER_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY)")
+  .option("--model <model>", "LLM model to use (or set NIGHTFANG_MODEL)")
   .option("--verbose", "Show detailed output with live attack replay", false)
   .option("--replay", "Replay the last scan's results as an animated attack chain", false)
   .action(async (opts) => {
@@ -300,6 +302,8 @@ program
       repoPath: opts.repo,
       timeout: parseInt(opts.timeout, 10),
       verbose,
+      apiKey: opts.apiKey as string | undefined,
+      model: opts.model as string | undefined,
     };
 
     const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
@@ -678,6 +682,8 @@ program
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
   .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, opencode, api", "auto")
   .option("--db-path <path>", "Path to SQLite database")
+  .option("--api-key <key>", "API key for LLM provider (or set OPENROUTER_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY)")
+  .option("--model <model>", "LLM model to use (or set NIGHTFANG_MODEL)")
   .option("--verbose", "Show detailed output", false)
   .option("--timeout <ms>", "AI agent timeout in milliseconds", "600000")
   .action(async (repo: string, opts: Record<string, string | boolean>) => {
@@ -743,6 +749,8 @@ program
           timeout: parseInt(opts.timeout as string, 10),
           verbose,
           dbPath: opts.dbPath as string | undefined,
+          apiKey: opts.apiKey as string | undefined,
+          model: opts.model as string | undefined,
         },
         onEvent: eventHandler,
       });
@@ -773,6 +781,8 @@ program
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
   .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, opencode, api", "auto")
   .option("--db-path <path>", "Path to SQLite database")
+  .option("--api-key <key>", "API key for LLM provider (or set OPENROUTER_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY)")
+  .option("--model <model>", "LLM model to use (or set NIGHTFANG_MODEL)")
   .option("--verbose", "Show detailed output", false)
   .option("--timeout <ms>", "AI agent timeout in milliseconds", "600000")
   .action(async (packageName: string, opts: Record<string, string | boolean>) => {
@@ -863,6 +873,8 @@ program
           timeout: parseInt(opts.timeout as string, 10),
           verbose,
           dbPath: opts.dbPath as string | undefined,
+          apiKey: opts.apiKey as string | undefined,
+          model: opts.model as string | undefined,
         },
         onEvent: eventHandler,
       });

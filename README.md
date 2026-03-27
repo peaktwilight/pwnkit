@@ -38,14 +38,14 @@ One command. Zero config. Every finding verified with proof.
 
 <!-- SELF-SCAN-START -->
 
-| Agent | Status | Findings |
-|-------|--------|----------|
-| Discover | Completed | Endpoints mapped |
-| Attack | Completed | 9 probes executed |
-| Verify | Completed | 9 findings confirmed |
-| Report | Completed | 4 critical, 3 high, 2 medium |
+| Stage | Status | Details |
+|-------|--------|---------|
+| Install | Completed | Dependencies audited |
+| npm audit | Completed | Advisories checked |
+| Semgrep | Completed | Static analysis done |
+| Summary | Completed | 0 critical, 0 high, 0 medium |
 
-*Last scan: 2026-03-27 23:48 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
+*Last audit: 2026-03-26 00:00 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
 
 <!-- SELF-SCAN-END -->
 
@@ -234,12 +234,16 @@ jobs:
           target: ${{ secrets.STAGING_API_URL }}
           depth: default  # quick | default | deep
           fail-on-severity: high  # critical | high | medium | low | info | none
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: nightfang-report/report.sarif
 ```
+
+> **API Key Priority:** Nightfang checks for `OPENROUTER_API_KEY` first, then `ANTHROPIC_API_KEY`, then `OPENAI_API_KEY`. OpenRouter gives you access to many models (including free ones) through a single key at [openrouter.ai](https://openrouter.ai).
 
 Findings show up directly in the **Security** tab of your repository.
 

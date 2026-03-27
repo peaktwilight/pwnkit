@@ -520,7 +520,12 @@ async function runAuditAgent(
   const maxTurns =
     config.depth === "deep" ? 50 : config.depth === "default" ? 30 : 15;
 
-  const runtimeConfig = { type: runtimeType as RuntimeType, timeout: config.timeout ?? 120_000 };
+  const runtimeConfig = {
+    type: runtimeType as RuntimeType,
+    timeout: config.timeout ?? 120_000,
+    apiKey: config.apiKey,
+    model: config.model,
+  };
   const runtime =
     runtimeType === "api" || !available.has(runtimeType)
       ? new ClaudeApiRuntime(runtimeConfig)

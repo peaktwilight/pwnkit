@@ -225,6 +225,8 @@ export interface AuditConfig {
   timeout?: number;
   verbose?: boolean;
   dbPath?: string;
+  apiKey?: string;
+  model?: string;
 }
 
 export interface SemgrepFinding {
@@ -271,6 +273,8 @@ export interface ReviewConfig {
   timeout?: number;
   verbose?: boolean;
   dbPath?: string;
+  apiKey?: string;
+  model?: string;
 }
 
 export interface ReviewReport {
