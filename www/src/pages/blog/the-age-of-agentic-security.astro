@@ -1,0 +1,224 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="The Age of Agentic Security - Why AI Pentesting Changes Everything - Nightfang">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 w-full z-50 bg-night/80 backdrop-blur-md border-b border-white/5">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+        <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> nightfang
+      </a>
+      <div class="flex items-center gap-6 text-sm text-smoke">
+        <a href="/" class="hover:text-white transition-colors hidden sm:block">Home</a>
+        <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md px-3 py-1.5 text-white transition-colors">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="pt-28 pb-24">
+    <article class="max-w-2xl mx-auto px-6">
+
+      <!-- Header -->
+      <header class="mb-12">
+        <div class="flex items-center gap-3 text-sm text-ash mb-4">
+          <time datetime="2026-03-26">March 26, 2026</time>
+          <span>&middot;</span>
+          <span>9 min read</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">
+          The Age of Agentic Security
+        </h1>
+        <p class="text-xl text-smoke leading-relaxed">
+          If AI agents can write 1,000 pull requests a week, AI agents should be testing 1,000 pull requests a week. The asymmetry between how fast we ship code and how fast we audit it is about to collapse.
+        </p>
+      </header>
+
+      <!-- Body -->
+      <div class="prose prose-invert max-w-none space-y-6 text-smoke leading-relaxed">
+
+        <p>
+          Stripe recently published a post about their internal AI agents &mdash; what they call "Minions." The numbers are striking: over 1,000 pull requests per week, produced autonomously by AI agents, reviewed and merged by human engineers. These are not toy examples. They are production changes to one of the most important financial infrastructure companies in the world.
+        </p>
+
+        <p>
+          This is the new normal. Every major engineering organization is deploying AI agents to write code at scale. GitHub Copilot, Cursor, Devin, internal systems like Stripe's &mdash; the velocity of code production has fundamentally changed.
+        </p>
+
+        <p>
+          But here is the part nobody is talking about enough: the velocity of security testing has not changed at all.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">The asymmetry problem</h2>
+
+        <p>
+          Consider what is happening. AI agents produce code at a rate that would have been inconceivable two years ago. A thousand PRs per week at one company. Multiply that across every engineering team now using AI coding tools. The global volume of new code being written and shipped has increased by an order of magnitude.
+        </p>
+
+        <p>
+          Now consider how that code gets security-tested. The answer, for most organizations, is: it mostly does not. Some companies run static analysis in CI &mdash; tools like Semgrep or CodeQL that check for known patterns. A smaller number run periodic penetration tests, typically quarterly. An even smaller number have dedicated security engineers who manually review high-risk changes.
+        </p>
+
+        <p>
+          The math does not work. You cannot have AI agents writing a thousand PRs per week and humans reviewing them for security at the rate of maybe twenty per week. The gap between code production and security review is growing every day.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">Static analysis is necessary but not sufficient</h2>
+
+        <p>
+          This is not an argument against static scanners. They catch real bugs. They belong in every CI pipeline. But they have a fundamental limitation: they match patterns, they do not understand intent.
+        </p>
+
+        <p>
+          Every CVE I found during my npm audit work was in code that would pass static analysis cleanly. The node-forge certificate forgery? The code was syntactically correct, followed the library's internal conventions, and had no pattern that a linter would flag. The bug was a <em>logical</em> error &mdash; checking a property only when its container was present, rather than treating absence as a failure. You cannot write a regex for that.
+        </p>
+
+        <p>
+          The mysql2 connection override? A URL parser that processes query parameters in the wrong order. The Uptime Kuma SSTI bypass? A fallback code path that skipped validation. The jsPDF XSS? String concatenation instead of DOM construction. Each one is a semantic issue that requires understanding what the code is supposed to do, not just what it does.
+        </p>
+
+        <p>
+          This is where AI agents change the game. An LLM-powered security agent can read the code, understand the intended behavior, trace the data flow, and identify where the implementation diverges from secure design. It does what a human security researcher does &mdash; but without the throughput constraint.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">Why verification changes everything</h2>
+
+        <p>
+          The biggest waste of time in security is not finding vulnerabilities. It is triaging false positives. Every static scanner produces a mountain of "possible" findings that turn out to be nothing. Security teams spend 80% of their time proving things are <em>not</em> broken. This is why most organizations do not run aggressive scanning &mdash; the signal-to-noise ratio is too low to be actionable.
+        </p>
+
+        <p>
+          Real attackers do not have this problem. They attempt to exploit something. If it works, it is real. If it does not, they move on. That is the workflow that should be automated.
+        </p>
+
+        <p>
+          This is why Nightfang runs four agents, not one. And it is why the third agent &mdash; the verification agent &mdash; is the most important.
+        </p>
+
+        <div class="grid grid-cols-2 gap-4 my-8">
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-emerald-400 mb-1">01 Discover</div>
+            <p class="text-sm text-smoke m-0">Map the attack surface. Endpoints, system prompts, tool schemas, auth flows, data flows.</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-amber-400 mb-1">02 Attack</div>
+            <p class="text-sm text-smoke m-0">Run systematic test cases against the target. Prompt injection, tool poisoning, data exfiltration, auth bypass.</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-blue-400 mb-1">03 Verify</div>
+            <p class="text-sm text-smoke m-0">Independently re-exploit every finding. Different agent, fresh context. If it cannot reproduce, the finding dies.</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
+            <div class="text-xs font-mono text-purple-400 mb-1">04 Report</div>
+            <p class="text-sm text-smoke m-0">Generate SARIF for GitHub Security, markdown for humans, JSON for automation. Full evidence chains.</p>
+          </div>
+        </div>
+
+        <p>
+          The verification agent does not trust the attack agent. It re-runs each exploit independently, with its own analysis of the target. If the attack agent says "prompt injection found" but the verification agent cannot reproduce it, the finding is killed. If a finding only works with a contrived input that no real user would send, it gets flagged and downgraded.
+        </p>
+
+        <p>
+          This is what separates an agentic security tool from a scanner that produces a list of maybes. The output is not "these 47 things might be problems." The output is "these 6 things are confirmed vulnerabilities, here is the proof for each one, and here is how to fix them."
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">The Stripe parallel</h2>
+
+        <p>
+          What Stripe built with Minions is instructive. Their agents do not just generate code &mdash; they operate within a structured pipeline. The agent produces a PR. A human reviews and approves. The system learns from feedback. The result is high-throughput, high-quality code production.
+        </p>
+
+        <p>
+          The same architecture applies to security testing. An AI agent produces a security assessment. A human reviews the findings. The system refines its approach based on what is confirmed versus what is noise. High-throughput, high-quality security analysis.
+        </p>
+
+        <p>
+          The critical difference is that in security, the verification step can be automated. You do not need a human to confirm that a vulnerability is real if you have a working proof of concept. The PoC <em>is</em> the confirmation. An agent that produces a working exploit has already done the verification that a human reviewer would do &mdash; and it has done it faster, more consistently, and with better documentation.
+        </p>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">What this means for the industry</h2>
+
+        <p>
+          I think we are about to see a fundamental shift in how security testing works. Here is what I expect:
+        </p>
+
+        <ul class="list-none space-y-3 pl-0">
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">Every PR gets a security review.</strong> Not a linter pass. An actual security review by an AI agent that reads the diff, understands the context, and checks for vulnerability classes that static analysis cannot detect. The cost is low enough &mdash; cents per review &mdash; to run on every commit.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">Continuous pentesting replaces quarterly assessments.</strong> Instead of hiring a pentest firm once a quarter, organizations run AI agents against their own systems continuously. The agents adapt as the codebase changes. New endpoints get tested the day they ship.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">Supply chain auditing becomes table stakes.</strong> Right now, most teams blindly trust their npm dependencies. When an AI agent can audit a package in minutes for a few cents, there is no excuse for not checking what you are importing.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-ash mt-1 shrink-0">&mdash;</span>
+            <span><strong class="text-white">The false positive problem goes away.</strong> Verification-based scanning means every reported finding comes with proof. Security teams stop spending 80% of their time on triage and start spending it on remediation.</span>
+          </li>
+        </ul>
+
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">This is not hypothetical</h2>
+
+        <p>
+          I have already done this manually. Three weeks with Claude Opus, auditing npm packages. 73 findings. 7 CVEs. Packages with 40 million weekly downloads. The vulnerabilities were real &mdash; certificate forgery, connection hijacking, server-side template injection, PDF injection, XSS. Each one verified with a working proof of concept. Each one responsibly disclosed and fixed by the maintainers.
+        </p>
+
+        <p>
+          That is what an AI agent can do when pointed at source code with a security researcher's methodology. Nightfang is the open-source version of that workflow. Four agents. Discover, attack, verify, report. Point it at a target and get back confirmed findings with evidence.
+        </p>
+
+        <p>
+          The age of agentic coding is here. Stripe's Minions are writing a thousand PRs a week. Other companies are doing the same. The volume of code being produced by AI agents is growing exponentially.
+        </p>
+
+        <p>
+          Agentic security needs to keep pace. Every AI-written PR should be AI-tested for security. Every dependency should be AI-audited before it enters the supply chain. Every LLM endpoint and MCP server should be AI-pentested before it goes to production.
+        </p>
+
+        <p>
+          The alternative is simple: the attackers will use AI agents too. And they will not bother with responsible disclosure.
+        </p>
+
+        <div class="bg-night-lighter border border-white/10 rounded-lg p-4 font-mono text-sm my-6">
+          <code class="text-white select-all">npx nightfang scan --target https://your-app.com/api/chat</code>
+        </div>
+
+        <div class="flex flex-wrap gap-3 mt-8">
+          <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-5 py-2.5 transition-colors text-sm">
+            Star on GitHub
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          </a>
+          <a href="/blog/how-ai-agents-found-7-cves" class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium rounded-lg px-5 py-2.5 transition-colors text-sm">
+            Read: How AI Agents Found 7 CVEs
+          </a>
+        </div>
+
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-8">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ash">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-sm bg-crimson inline-block"></span>
+        <span>nightfang</span>
+        <span>&middot;</span>
+        <span>MIT License</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">GitHub</a>
+        <a href="https://github.com/peaktwilight/nightfang/issues" target="_blank" rel="noopener" class="hover:text-white transition-colors">Issues</a>
+        <a href="https://www.npmjs.com/package/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">npm</a>
+      </div>
+    </div>
+  </footer>
+</Layout>

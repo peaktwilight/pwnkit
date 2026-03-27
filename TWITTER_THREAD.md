@@ -1,69 +1,96 @@
 # Nightfang Launch Thread (Twitter/X)
 
 ## Tweet 1 (Hook)
-I've published 7 CVEs across node-forge, uptime-kuma, liquidjs, picomatch, and jspdf.
+I used Claude Opus to find 7 CVEs in projects with 500M+ combined downloads.
 
-Today I'm open-sourcing the tool I built to automate my own pentesting workflow.
+node-forge. uptime-kuma. liquidjs. picomatch. jspdf.
 
-Meet Nightfang — four AI agents that pentest your AI apps before attackers do.
+Today I'm open-sourcing the framework that made it possible.
 
-npx nightfang scan --target <url>
+Meet Nightfang.
 
-## Tweet 2 (The Problem)
-Every AI app shipping today has an attack surface traditional scanners can't see.
+## Tweet 2 (The Story)
+Here's what happened:
 
-You can't nmap a language model. You can't write a static rule for a jailbreak that hasn't been invented yet.
+I pointed Claude Opus at npm packages I use daily. Within hours, it found vulnerabilities that had been sitting in production for years.
 
-I needed a tool that thinks like an attacker — and proves what it finds.
+Not theoretical. Real CVEs. Assigned, disclosed, patched.
 
-## Tweet 3 (How It Works)
-Nightfang runs 4 agents in sequence:
+Full writeups: doruk.ch/blog
 
-1. DISCOVER — maps endpoints, system prompts, MCP tools
+## Tweet 3 (The Insight)
+The interesting part wasn't that AI found bugs.
+
+It's that it found bugs *traditional scanners missed*.
+
+You can't write a static rule for every edge case. But an LLM that reads code like a researcher — pattern-matching across thousands of packages it's been trained on — sees things differently.
+
+## Tweet 4 (From Manual to Framework)
+So I turned my manual workflow into a framework.
+
+Four agents, each specialized:
+
+1. DISCOVER — maps attack surface, extracts system prompts, enumerates MCP tools
 2. ATTACK — 47+ test cases across OWASP LLM Top 10
-3. VERIFY — re-exploits every finding to kill false positives
+3. VERIFY — re-exploits every finding. Can't reproduce? Killed as false positive.
 4. REPORT — SARIF for GitHub Security tab
 
-The verify step is what makes it different.
+## Tweet 5 (Why Verification Matters)
+The verify step is the whole point.
 
-## Tweet 4 (Five Attack Surfaces)
-It's not just LLM endpoints. Five commands, five attack surfaces:
+Every other tool gives you 200 "possible vulnerabilities" and hopes you triage them.
+
+Nightfang re-exploits each finding independently. If it can't prove it's real, it drops it.
+
+Zero false positives. Every finding comes with proof.
+
+## Tweet 6 (Not Just LLMs)
+It's not just for LLM endpoints. Five commands, five attack surfaces:
 
 - scan → LLM APIs + MCP servers
-- audit → npm packages (supply chain)
-- review → source code (any repo)
+- audit → npm packages (found the CVEs this way)
+- review → source code (any repo, local or GitHub)
 - findings → query verified results
 - history → track scans over time
 
-One toolkit. Full coverage.
+## Tweet 7 (Industry Context)
+This isn't a toy. Stripe just published their Minions paper — running 1000s of AI agents on internal tasks.
 
-## Tweet 5 (Cost)
-AI-powered security tools have a cost problem. Most burn $50+ per scan.
+AI agents at scale are the future. But with scale comes attack surface.
+
+If companies are deploying thousands of agents, someone needs to be testing them. That's what Nightfang does.
+
+## Tweet 8 (promptfoo Comparison)
+"What about promptfoo?"
+
+Promptfoo was acquired by OpenAI. It's a red-teaming test runner — good for what it does.
+
+Nightfang is different:
+- Multi-agent pipeline, not a single runner
+- Verification eliminates false positives
+- Also covers npm packages and source code
+- MIT licensed. No corporate parent.
+
+## Tweet 9 (Cost + Speed)
+AI security tools have a cost problem. Most charge $50+ per assessment.
 
 Nightfang CI scans: $0.05, under 1 minute.
 Default scans: $0.15, 3 minutes.
 Deep audits: $1.00, 10 minutes.
 
-Cheaper than one hour of manual pentesting. Runs on every push.
+Runs on OpenAI, Anthropic, Ollama, or bring your own agent CLI.
 
-## Tweet 6 (Demo / Try It)
-Try it right now — zero config:
+## Tweet 10 (CTA)
+Try it now — zero config:
 
 npx nightfang scan --target https://your-app.com/api/chat
 npx nightfang audit lodash
 npx nightfang review ./my-ai-app
 
-Works with OpenAI, Anthropic, Ollama, Claude Code, Codex, Gemini CLI.
-
-## Tweet 7 (CTA)
-Nightfang is:
-- MIT licensed
-- Live on npm (v0.1.0)
-- Zero config (just npx)
-- 8/10 OWASP LLM Top 10 coverage
+MIT licensed. v0.1.0 on npm.
 
 GitHub: github.com/peaktwilight/nightfang
 Website: nightfang.dev
-npm: npmjs.com/package/nightfang
+Full CVE writeups: doruk.ch/blog
 
-Star it, try it, break it. PRs welcome.
+Star it, try it, break it.
