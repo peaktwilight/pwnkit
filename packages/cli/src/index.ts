@@ -2,7 +2,6 @@
 
 import { Command } from "commander";
 import chalk from "chalk";
-import ora from "ora";
 import { VERSION } from "@nightfang/shared";
 import { createNightfangSpinner } from "./spinner.js";
 import type {
