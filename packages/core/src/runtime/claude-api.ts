@@ -129,6 +129,58 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
       detected.defaultModel;
   }
 
+  /** Whether this provider uses OpenAI-compatible chat/completions format. */
+  private get isOpenAICompat(): boolean {
+    return this.provider === "openrouter" || this.provider === "openai";
+  }
+
+  /** Build the appropriate headers for the configured provider. */
+  private buildHeaders(): Record<string, string> {
+    if (this.isOpenAICompat) {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      };
+      if (this.provider === "openrouter") {
+        headers["HTTP-Referer"] = "https://nightfang.dev";
+        headers["X-Title"] = "Nightfang Security Scanner";
+      }
+      return headers;
+    }
+    // Anthropic
+    return {
+      "Content-Type": "application/json",
+      "x-api-key": this.apiKey,
+      "anthropic-version": "2023-06-01",
+    };
+  }
+
+  /** Build the API endpoint URL. */
+  private buildUrl(): string {
+    if (this.isOpenAICompat) {
+      return `${this.baseUrl}/chat/completions`;
+    }
+    return `${this.baseUrl}/v1/messages`;
+  }
+
+  /** Friendly provider name for error messages. */
+  private get providerLabel(): string {
+    switch (this.provider) {
+      case "openrouter": return "OpenRouter";
+      case "anthropic": return "Anthropic";
+      case "openai": return "OpenAI";
+    }
+  }
+
+  private noKeyError(): string {
+    return (
+      "No API key found. Set one of:\n" +
+      "  export OPENROUTER_API_KEY=sk-or-...   (OpenRouter — many models, one key)\n" +
+      "  export ANTHROPIC_API_KEY=sk-ant-...    (Anthropic — direct Claude access)\n" +
+      "  export OPENAI_API_KEY=sk-...           (OpenAI — direct GPT access)"
+    );
+  }
+
   // ── Legacy Runtime interface (single-prompt) ──
 
   async execute(
@@ -143,8 +195,7 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
         exitCode: 1,
         timedOut: false,
         durationMs: Date.now() - start,
-        error:
-          "ANTHROPIC_API_KEY not set. Export it to use the audit agent:\n  export ANTHROPIC_API_KEY=sk-ant-...",
+        error: this.noKeyError(),
       };
     }
 
@@ -157,21 +208,40 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
     );
 
     try {
-      const res = await fetch(`${this.baseUrl}/v1/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: this.model,
-          max_tokens: 8192,
-          ...(systemPrompt ? { system: systemPrompt } : {}),
-          messages: [{ role: "user", content: prompt }],
-        }),
-        signal: controller.signal,
-      });
+      let res: Response;
+
+      if (this.isOpenAICompat) {
+        // OpenRouter / OpenAI chat completions format
+        const messages: Array<Record<string, string>> = [];
+        if (systemPrompt) {
+          messages.push({ role: "system", content: systemPrompt });
+        }
+        messages.push({ role: "user", content: prompt });
+
+        res = await fetch(this.buildUrl(), {
+          method: "POST",
+          headers: this.buildHeaders(),
+          body: JSON.stringify({
+            model: this.model,
+            max_tokens: 8192,
+            messages,
+          }),
+          signal: controller.signal,
+        });
+      } else {
+        // Anthropic Messages API format
+        res = await fetch(this.buildUrl(), {
+          method: "POST",
+          headers: this.buildHeaders(),
+          body: JSON.stringify({
+            model: this.model,
+            max_tokens: 8192,
+            ...(systemPrompt ? { system: systemPrompt } : {}),
+            messages: [{ role: "user", content: prompt }],
+          }),
+          signal: controller.signal,
+        });
+      }
 
       clearTimeout(timer);
 
@@ -183,16 +253,23 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
           exitCode: 1,
           timedOut: false,
           durationMs: Date.now() - start,
-          error: `Anthropic API error ${res.status}: ${body.slice(0, 500)}`,
+          error: `${this.providerLabel} API error ${res.status}: ${body.slice(0, 500)}`,
         };
       }
 
       const json = JSON.parse(body);
-      const text =
-        json.content
-          ?.filter((b: { type: string }) => b.type === "text")
-          .map((b: { text: string }) => b.text)
-          .join("\n") ?? "";
+
+      // Extract text from response (different formats)
+      let text: string;
+      if (this.isOpenAICompat) {
+        text = json.choices?.[0]?.message?.content ?? "";
+      } else {
+        text =
+          json.content
+            ?.filter((b: { type: string }) => b.type === "text")
+            .map((b: { text: string }) => b.text)
+            .join("\n") ?? "";
+      }
 
       return {
         output: text,
@@ -210,8 +287,8 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
         timedOut,
         durationMs: Date.now() - start,
         error: timedOut
-          ? "Claude API request timed out"
-          : `Claude API error: ${msg}`,
+          ? `${this.providerLabel} API request timed out`
+          : `${this.providerLabel} API error: ${msg}`,
       };
     }
   }
@@ -230,7 +307,7 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
         content: [{ type: "text", text: "" }],
         stopReason: "error",
         durationMs: Date.now() - start,
-        error: "ANTHROPIC_API_KEY not set.",
+        error: this.noKeyError(),
       };
     }
 
@@ -241,47 +318,99 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
     );
 
     try {
-      // Convert messages to API format
-      const apiMessages = messages.map((m) => ({
-        role: m.role,
-        content: m.content.map((block) => {
-          if (block.type === "text") return { type: "text", text: block.text };
-          if (block.type === "tool_use") {
-            return { type: "tool_use", id: block.id, name: block.name, input: block.input };
-          }
-          if (block.type === "tool_result") {
-            return {
-              type: "tool_result",
-              tool_use_id: block.tool_use_id,
-              content: block.content,
-              ...(block.is_error ? { is_error: true } : {}),
-            };
-          }
-          return block;
-        }),
-      }));
+      let res: Response;
 
-      const body: Record<string, unknown> = {
-        model: this.model,
-        max_tokens: 8192,
-        system,
-        messages: apiMessages,
-      };
+      if (this.isOpenAICompat) {
+        // Convert to OpenAI chat completions format
+        const chatMessages: Array<Record<string, unknown>> = [];
+        chatMessages.push({ role: "system", content: system });
 
-      if (tools.length > 0) {
-        body.tools = tools;
+        for (const m of messages) {
+          for (const block of m.content) {
+            if (block.type === "text") {
+              chatMessages.push({ role: m.role, content: block.text });
+            } else if (block.type === "tool_use") {
+              chatMessages.push({
+                role: "assistant",
+                content: null,
+                tool_calls: [{
+                  id: block.id,
+                  type: "function",
+                  function: { name: block.name, arguments: JSON.stringify(block.input) },
+                }],
+              });
+            } else if (block.type === "tool_result") {
+              chatMessages.push({
+                role: "tool",
+                tool_call_id: block.tool_use_id,
+                content: block.content,
+              });
+            }
+          }
+        }
+
+        const body: Record<string, unknown> = {
+          model: this.model,
+          max_tokens: 8192,
+          messages: chatMessages,
+        };
+
+        if (tools.length > 0) {
+          body.tools = tools.map((t) => ({
+            type: "function",
+            function: {
+              name: t.name,
+              description: t.description,
+              parameters: t.input_schema,
+            },
+          }));
+        }
+
+        res = await fetch(this.buildUrl(), {
+          method: "POST",
+          headers: this.buildHeaders(),
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } else {
+        // Anthropic Messages API format
+        const apiMessages = messages.map((m) => ({
+          role: m.role,
+          content: m.content.map((block) => {
+            if (block.type === "text") return { type: "text", text: block.text };
+            if (block.type === "tool_use") {
+              return { type: "tool_use", id: block.id, name: block.name, input: block.input };
+            }
+            if (block.type === "tool_result") {
+              return {
+                type: "tool_result",
+                tool_use_id: block.tool_use_id,
+                content: block.content,
+                ...(block.is_error ? { is_error: true } : {}),
+              };
+            }
+            return block;
+          }),
+        }));
+
+        const body: Record<string, unknown> = {
+          model: this.model,
+          max_tokens: 8192,
+          system,
+          messages: apiMessages,
+        };
+
+        if (tools.length > 0) {
+          body.tools = tools;
+        }
+
+        res = await fetch(this.buildUrl(), {
+          method: "POST",
+          headers: this.buildHeaders(),
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
       }
-
-      const res = await fetch(`${this.baseUrl}/v1/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": this.apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
 
       clearTimeout(timer);
 
@@ -292,43 +421,85 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
           content: [{ type: "text", text: "" }],
           stopReason: "error",
           durationMs: Date.now() - start,
-          error: `Anthropic API error ${res.status}: ${responseText.slice(0, 500)}`,
+          error: `${this.providerLabel} API error ${res.status}: ${responseText.slice(0, 500)}`,
         };
       }
 
       const json = JSON.parse(responseText);
 
-      // Parse content blocks
-      const content: NativeContentBlock[] = (json.content ?? []).map(
-        (block: Record<string, unknown>) => {
-          if (block.type === "text") {
-            return { type: "text", text: block.text as string };
-          }
-          if (block.type === "tool_use") {
-            return {
-              type: "tool_use",
-              id: block.id as string,
-              name: block.name as string,
-              input: block.input as Record<string, unknown>,
-            };
-          }
-          return { type: "text", text: JSON.stringify(block) };
-        },
-      );
+      // Parse response into unified content blocks
+      let content: NativeContentBlock[];
+      let stopReason: "end_turn" | "tool_use" | "max_tokens" | "error";
+      let usage: { inputTokens: number; outputTokens: number } | undefined;
 
-      const stopReason = json.stop_reason === "tool_use" ? "tool_use" as const
-        : json.stop_reason === "max_tokens" ? "max_tokens" as const
-        : "end_turn" as const;
+      if (this.isOpenAICompat) {
+        const choice = json.choices?.[0];
+        const msg = choice?.message;
+        content = [];
+
+        if (msg?.content) {
+          content.push({ type: "text", text: msg.content });
+        }
+        if (msg?.tool_calls) {
+          for (const tc of msg.tool_calls) {
+            content.push({
+              type: "tool_use",
+              id: tc.id,
+              name: tc.function.name,
+              input: JSON.parse(tc.function.arguments || "{}"),
+            });
+          }
+        }
+
+        const finishReason = choice?.finish_reason;
+        stopReason =
+          finishReason === "tool_calls" || finishReason === "function_call"
+            ? "tool_use"
+            : finishReason === "length"
+              ? "max_tokens"
+              : "end_turn";
+
+        if (json.usage) {
+          usage = {
+            inputTokens: json.usage.prompt_tokens ?? 0,
+            outputTokens: json.usage.completion_tokens ?? 0,
+          };
+        }
+      } else {
+        // Anthropic format
+        content = (json.content ?? []).map(
+          (block: Record<string, unknown>) => {
+            if (block.type === "text") {
+              return { type: "text", text: block.text as string };
+            }
+            if (block.type === "tool_use") {
+              return {
+                type: "tool_use",
+                id: block.id as string,
+                name: block.name as string,
+                input: block.input as Record<string, unknown>,
+              };
+            }
+            return { type: "text", text: JSON.stringify(block) };
+          },
+        );
+
+        stopReason = json.stop_reason === "tool_use" ? "tool_use" as const
+          : json.stop_reason === "max_tokens" ? "max_tokens" as const
+          : "end_turn" as const;
+
+        if (json.usage) {
+          usage = {
+            inputTokens: json.usage.input_tokens ?? 0,
+            outputTokens: json.usage.output_tokens ?? 0,
+          };
+        }
+      }
 
       return {
         content,
         stopReason,
-        usage: json.usage
-          ? {
-              inputTokens: json.usage.input_tokens ?? 0,
-              outputTokens: json.usage.output_tokens ?? 0,
-            }
-          : undefined,
+        usage,
         durationMs: Date.now() - start,
       };
     } catch (err) {
@@ -340,8 +511,8 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
         stopReason: "error",
         durationMs: Date.now() - start,
         error: timedOut
-          ? "Claude API request timed out"
-          : `Claude API error: ${msg}`,
+          ? `${this.providerLabel} API request timed out`
+          : `${this.providerLabel} API error: ${msg}`,
       };
     }
   }
