@@ -187,6 +187,8 @@ export async function scan(
   if (db) {
     db.completeScan(scanId, reportResult.data.summary as unknown as Record<string, unknown>);
     db.close();
+    // Reset the singleton so subsequent scans open a fresh connection
+    _db = null;
   }
 
   return reportResult.data;
