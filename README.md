@@ -145,7 +145,33 @@ npx nightfang scan --target https://api.example.com/chat --depth quick
 
 # Deep audit before launch
 npx nightfang scan --target https://api.example.com/chat --depth deep
+
+# Deep scan with source code analysis (requires Claude Code or Codex CLI)
+npx nightfang scan --target https://api.example.com/chat --runtime claude --mode deep --repo ./path/to/target
+
+# MCP server audit
+npx nightfang scan --target https://mcp-server.example.com --runtime claude --mode mcp
 ```
+
+## Runtime Modes
+
+Nightfang supports three execution runtimes:
+
+| Runtime | Flag | Description |
+|---------|------|-------------|
+| `api` | `--runtime api` | Direct HTTP probing (default). Fast, cheap, no dependencies. |
+| `claude` | `--runtime claude` | Spawns Claude Code as subprocess. Can read source code, run tools, execute PoCs. |
+| `codex` | `--runtime codex` | Spawns Codex CLI as subprocess. Same capabilities as Claude runtime. |
+
+Combined with scan modes:
+
+| Mode | Flag | Description |
+|------|------|-------------|
+| `probe` | `--mode probe` | Send payloads to API, check responses (default). |
+| `deep` | `--mode deep` | Full analysis — API probing + source code audit when `--repo` is provided. |
+| `mcp` | `--mode mcp` | Connect to MCP server, enumerate tools, test each for security issues. |
+
+> `deep` and `mcp` modes require `--runtime claude` or `--runtime codex`.
 
 ## Roadmap
 

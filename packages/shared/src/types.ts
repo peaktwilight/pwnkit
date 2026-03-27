@@ -119,7 +119,7 @@ export interface AttackResult {
 
 // ── Pipeline Stages ──
 
-export type PipelineStage = "discovery" | "attack" | "verify" | "report";
+export type PipelineStage = "discovery" | "source-analysis" | "attack" | "verify" | "report";
 
 export interface StageResult<T = unknown> {
   stage: PipelineStage;

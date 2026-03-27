@@ -3,6 +3,7 @@ import { loadTemplates } from "@nightfang/templates";
 import { createScanContext, finalize } from "./context.js";
 import { createRuntime } from "./runtime/index.js";
 import { runDiscovery } from "./stages/discovery.js";
+import { runSourceAnalysis } from "./stages/source-analysis.js";
 import { runAttacks } from "./stages/attack.js";
 import { runVerification } from "./stages/verify.js";
 import { generateReport } from "./stages/report.js";
@@ -49,8 +50,26 @@ export async function scan(
     data: discovery,
   });
 
-  // Stage 2: Attack
+  // Stage 1.5: Source Analysis (when --repo is provided with a process runtime)
   const templates = loadTemplates(config.depth);
+  if (config.repoPath && runtime.type !== "api") {
+    emit({
+      type: "stage:start",
+      stage: "source-analysis",
+      message: `Analyzing source code in ${config.repoPath}...`,
+    });
+    const sourceResult = await runSourceAnalysis(ctx, templates, runtime, config.repoPath);
+    emit({
+      type: "stage:end",
+      stage: "source-analysis",
+      message: sourceResult.data.findings.length > 0
+        ? `Found ${sourceResult.data.findings.length} source-level issues across ${sourceResult.data.templatesAnalyzed} categories (${sourceResult.durationMs}ms)`
+        : `No source-level issues found across ${sourceResult.data.templatesAnalyzed} categories (${sourceResult.durationMs}ms)`,
+      data: sourceResult,
+    });
+  }
+
+  // Stage 2: Attack
   emit({
     type: "stage:start",
     stage: "attack",
