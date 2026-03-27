@@ -1,70 +1,54 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import TerminalHero from '../components/TerminalHero';
 import PipelineViz from '../components/PipelineViz';
+import DockNav from '../components/DockNav';
 import AnimatedSection from '../components/AnimatedSection';
 ---
 
 <Layout title="Nightfang - Open-source pentesting toolkit for AI, code, and supply chain">
 
-  <!-- Nav -->
-  <nav class="fixed top-0 w-full z-50 bg-night/80 backdrop-blur-md border-b border-white/5">
-    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-2 font-mono font-bold text-lg tracking-tight">
-        <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> nightfang
-      </a>
-      <div class="flex items-center gap-6 text-sm text-smoke">
-        <a href="#commands" class="hover:text-white transition-colors hidden sm:block">Commands</a>
-        <a href="#pipeline" class="hover:text-white transition-colors hidden sm:block">Pipeline</a>
-        <a href="#comparison" class="hover:text-white transition-colors hidden sm:block">Compare</a>
-        <a href="/blog/why-i-built-nightfang" class="hover:text-white transition-colors hidden sm:block">Blog</a>
-        <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md px-3 py-1.5 text-white transition-colors text-sm">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          GitHub
-        </a>
-      </div>
-    </div>
-  </nav>
 
   <main>
 
     <!-- Hero -->
-    <section class="relative min-h-screen flex items-center justify-center pt-14 overflow-hidden">
-      <div class="absolute inset-0 grid-bg-crimson"></div>
-      <div class="hero-glow animate-spotlight"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,#0a0a0a_80%)]"></div>
+    <section data-section="hero" class="relative min-h-screen flex items-center justify-center pt-14 overflow-hidden grid-bg">
+      <!-- CSS grid + spotlight background -->
+      <div class="absolute top-1/3 left-1/2 w-[800px] h-[600px] bg-crimson/5 rounded-full blur-[120px] opacity-0 animate-spotlight"></div>
 
-      <div class="relative max-w-4xl mx-auto px-6 text-center z-10">
+      <div class="relative max-w-4xl mx-auto px-6 text-center">
         <div class="animate-fade-up">
-          <p class="inline-flex items-center gap-2 text-sm font-medium text-crimson mb-8 border border-crimson/20 rounded-full px-4 py-1.5 bg-crimson/5">
+          <p class="inline-flex items-center gap-2 text-sm font-medium text-crimson mb-6 border border-crimson/20 rounded-full px-4 py-1.5 bg-crimson/5">
             <span class="w-1.5 h-1.5 rounded-full bg-crimson animate-pulse"></span>
             Open source &middot; MIT licensed
           </p>
-          <h1 class="font-mono text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6">
-            Pentest your AI, code,<br class="hidden sm:block"/>and supply chain
+          <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+            Pentest your AI, code,<br/>and supply chain<br/>
+            <span class="text-crimson">with autonomous agents</span>
           </h1>
-          <h2 class="text-crimson font-mono text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 animate-fade-up" style="animation-delay: 0.15s">
-            with autonomous agents.
-          </h2>
-          <p class="text-lg sm:text-xl text-smoke max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-up" style="animation-delay: 0.25s">
+          <p class="text-lg sm:text-xl text-smoke max-w-2xl mx-auto mb-10 leading-relaxed">
             Five commands. Four AI agents. Scan LLM endpoints, audit npm packages, review source code, test MCP servers &mdash; then prove every finding is exploitable.
           </p>
         </div>
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up" style="animation-delay: 0.35s">
+        <!-- CTA -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up" style="animation-delay: 0.2s">
           <div class="group relative">
-            <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm sm:text-base text-white select-all cursor-pointer hover:border-crimson/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(220,38,38,0.1)]">
+            <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm sm:text-base text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
               npx nightfang scan --target https://your-app.com/api/chat
             </code>
           </div>
-          <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-6 py-3 transition-all duration-300 text-sm sm:text-base hover:shadow-[0_0_30px_rgba(220,38,38,0.2)]">
-            Get started
+          <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-6 py-3 transition-colors text-sm sm:text-base">
+            View on GitHub
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
         </div>
 
-        <div class="animate-fade-up max-w-2xl mx-auto" style="animation-delay: 0.5s">
-          <TerminalHero client:visible />
+        <!-- Demo GIF — real CLI output, not a simulation -->
+        <div class="animate-fade-up max-w-2xl mx-auto" style="animation-delay: 0.4s">
+          <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
+            <img src="/demo.gif" alt="Nightfang scanning a target and finding vulnerabilities" class="w-full" loading="eager" />
+          </div>
+          <!-- Static fallback for no-JS -->
           <noscript>
           <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
             <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
@@ -76,15 +60,69 @@ import AnimatedSection from '../components/AnimatedSection';
               <span class="text-xs text-ash font-mono ml-2">Terminal</span>
             </div>
             <div class="bg-night-light p-5 font-mono text-sm text-left leading-relaxed space-y-1">
-              <div class="text-ash">$ npx nightfang scan --target https://demo.app/api/chat</div>
-              <div>&nbsp;</div>
-              <div class="text-smoke">nightfang v0.1.0</div>
-              <div class="text-emerald-400">&#9656; Discover  Found 3 endpoints, system prompt extracted</div>
-              <div class="text-amber-400">&#9656; Attack   Ran 47 test cases across 6 categories</div>
-              <div class="text-blue-400">&#9656; Verify   Confirmed 4 of 7 findings</div>
-              <div class="text-purple-400">&#9656; Report   Written to ./nightfang-report/</div>
-              <div>&nbsp;</div>
-              <div class="text-crimson font-bold">4 verified vulnerabilities found.</div>
+              <div class="text-ash terminal-line">$ npx nightfang scan --target https://demo.app/api/chat</div>
+              <div class="terminal-line">&nbsp;</div>
+              <div class="text-smoke terminal-line">
+                <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> nightfang v0.1.0
+              </div>
+              <div class="text-smoke terminal-line">
+                <span class="inline-block w-2 h-2 rounded-sm bg-crimson"></span> Target: https://demo.app/api/chat
+              </div>
+              <div class="terminal-line">&nbsp;</div>
+              <div class="text-emerald-400 terminal-line">
+                &#9656; Discover &nbsp;Found 3 endpoints, 2 MCP tools, system prompt extracted
+              </div>
+              <div class="text-amber-400 terminal-line">
+                &#9656; Attack &nbsp;&nbsp;&nbsp;Ran 47 test cases across 6 categories
+              </div>
+              <div class="text-blue-400 terminal-line">
+                &#9656; Verify &nbsp;&nbsp;&nbsp;Confirmed 4 of 7 findings (3 false positives eliminated)
+              </div>
+              <div class="text-purple-400 terminal-line">
+                &#9656; Report &nbsp;&nbsp;&nbsp;Written to ./nightfang-report/
+              </div>
+              <div class="terminal-line">&nbsp;</div>
+              <div class="terminal-line">
+                <span class="text-crimson font-bold">4 verified vulnerabilities found.</span>
+              </div>
+              <div class="terminal-line">
+                <table class="w-full text-xs sm:text-sm mt-2 border-collapse">
+                  <thead>
+                    <tr class="text-ash border-b border-white/10">
+                      <th class="text-left py-1 pr-4">ID</th>
+                      <th class="text-left py-1 pr-4">Finding</th>
+                      <th class="text-left py-1 pr-4">Risk</th>
+                      <th class="text-left py-1">Conf</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-smoke">
+                    <tr class="border-b border-white/5">
+                      <td class="py-1 pr-4 text-white">NF-001</td>
+                      <td class="py-1 pr-4">Direct prompt injection</td>
+                      <td class="py-1 pr-4 text-crimson font-medium">HIGH</td>
+                      <td class="py-1">99%</td>
+                    </tr>
+                    <tr class="border-b border-white/5">
+                      <td class="py-1 pr-4 text-white">NF-002</td>
+                      <td class="py-1 pr-4">System prompt extraction</td>
+                      <td class="py-1 pr-4 text-amber-400 font-medium">MED</td>
+                      <td class="py-1">95%</td>
+                    </tr>
+                    <tr class="border-b border-white/5">
+                      <td class="py-1 pr-4 text-white">NF-003</td>
+                      <td class="py-1 pr-4">MCP tool SSRF via fetch_url</td>
+                      <td class="py-1 pr-4 text-crimson font-medium">HIGH</td>
+                      <td class="py-1">97%</td>
+                    </tr>
+                    <tr>
+                      <td class="py-1 pr-4 text-white">NF-004</td>
+                      <td class="py-1 pr-4">PII leak in chat context</td>
+                      <td class="py-1 pr-4 text-crimson font-medium">HIGH</td>
+                      <td class="py-1">92%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
           </noscript>
@@ -92,232 +130,435 @@ import AnimatedSection from '../components/AnimatedSection';
       </div>
     </section>
 
-    <!-- Attack Surfaces -->
-    <section class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-6xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-16">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">One toolkit. Five attack surfaces.</h2>
-            <p class="text-smoke text-lg max-w-xl mx-auto">From LLM endpoints to npm packages to git repos &mdash; nightfang finds what scanners miss.</p>
+    <!-- What you can scan -->
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">One toolkit. Five attack surfaces.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">From LLM endpoints to npm packages to git repos &mdash; nightfang finds what scanners miss.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
+            <p class="text-xs text-ash">ChatGPT, Claude, Llama APIs, custom chatbots</p>
           </div>
-        </AnimatedSection>
-
-        <AnimatedSection client:visible delay={0.15}>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-crimson/20 transition-all duration-300 text-center group">
-              <div class="w-10 h-10 mx-auto mb-4 text-crimson opacity-80 group-hover:opacity-100 transition-opacity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-              <h3 class="font-mono font-semibold text-sm mb-1.5">LLM Endpoints</h3>
-              <p class="text-xs text-ash leading-relaxed">ChatGPT, Claude, Llama APIs, custom chatbots</p>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg>
             </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-crimson/20 transition-all duration-300 text-center group">
-              <div class="w-10 h-10 mx-auto mb-4 text-crimson opacity-80 group-hover:opacity-100 transition-opacity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg></div>
-              <h3 class="font-mono font-semibold text-sm mb-1.5">MCP Servers</h3>
-              <p class="text-xs text-ash leading-relaxed">Tool schemas, validation, auth, poisoning</p>
-            </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-crimson/20 transition-all duration-300 text-center group">
-              <div class="w-10 h-10 mx-auto mb-4 text-crimson opacity-80 group-hover:opacity-100 transition-opacity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
-              <h3 class="font-mono font-semibold text-sm mb-1.5">npm Packages</h3>
-              <p class="text-xs text-ash leading-relaxed">Supply chain, malicious code, dependency risk</p>
-            </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-crimson/20 transition-all duration-300 text-center group">
-              <div class="w-10 h-10 mx-auto mb-4 text-crimson opacity-80 group-hover:opacity-100 transition-opacity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
-              <h3 class="font-mono font-semibold text-sm mb-1.5">Source Code</h3>
-              <p class="text-xs text-ash leading-relaxed">Local repos, GitHub URLs, deep AI audit</p>
-            </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-crimson/20 transition-all duration-300 text-center group">
-              <div class="w-10 h-10 mx-auto mb-4 text-crimson opacity-80 group-hover:opacity-100 transition-opacity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></div>
-              <h3 class="font-mono font-semibold text-sm mb-1.5">Web Apps</h3>
-              <p class="text-xs text-ash leading-relaxed">AI copilots, RAG pipelines, agent APIs</p>
-            </div>
+            <h3 class="font-semibold text-sm mb-1">MCP Servers</h3>
+            <p class="text-xs text-ash">Tool schemas, validation, auth, poisoning</p>
           </div>
-        </AnimatedSection>
-      </div>
-    </section>
-
-    <!-- Commands -->
-    <section id="commands" class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-6xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-16">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">Five commands. Full coverage.</h2>
-            <p class="text-smoke text-lg max-w-xl mx-auto">Each command is purpose-built for a different attack surface. Zero config, instant results.</p>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <h3 class="font-semibold text-sm mb-1">npm Packages</h3>
+            <p class="text-xs text-ash">Supply chain, malicious code, dependency risk</p>
           </div>
-        </AnimatedSection>
-
-        <div class="space-y-4">
-          <AnimatedSection client:visible delay={0.05}><div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl overflow-hidden hover:border-crimson/20 transition-all duration-300"><div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6"><div class="flex-1 min-w-0"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-mono text-crimson bg-crimson/10 px-2.5 py-1 rounded-md uppercase tracking-wider">scan</span><h3 class="font-semibold text-lg">Probe LLM endpoints &amp; MCP servers</h3></div><p class="text-smoke text-sm leading-relaxed mb-3">Discovers vulnerabilities in AI endpoints with 47+ test cases across prompt injection, jailbreaks, tool poisoning, data exfiltration, and more.</p><div class="flex flex-wrap gap-2"><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--mode probe|deep|mcp</span><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--depth quick|default|deep</span><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--agentic</span></div></div><div class="lg:w-[340px] shrink-0"><code class="block bg-night border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang scan --target &lt;url&gt;</code></div></div></div></AnimatedSection>
-
-          <AnimatedSection client:visible delay={0.1}><div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl overflow-hidden hover:border-amber-400/20 transition-all duration-300"><div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6"><div class="flex-1 min-w-0"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-mono text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-md uppercase tracking-wider">audit</span><h3 class="font-semibold text-lg">Audit npm packages for malicious code</h3></div><p class="text-smoke text-sm leading-relaxed mb-3">Installs a package in a sandbox, runs semgrep static analysis plus AI-powered code review. Catches supply chain attacks and backdoors.</p><div class="flex flex-wrap gap-2"><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--version &lt;ver&gt;</span><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--depth quick|default|deep</span></div></div><div class="lg:w-[340px] shrink-0"><code class="block bg-night border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang audit &lt;package&gt;</code></div></div></div></AnimatedSection>
-
-          <AnimatedSection client:visible delay={0.15}><div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl overflow-hidden hover:border-blue-400/20 transition-all duration-300"><div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6"><div class="flex-1 min-w-0"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-mono text-blue-400 bg-blue-400/10 px-2.5 py-1 rounded-md uppercase tracking-wider">review</span><h3 class="font-semibold text-lg">Deep security audit of source code</h3></div><p class="text-smoke text-sm leading-relaxed mb-3">Security-focused code review of local repos or GitHub URLs. Multiple AI runtimes analyze your codebase and output SARIF, Markdown, and JSON reports.</p><div class="flex flex-wrap gap-2"><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--runtime api|claude|codex|gemini|auto</span><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--depth quick|default|deep</span></div></div><div class="lg:w-[340px] shrink-0"><code class="block bg-night border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang review &lt;repo&gt;</code></div></div></div></AnimatedSection>
-
-          <AnimatedSection client:visible delay={0.2}><div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl overflow-hidden hover:border-purple-400/20 transition-all duration-300"><div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6"><div class="flex-1 min-w-0"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-mono text-purple-400 bg-purple-400/10 px-2.5 py-1 rounded-md uppercase tracking-wider">findings</span><h3 class="font-semibold text-lg">Query and inspect verified findings</h3></div><p class="text-smoke text-sm leading-relaxed mb-3">Filter findings by severity, category, and status. Inspect individual findings with full evidence chains and proof artifacts.</p><div class="flex flex-wrap gap-2"><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">list --severity critical</span><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">show NF-001</span></div></div><div class="lg:w-[340px] shrink-0"><code class="block bg-night border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang findings list</code></div></div></div></AnimatedSection>
-
-          <AnimatedSection client:visible delay={0.25}><div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl overflow-hidden hover:border-emerald-400/20 transition-all duration-300"><div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6"><div class="flex-1 min-w-0"><div class="flex items-center gap-3 mb-2"><span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2.5 py-1 rounded-md uppercase tracking-wider">history</span><h3 class="font-semibold text-lg">Browse past scan results</h3></div><p class="text-smoke text-sm leading-relaxed mb-3">Query the local SQLite database for previous scans. Track status, depth, findings count, and duration over time.</p><div class="flex flex-wrap gap-2"><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--limit 20</span><span class="text-xs font-mono text-ash bg-white/[0.03] px-2 py-0.5 rounded">--db-path ./custom.db</span></div></div><div class="lg:w-[340px] shrink-0"><code class="block bg-night border border-white/[0.06] rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang history</code></div></div></div></AnimatedSection>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h3 class="font-semibold text-sm mb-1">Source Code</h3>
+            <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            </div>
+            <h3 class="font-semibold text-sm mb-1">Web Apps</h3>
+            <p class="text-xs text-ash">AI copilots, RAG pipelines, agent APIs</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Value Props -->
-    <section class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-6xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="grid md:grid-cols-3 gap-10">
-            <div class="space-y-4">
-              <div class="w-12 h-12 rounded-xl bg-crimson/10 flex items-center justify-center text-crimson"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></div>
-              <h3 class="font-mono text-lg font-semibold">One command, zero config</h3>
-              <p class="text-smoke text-sm leading-relaxed">No YAML files. No Python environments. Just <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs font-mono">npx nightfang scan</code> and you are running.</p>
-            </div>
-            <div class="space-y-4">
-              <div class="w-12 h-12 rounded-xl bg-crimson/10 flex items-center justify-center text-crimson"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-              <h3 class="font-mono text-lg font-semibold">Zero false positives</h3>
-              <p class="text-smoke text-sm leading-relaxed">Every finding is re-exploited with proof before it hits the report. No more triaging 200 "possible prompt injections."</p>
-            </div>
-            <div class="space-y-4">
-              <div class="w-12 h-12 rounded-xl bg-crimson/10 flex items-center justify-center text-crimson"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-              <h3 class="font-mono text-lg font-semibold">$0.05 per CI scan</h3>
-              <p class="text-smoke text-sm leading-relaxed">Quick scans in under a minute. Deep audits for $1. Cheaper than one hour of manual pentesting.</p>
+    <!-- 5 Commands -->
+    <section id="commands" data-section="commands" class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Five commands. Full coverage.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">Each command is purpose-built for a different attack surface. Zero config, instant results.</p>
+        </div>
+
+        <div class="space-y-4">
+          <!-- scan -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-crimson bg-crimson/10 px-2 py-0.5 rounded uppercase tracking-wider">scan</span>
+                  <h3 class="font-semibold text-lg">Probe LLM endpoints &amp; MCP servers</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Discovers vulnerabilities in AI endpoints with 47+ test cases across prompt injection, jailbreaks, tool poisoning, data exfiltration, and more. Supports probe, deep, and MCP modes.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--agentic</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang scan --target &lt;url&gt;</code>
+              </div>
             </div>
           </div>
-        </AnimatedSection>
+
+          <!-- audit -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded uppercase tracking-wider">audit</span>
+                  <h3 class="font-semibold text-lg">Audit npm packages for malicious code</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Installs a package in a sandbox, runs semgrep static analysis plus AI-powered code review. Catches supply chain attacks, backdoors, and dependency vulnerabilities.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--version &lt;ver&gt;</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang audit &lt;package&gt;</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- review -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded uppercase tracking-wider">review</span>
+                  <h3 class="font-semibold text-lg">Deep security audit of source code</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Security-focused code review of local repos or GitHub URLs. Multiple AI runtimes analyze your entire codebase and output SARIF, Markdown, and JSON reports.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--runtime api|claude|codex|gemini|auto</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang review &lt;repo&gt;</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- findings -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded uppercase tracking-wider">findings</span>
+                  <h3 class="font-semibold text-lg">Query and inspect verified findings</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Filter findings by severity, category, and status. Inspect individual findings with full evidence chains and proof artifacts. Track the lifecycle from discovered to confirmed.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">list --severity critical</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">show NF-001</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang findings list</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- history -->
+          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
+            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase tracking-wider">history</span>
+                  <h3 class="font-semibold text-lg">Browse past scan results</h3>
+                </div>
+                <p class="text-smoke text-sm leading-relaxed mb-3">Query the local SQLite database for previous scans. See status, depth, findings count, and duration for every run. Track your security posture over time.</p>
+                <div class="flex flex-wrap gap-2">
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--limit 20</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--db-path ./custom.db</span>
+                </div>
+              </div>
+              <div class="lg:w-[340px] shrink-0">
+                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all">npx nightfang history</code>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- Pipeline -->
-    <section id="pipeline" class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-6xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-16">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">Four agents. One pipeline.</h2>
-            <p class="text-smoke text-lg max-w-xl mx-auto">Each agent is specialized for a phase of the security audit. They work in sequence, building on each other's output.</p>
+    <!-- Value props -->
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold">One command, zero config</h3>
+            <p class="text-smoke text-sm leading-relaxed">No YAML files. No Python environments. Just <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">npx nightfang scan</code> and you're running.</p>
           </div>
-        </AnimatedSection>
+          <div class="space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold">Zero false positives</h3>
+            <p class="text-smoke text-sm leading-relaxed">Every finding is re-exploited with proof before it hits the report. No more triaging 200 "possible prompt injections."</p>
+          </div>
+          <div class="space-y-3">
+            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
+            <h3 class="text-lg font-semibold">$0.05 per CI scan</h3>
+            <p class="text-smoke text-sm leading-relaxed">Quick scans in under a minute. Deep audits for $1. Cheaper than one hour of manual pentesting.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-        <AnimatedSection client:visible delay={0.1}>
-          <div class="mb-14">
-            <PipelineViz client:visible />
-          </div>
-        </AnimatedSection>
+    <!-- 4-agent pipeline -->
+    <section id="pipeline" data-section="pipeline" class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Four agents. One pipeline.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">Each agent is specialized for a phase of the security audit. They work in sequence, building on each other's output.</p>
+        </div>
 
-        <AnimatedSection client:visible delay={0.2}>
-          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-emerald-500/20 transition-all duration-300 h-full">
-              <div class="text-xs font-mono text-emerald-400 mb-3 uppercase tracking-wider">01 &middot; Discover</div>
-              <h3 class="font-semibold text-lg mb-2">Recon</h3>
-              <p class="text-smoke text-sm leading-relaxed">Maps endpoints, model cards, system prompts, MCP tool schemas, and auth flows.</p>
-              <div class="mt-4 pt-4 border-t border-white/[0.04] text-xs text-ash font-mono space-y-1.5"><div>&#8226; API surface mapping</div><div>&#8226; System prompt extraction</div><div>&#8226; MCP tool enumeration</div></div>
+        <!-- Pipeline visual -->
+        <div class="flex items-center justify-center gap-2 sm:gap-4 mb-12 font-mono text-xs sm:text-sm overflow-x-auto px-4">
+          <div class="flex items-center gap-2 sm:gap-4">
+            <div class="bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">DISCOVER</div>
+              <div class="text-emerald-400/60 text-[10px] sm:text-xs mt-0.5">Recon</div>
             </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-amber-500/20 transition-all duration-300 h-full">
-              <div class="text-xs font-mono text-amber-400 mb-3 uppercase tracking-wider">02 &middot; Attack</div>
-              <h3 class="font-semibold text-lg mb-2">Offense</h3>
-              <p class="text-smoke text-sm leading-relaxed">Runs prompt injection, jailbreaks, tool poisoning, data exfiltration, and more.</p>
-              <div class="mt-4 pt-4 border-t border-white/[0.04] text-xs text-ash font-mono space-y-1.5"><div>&#8226; 47+ test cases</div><div>&#8226; OWASP LLM Top 10</div><div>&#8226; 6 attack categories</div></div>
+            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
+            <div class="bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">ATTACK</div>
+              <div class="text-amber-400/60 text-[10px] sm:text-xs mt-0.5">Offense</div>
             </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-blue-500/20 transition-all duration-300 h-full">
-              <div class="text-xs font-mono text-blue-400 mb-3 uppercase tracking-wider">03 &middot; Verify</div>
-              <h3 class="font-semibold text-lg mb-2">Validation</h3>
-              <p class="text-smoke text-sm leading-relaxed">Re-exploits each finding to eliminate false positives. Captures proof artifacts.</p>
-              <div class="mt-4 pt-4 border-t border-white/[0.04] text-xs text-ash font-mono space-y-1.5"><div>&#8226; Re-exploitation</div><div>&#8226; Proof capture</div><div>&#8226; Confidence scoring</div></div>
+            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
+            <div class="bg-blue-400/10 border border-blue-400/20 text-blue-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">VERIFY</div>
+              <div class="text-blue-400/60 text-[10px] sm:text-xs mt-0.5">Validate</div>
             </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-6 hover:border-purple-500/20 transition-all duration-300 h-full">
-              <div class="text-xs font-mono text-purple-400 mb-3 uppercase tracking-wider">04 &middot; Report</div>
-              <h3 class="font-semibold text-lg mb-2">Output</h3>
-              <p class="text-smoke text-sm leading-relaxed">Generates SARIF, Markdown, and JSON reports with severity and remediation.</p>
-              <div class="mt-4 pt-4 border-t border-white/[0.04] text-xs text-ash font-mono space-y-1.5"><div>&#8226; SARIF for GitHub Security tab</div><div>&#8226; Markdown reports</div><div>&#8226; Remediation guidance</div></div>
+            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
+            <div class="bg-purple-400/10 border border-purple-400/20 text-purple-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
+              <div class="font-bold">REPORT</div>
+              <div class="text-purple-400/60 text-[10px] sm:text-xs mt-0.5">Output</div>
             </div>
           </div>
-        </AnimatedSection>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-emerald-400 mb-3 uppercase tracking-wider">01 &middot; Discover</div>
+            <h3 class="font-semibold text-lg mb-2">Recon</h3>
+            <p class="text-smoke text-sm leading-relaxed">Maps endpoints, model cards, system prompts, MCP tool schemas, and auth flows.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; API surface mapping</div>
+              <div>&#8226; System prompt extraction</div>
+              <div>&#8226; MCP tool enumeration</div>
+            </div>
+          </div>
+
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-amber-400 mb-3 uppercase tracking-wider">02 &middot; Attack</div>
+            <h3 class="font-semibold text-lg mb-2">Offense</h3>
+            <p class="text-smoke text-sm leading-relaxed">Runs prompt injection, jailbreaks, tool poisoning, data exfiltration, and more.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; 47+ test cases</div>
+              <div>&#8226; OWASP LLM Top 10</div>
+              <div>&#8226; 6 attack categories</div>
+            </div>
+          </div>
+
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-blue-400 mb-3 uppercase tracking-wider">03 &middot; Verify</div>
+            <h3 class="font-semibold text-lg mb-2">Validation</h3>
+            <p class="text-smoke text-sm leading-relaxed">Re-exploits each finding to eliminate false positives. Captures proof artifacts.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; Re-exploitation</div>
+              <div>&#8226; Proof capture</div>
+              <div>&#8226; Confidence scoring</div>
+            </div>
+          </div>
+
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
+            <div class="text-xs font-mono text-purple-400 mb-3 uppercase tracking-wider">04 &middot; Report</div>
+            <h3 class="font-semibold text-lg mb-2">Output</h3>
+            <p class="text-smoke text-sm leading-relaxed">Generates SARIF, Markdown, and JSON reports with severity and remediation.</p>
+            <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash font-mono space-y-1">
+              <div>&#8226; SARIF for GitHub Security tab</div>
+              <div>&#8226; Markdown reports</div>
+              <div>&#8226; Remediation guidance</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- OWASP Coverage -->
-    <section class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-4xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-14">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">OWASP LLM Top 10 coverage</h2>
-            <p class="text-smoke text-lg">8 out of 10 categories covered. The most comprehensive open-source coverage available.</p>
-          </div>
-        </AnimatedSection>
-        <AnimatedSection client:visible delay={0.1}>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {[
-              { id: "LLM01", name: "Prompt Injection", covered: true, detail: "Direct + indirect + encoding" },
-              { id: "LLM02", name: "Insecure Output Handling", covered: true, detail: "XSS, code exec" },
-              { id: "LLM03", name: "Training Data Poisoning", covered: false, detail: "Detection only" },
-              { id: "LLM04", name: "Model Denial of Service", covered: true, detail: "Resource exhaustion" },
-              { id: "LLM05", name: "Supply Chain Vulns", covered: true, detail: "MCP + npm audit" },
-              { id: "LLM06", name: "Sensitive Info Disclosure", covered: true, detail: "PII/secret extraction" },
-              { id: "LLM07", name: "Insecure Plugin Design", covered: true, detail: "Tool schema abuse, SSRF" },
-              { id: "LLM08", name: "Excessive Agency", covered: true, detail: "Privilege escalation" },
-              { id: "LLM09", name: "Overreliance", covered: false, detail: "Coming soon" },
-              { id: "LLM10", name: "Model Theft", covered: true, detail: "Extraction, prompt theft" },
-            ].map((item) => (
-              <div class={`flex items-center gap-3 px-4 py-3.5 rounded-lg border transition-colors ${item.covered ? 'border-white/[0.06] bg-night-lighter/60 hover:border-emerald-500/20' : 'border-white/[0.04] bg-night-light/40 opacity-50'}`}>
-                <span class={`text-sm ${item.covered ? 'text-emerald-400' : 'text-ash'}`}>{item.covered ? '\u2713' : '\u2022'}</span>
-                <div class="flex-1 min-w-0"><div class="flex items-center gap-2"><span class="text-xs font-mono text-ash">{item.id}</span><span class="text-sm font-medium text-white truncate">{item.name}</span></div></div>
-                <span class="text-xs text-ash hidden sm:block">{item.detail}</span>
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-4xl mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">OWASP LLM Top 10 coverage</h2>
+          <p class="text-smoke text-lg">8 out of 10 categories covered. The most comprehensive open-source coverage available.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            { id: "LLM01", name: "Prompt Injection", covered: true, detail: "Direct + indirect + encoding" },
+            { id: "LLM02", name: "Insecure Output Handling", covered: true, detail: "XSS, code exec" },
+            { id: "LLM03", name: "Training Data Poisoning", covered: false, detail: "Detection only" },
+            { id: "LLM04", name: "Model Denial of Service", covered: true, detail: "Resource exhaustion" },
+            { id: "LLM05", name: "Supply Chain Vulns", covered: true, detail: "MCP + npm audit" },
+            { id: "LLM06", name: "Sensitive Info Disclosure", covered: true, detail: "PII/secret extraction" },
+            { id: "LLM07", name: "Insecure Plugin Design", covered: true, detail: "Tool schema abuse, SSRF" },
+            { id: "LLM08", name: "Excessive Agency", covered: true, detail: "Privilege escalation" },
+            { id: "LLM09", name: "Overreliance", covered: false, detail: "Coming soon" },
+            { id: "LLM10", name: "Model Theft", covered: true, detail: "Extraction, prompt theft" },
+          ].map((item) => (
+            <div class={`flex items-center gap-3 px-4 py-3 rounded-lg border ${item.covered ? 'border-white/5 bg-night-lighter' : 'border-white/5 bg-night-light opacity-50'}`}>
+              <span class={`text-sm ${item.covered ? 'text-emerald-400' : 'text-ash'}`}>
+                {item.covered ? '\u2713' : '\u2022'}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-mono text-ash">{item.id}</span>
+                  <span class="text-sm font-medium text-white truncate">{item.name}</span>
+                </div>
               </div>
-            ))}
-          </div>
-        </AnimatedSection>
+              <span class="text-xs text-ash hidden sm:block">{item.detail}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
 
     <!-- Comparison -->
-    <section id="comparison" class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-6xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-14">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">How it compares</h2>
-            <p class="text-smoke text-lg">The only open-source tool with autonomous multi-agent testing, verification, and full-stack coverage.</p>
-          </div>
-        </AnimatedSection>
-        <AnimatedSection client:visible delay={0.1}>
-          <div class="overflow-x-auto rounded-xl border border-white/[0.06]">
-            <table class="w-full text-sm">
-              <thead><tr class="border-b border-white/[0.08] bg-night-lighter/40"><th class="text-left py-4 px-5 text-smoke font-medium">Feature</th><th class="py-4 px-4 text-crimson font-bold font-mono">Nightfang</th><th class="py-4 px-4 text-ash font-medium">promptfoo</th><th class="py-4 px-4 text-ash font-medium">garak</th><th class="py-4 px-4 text-ash font-medium">nuclei</th><th class="py-4 px-4 text-ash font-medium">Semgrep</th></tr></thead>
-              <tbody class="text-smoke">
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">Autonomous multi-agent</td><td class="py-3.5 px-4 text-center text-emerald-400 font-medium">4 agents</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">Verification (no false positives)</td><td class="py-3.5 px-4 text-center text-emerald-400 font-medium">Re-exploits</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">LLM endpoint scanning</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">MCP server security</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">npm package audit</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-emerald-400">Rules</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">Source code review</td><td class="py-3.5 px-4 text-center text-emerald-400 font-medium">AI-powered</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-emerald-400">Rules</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">Web/API scanning</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-emerald-400">&check;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">OWASP LLM Top 10</td><td class="py-3.5 px-4 text-center text-emerald-400 font-medium">8/10</td><td class="py-3.5 px-4 text-center text-ash">Partial</td><td class="py-3.5 px-4 text-center text-ash">Partial</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td><td class="py-3.5 px-4 text-center text-ash/50">&mdash;</td></tr>
-                <tr class="border-b border-white/[0.04]"><td class="py-3.5 px-5">Zero config</td><td class="py-3.5 px-4 text-center text-emerald-400 font-medium font-mono text-xs">npx</td><td class="py-3.5 px-4 text-center text-ash">YAML</td><td class="py-3.5 px-4 text-center text-ash">Python</td><td class="py-3.5 px-4 text-center text-ash">Templates</td><td class="py-3.5 px-4 text-center text-ash">Config</td></tr>
-                <tr><td class="py-3.5 px-5">Open source</td><td class="py-3.5 px-4 text-center text-emerald-400 font-medium">MIT</td><td class="py-3.5 px-4 text-center text-ash">OpenAI</td><td class="py-3.5 px-4 text-center text-emerald-400">OSS</td><td class="py-3.5 px-4 text-center text-emerald-400">MIT</td><td class="py-3.5 px-4 text-center text-ash">LGPL</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </AnimatedSection>
+    <section id="comparison" data-section="comparison" class="py-24 border-t border-white/5">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">How it compares</h2>
+          <p class="text-smoke text-lg">The only open-source tool with autonomous multi-agent testing, verification, and full-stack coverage.</p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="text-left py-3 pr-4 text-smoke font-medium">Feature</th>
+                <th class="py-3 px-3 text-crimson font-bold">Nightfang</th>
+                <th class="py-3 px-3 text-ash font-medium">promptfoo</th>
+                <th class="py-3 px-3 text-ash font-medium">garak</th>
+                <th class="py-3 px-3 text-ash font-medium">nuclei</th>
+                <th class="py-3 px-3 text-ash font-medium">Semgrep</th>
+              </tr>
+            </thead>
+            <tbody class="text-smoke">
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Autonomous multi-agent</td>
+                <td class="py-3 px-3 text-center text-emerald-400">4 agents</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Verification (no false positives)</td>
+                <td class="py-3 px-3 text-center text-emerald-400">Re-exploits</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">LLM endpoint scanning</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">MCP server security</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">npm package audit</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">Rules</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Source code review</td>
+                <td class="py-3 px-3 text-center text-emerald-400">AI-powered</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">Rules</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Web/API scanning</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">OWASP LLM Top 10</td>
+                <td class="py-3 px-3 text-center text-emerald-400">8/10</td>
+                <td class="py-3 px-3 text-center text-ash">Partial</td>
+                <td class="py-3 px-3 text-center text-ash">Partial</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
+              </tr>
+              <tr class="border-b border-white/5">
+                <td class="py-3 pr-4">Zero config</td>
+                <td class="py-3 px-3 text-center text-emerald-400">npx</td>
+                <td class="py-3 px-3 text-center text-ash">YAML</td>
+                <td class="py-3 px-3 text-center text-ash">Python</td>
+                <td class="py-3 px-3 text-center text-ash">Templates</td>
+                <td class="py-3 px-3 text-center text-ash">Config</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4">Open source</td>
+                <td class="py-3 px-3 text-center text-emerald-400">MIT</td>
+                <td class="py-3 px-3 text-center text-ash">OpenAI</td>
+                <td class="py-3 px-3 text-center text-emerald-400">OSS</td>
+                <td class="py-3 px-3 text-center text-emerald-400">MIT</td>
+                <td class="py-3 px-3 text-center text-ash">LGPL</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
     <!-- CI/CD -->
-    <section class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-4xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-14">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">Drops into your CI/CD</h2>
-            <p class="text-smoke text-lg">Findings show up directly in GitHub's Security tab.</p>
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-4xl mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Drops into your CI/CD</h2>
+          <p class="text-smoke text-lg">Findings show up directly in GitHub's Security tab.</p>
+        </div>
+
+        <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
+          <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
+            <span class="text-xs text-ash font-mono">.github/workflows/nightfang.yml</span>
           </div>
-        </AnimatedSection>
-        <AnimatedSection client:visible delay={0.1}>
-          <div class="glow-crimson rounded-xl overflow-hidden border border-white/[0.08]">
-            <div class="bg-night-lighter/80 border-b border-white/[0.06] px-5 py-3 flex items-center gap-2">
-              <div class="flex gap-1.5"><div class="w-2.5 h-2.5 rounded-full bg-white/10"></div><div class="w-2.5 h-2.5 rounded-full bg-white/10"></div><div class="w-2.5 h-2.5 rounded-full bg-white/10"></div></div>
-              <span class="text-xs text-ash font-mono ml-2">.github/workflows/nightfang.yml</span>
-            </div>
-            <pre class="bg-night-light/50 p-6 font-mono text-sm text-smoke overflow-x-auto leading-relaxed"><code><span class="text-ash">name:</span> <span class="text-amber-300">AI Security Scan</span>
+          <pre class="bg-night-light p-5 font-mono text-sm text-smoke overflow-x-auto leading-relaxed"><code><span class="text-ash">name:</span> <span class="text-amber-300">AI Security Scan</span>
 <span class="text-ash">on:</span> <span class="text-white">[push, pull_request]</span>
 
 <span class="text-ash">jobs:</span>
@@ -333,104 +574,97 @@ import AnimatedSection from '../components/AnimatedSection';
         <span class="text-ash">uses:</span> <span class="text-blue-400">github/codeql-action/upload-sarif@v3</span>
         <span class="text-ash">with:</span>
           <span class="text-ash">sarif_file:</span> <span class="text-emerald-400">nightfang-report/report.sarif</span></code></pre>
-          </div>
-        </AnimatedSection>
+        </div>
       </div>
     </section>
 
-    <!-- Pricing -->
-    <section class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-4xl mx-auto px-6 pt-28">
-        <AnimatedSection client:visible>
-          <div class="text-center mb-14">
-            <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">Costs less than coffee</h2>
-            <p class="text-smoke text-lg">AI-powered security testing at a fraction of manual pentesting costs.</p>
+    <!-- Cost section -->
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-4xl mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Costs less than coffee</h2>
+          <p class="text-smoke text-lg">AI-powered security testing at a fraction of manual pentesting costs.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-6">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 text-center">
+            <div class="text-xs font-mono text-ash uppercase tracking-wider mb-3">Quick</div>
+            <div class="text-3xl font-bold text-white mb-1">$0.05</div>
+            <div class="text-sm text-smoke mb-4">~15 tests &middot; 1 min</div>
+            <div class="text-xs text-ash">Perfect for CI</div>
           </div>
-        </AnimatedSection>
-        <AnimatedSection client:visible delay={0.1}>
-          <div class="grid sm:grid-cols-3 gap-6">
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-8 text-center hover:border-white/10 transition-all duration-300">
-              <div class="text-xs font-mono text-ash uppercase tracking-wider mb-4">Quick</div>
-              <div class="text-4xl font-mono font-bold text-white mb-2">$0.05</div>
-              <div class="text-sm text-smoke mb-6">~15 tests &middot; 1 min</div>
-              <div class="text-xs text-ash">Perfect for CI</div>
-            </div>
-            <div class="bg-night-lighter/60 border border-crimson/20 rounded-xl p-8 text-center relative glow-crimson">
-              <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-mono font-medium bg-crimson text-white rounded-full px-4 py-1">Recommended</div>
-              <div class="text-xs font-mono text-ash uppercase tracking-wider mb-4">Default</div>
-              <div class="text-4xl font-mono font-bold text-white mb-2">$0.15</div>
-              <div class="text-sm text-smoke mb-6">~50 tests &middot; 3 min</div>
-              <div class="text-xs text-ash">Balanced coverage</div>
-            </div>
-            <div class="bg-night-lighter/60 border border-white/[0.06] rounded-xl p-8 text-center hover:border-white/10 transition-all duration-300">
-              <div class="text-xs font-mono text-ash uppercase tracking-wider mb-4">Deep</div>
-              <div class="text-4xl font-mono font-bold text-white mb-2">$1.00</div>
-              <div class="text-sm text-smoke mb-6">~150 tests &middot; 10 min</div>
-              <div class="text-xs text-ash">Pre-launch audit</div>
-            </div>
+          <div class="bg-night-lighter border border-crimson/20 rounded-xl p-6 text-center relative">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-medium bg-crimson text-white rounded-full px-3 py-0.5">Popular</div>
+            <div class="text-xs font-mono text-ash uppercase tracking-wider mb-3">Default</div>
+            <div class="text-3xl font-bold text-white mb-1">$0.15</div>
+            <div class="text-sm text-smoke mb-4">~50 tests &middot; 3 min</div>
+            <div class="text-xs text-ash">Balanced coverage</div>
           </div>
-        </AnimatedSection>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 text-center">
+            <div class="text-xs font-mono text-ash uppercase tracking-wider mb-3">Deep</div>
+            <div class="text-3xl font-bold text-white mb-1">$1.00</div>
+            <div class="text-sm text-smoke mb-4">~150 tests &middot; 10 min</div>
+            <div class="text-xs text-ash">Pre-launch audit</div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Credibility -->
-    <section class="py-28 relative">
-      <hr class="section-divider" />
-      <div class="max-w-4xl mx-auto px-6 pt-28 text-center">
-        <AnimatedSection client:visible>
-          <h2 class="font-mono text-3xl sm:text-4xl font-bold tracking-tight mb-4">Built by a security researcher</h2>
-          <p class="text-smoke text-lg max-w-2xl mx-auto mb-12 leading-relaxed">
-            Created by a researcher with <span class="text-white font-semibold">7 published CVEs</span> across node-forge, uptime-kuma, liquidjs, picomatch, and jspdf &mdash; plus the creator of OpenSOAR and PhishMind.
-          </p>
-          <div class="flex flex-wrap justify-center gap-3">
-            {["node-forge", "uptime-kuma", "liquidjs", "picomatch", "jspdf", "OpenSOAR", "PhishMind"].map((name) => (
-              <span class="inline-flex items-center px-4 py-2 rounded-lg bg-night-lighter/60 border border-white/[0.06] text-sm text-smoke font-mono hover:border-white/10 transition-colors">{name}</span>
-            ))}
-          </div>
-        </AnimatedSection>
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-4xl mx-auto px-6 text-center">
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4">Built by a security researcher</h2>
+        <p class="text-smoke text-lg max-w-2xl mx-auto mb-10 leading-relaxed">
+          Created by a researcher with <span class="text-white font-semibold">7 published CVEs</span> across node-forge, uptime-kuma, liquidjs, picomatch, and jspdf &mdash; plus the creator of OpenSOAR and PhishMind.
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          {["node-forge", "uptime-kuma", "liquidjs", "picomatch", "jspdf", "OpenSOAR", "PhishMind"].map((name) => (
+            <span class="inline-flex items-center px-3 py-1.5 rounded-lg bg-night-lighter border border-white/5 text-sm text-smoke font-mono">
+              {name}
+            </span>
+          ))}
+        </div>
       </div>
     </section>
 
     <!-- Final CTA -->
-    <section class="py-36 relative overflow-hidden">
-      <hr class="section-divider" />
-      <div class="absolute inset-0 grid-bg-crimson"></div>
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-crimson/5 rounded-full blur-[120px] pointer-events-none"></div>
-      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,transparent_30%,#0a0a0a_80%)]"></div>
-      <div class="relative max-w-3xl mx-auto px-6 pt-28 text-center z-10">
-        <AnimatedSection client:visible>
-          <h2 class="font-mono text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-tight">
-            Stop guessing.<br/>Start <span class="text-crimson">proving</span>.
-          </h2>
-          <p class="text-smoke text-lg mb-12">Five commands. Real vulnerabilities. Proof of exploitability.</p>
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(220,38,38,0.1)]">npx nightfang scan --target &lt;url&gt;</code>
-            <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-6 py-3 transition-all duration-300 hover:shadow-[0_0_30px_rgba(220,38,38,0.2)]">
-              Star on GitHub
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            </a>
-          </div>
-        </AnimatedSection>
+    <section class="py-32 border-t border-white/5 relative overflow-hidden">
+      <!-- CSS grid + spotlight background -->
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson/5 rounded-full blur-[120px]"></div>
+
+      <div class="relative max-w-3xl mx-auto px-6 text-center">
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-6">
+          Stop guessing.<br/>Start <span class="text-crimson">proving</span>.
+        </h2>
+        <p class="text-smoke text-lg mb-10">Five commands. Real vulnerabilities. Proof of exploitability.</p>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
+            npx nightfang scan --target &lt;url&gt;
+          </code>
+          <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-crimson hover:bg-crimson-light text-white font-medium rounded-lg px-6 py-3 transition-colors">
+            Star on GitHub
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          </a>
+        </div>
       </div>
     </section>
   </main>
 
   <!-- Footer -->
-  <footer class="border-t border-white/[0.06] py-10">
+  <footer class="border-t border-white/5 py-8">
     <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ash">
-      <div class="flex items-center gap-2 font-mono">
+      <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-sm bg-crimson inline-block"></span>
         <span>nightfang</span>
-        <span class="text-white/20">&middot;</span>
+        <span>&middot;</span>
         <span>MIT License</span>
       </div>
-      <div class="flex items-center gap-6">
-        <a href="/blog/why-i-built-nightfang" class="hover:text-white transition-colors">Blog</a>
+      <div class="flex items-center gap-4">
         <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">GitHub</a>
         <a href="https://github.com/peaktwilight/nightfang/issues" target="_blank" rel="noopener" class="hover:text-white transition-colors">Issues</a>
         <a href="https://www.npmjs.com/package/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">npm</a>
       </div>
     </div>
   </footer>
+  <DockNav client:load />
 </Layout>
