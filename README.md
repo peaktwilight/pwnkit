@@ -45,7 +45,7 @@ One command. Zero config. Every finding verified with proof.
 | Verify | Completed | 9 findings confirmed |
 | Report | Completed | 4 critical, 3 high, 2 medium |
 
-*Last scan: 2026-03-27 23:27 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
+*Last scan: 2026-03-27 23:35 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
 
 <!-- SELF-SCAN-END -->
 
