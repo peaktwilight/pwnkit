@@ -1,107 +1,191 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import * as THREE from 'three';
 
 const CRIMSON = '#DC2626';
+const CRIMSON_DARK = '#7F1D1D';
+const BODY_DARK = '#1C1917';
+const EYE_COLOR = '#DC2626';
 
-const Shield = () => {
+// Pixel grid of the pwnkit fang character (20x24)
+// 0=empty, 1=outline, 2=fill(dark), 3=eye
+const GRID: number[][] = [
+  //
+  [0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0],
+  [0,0,0,0,0,0,1,1,2,2,2,2,1,1,0,0,0,0,0,0],
+  [0,0,0,0,0,1,1,2,2,2,2,2,2,1,1,0,0,0,0,0],
+  [0,0,0,0,1,1,2,2,2,2,2,2,2,2,1,1,0,0,0,0],
+  [0,0,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,0,0],
+  [0,0,1,1,2,2,2,2,2,2,2,2,2,2,2,2,1,1,0,0],
+  [0,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,0],
+  [1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+  [1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+  [1,1,2,2,2,2,3,3,2,2,2,2,3,3,2,2,2,2,1,1],
+  [1,1,2,2,2,2,3,3,2,2,2,2,3,3,2,2,2,2,1,1],
+  [1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+  [1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+  [1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+  [1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1],
+  [0,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,0],
+  [0,0,1,1,2,2,2,2,2,1,1,2,2,2,2,2,1,1,0,0],
+  [0,0,0,1,1,2,2,2,1,1,1,1,2,2,2,1,1,0,0,0],
+  [0,0,0,0,1,1,2,1,1,0,0,1,1,2,1,1,0,0,0,0],
+  [0,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,0],
+  [0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0],
+];
+
+const ROWS = GRID.length;
+const COLS = GRID[0].length;
+const VOXEL_SIZE = 0.12;
+const DEPTH_LAYERS = 4;
+
+function getColor(type: number): string {
+  switch (type) {
+    case 1: return CRIMSON;
+    case 2: return BODY_DARK;
+    case 3: return EYE_COLOR;
+    default: return CRIMSON;
+  }
+}
+
+const VoxelCharacter = () => {
   const groupRef = useRef<THREE.Group>(null);
-  const leftEyeRef = useRef<THREE.Mesh>(null);
-  const rightEyeRef = useRef<THREE.Mesh>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const targetRotation = useRef({ x: 0, y: 0 });
 
-  // The fang outline as a smooth tube
-  // SVG: M8,12 L16,6 L24,12 L24,22 L20,26 L16,22 L12,26 L8,22 Z
-  // viewBox 0 0 32 32, center=(16,16)
-  const outlineGeo = useMemo(() => {
-    const s = 0.05; // smaller scale
-    const cx = 16, cy = 16;
-    const pts = [
-      [8, 12], [16, 6], [24, 12], [24, 22],
-      [20, 26], [16, 22], [12, 26], [8, 22],
-    ].map(([x, y]) => new THREE.Vector3((x - cx) * s, -(y - cy) * s, 0));
-    pts.push(pts[0].clone());
-
-    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.15);
-    return new THREE.TubeGeometry(curve, 80, 0.016, 8, false);
+  // Listen to mouse across the whole page
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      mouseRef.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseRef.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
-  // Glow (wider, softer)
-  const glowGeo = useMemo(() => {
-    const s = 0.05;
-    const cx = 16, cy = 16;
-    const pts = [
-      [8, 12], [16, 6], [24, 12], [24, 22],
-      [20, 26], [16, 22], [12, 26], [8, 22],
-    ].map(([x, y]) => new THREE.Vector3((x - cx) * s, -(y - cy) * s, 0));
-    pts.push(pts[0].clone());
-    const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.15);
-    return new THREE.TubeGeometry(curve, 80, 0.03, 8, false);
-  }, []);
+  // Build instanced meshes for each voxel type
+  const { outlineData, fillData, eyeData } = useMemo(() => {
+    const outline: THREE.Vector3[] = [];
+    const fill: THREE.Vector3[] = [];
+    const eyes: THREE.Vector3[] = [];
 
-  useFrame(({ clock, pointer }) => {
-    const t = clock.getElapsedTime();
-    if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(t * 0.3) * 0.2 + pointer.x * 0.1;
-      groupRef.current.rotation.x = Math.cos(t * 0.25) * 0.06 + pointer.y * -0.05;
-      groupRef.current.position.y = Math.sin(t * 0.5) * 0.01;
-      const breathe = 1 + Math.sin(t * 1.2) * 0.015;
-      groupRef.current.scale.setScalar(breathe);
+    const offsetX = -(COLS * VOXEL_SIZE) / 2;
+    const offsetY = (ROWS * VOXEL_SIZE) / 2;
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const type = GRID[row][col];
+        if (type === 0) continue;
+
+        const x = col * VOXEL_SIZE + offsetX + VOXEL_SIZE / 2;
+        const y = -row * VOXEL_SIZE + offsetY - VOXEL_SIZE / 2;
+
+        // Add depth layers
+        const layers = type === 1 ? DEPTH_LAYERS : (type === 3 ? DEPTH_LAYERS + 1 : DEPTH_LAYERS - 1);
+        for (let z = 0; z < layers; z++) {
+          const pos = new THREE.Vector3(x, y, z * VOXEL_SIZE - (DEPTH_LAYERS * VOXEL_SIZE) / 2);
+          if (type === 1) outline.push(pos);
+          else if (type === 2) fill.push(pos);
+          else if (type === 3) eyes.push(pos);
+        }
+      }
     }
 
-    // Blink
-    const bc = 2.5, bd = 0.12;
-    const b1 = t % bc;
-    let e1 = 1;
-    if (b1 < bd) e1 = b1 < bd / 2 ? 1 - b1 / (bd / 2) : (b1 - bd / 2) / (bd / 2);
-    const b2 = (t + 0.03) % bc;
-    let e2 = 1;
-    if (b2 < bd) e2 = b2 < bd / 2 ? 1 - b2 / (bd / 2) : (b2 - bd / 2) / (bd / 2);
-    if (leftEyeRef.current) leftEyeRef.current.scale.set(1, e1, 1);
-    if (rightEyeRef.current) rightEyeRef.current.scale.set(1, e2, 1);
-  });
+    return { outlineData: outline, fillData: fill, eyeData: eyes };
+  }, []);
 
-  const s = 0.05;
-  const cx = 16, cy = 16;
-  const le: [number, number] = [(13 - cx) * s, -(16 - cy) * s];
-  const re: [number, number] = [(19 - cx) * s, -(16 - cy) * s];
+  // Create instanced meshes
+  const outlineMesh = useMemo(() => {
+    const geo = new THREE.BoxGeometry(VOXEL_SIZE * 0.95, VOXEL_SIZE * 0.95, VOXEL_SIZE * 0.95);
+    const mat = new THREE.MeshStandardMaterial({ color: CRIMSON, roughness: 0.4, metalness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, outlineData.length);
+    const dummy = new THREE.Object3D();
+    outlineData.forEach((pos, i) => {
+      dummy.position.copy(pos);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
+  }, [outlineData]);
+
+  const fillMesh = useMemo(() => {
+    const geo = new THREE.BoxGeometry(VOXEL_SIZE * 0.95, VOXEL_SIZE * 0.95, VOXEL_SIZE * 0.95);
+    const mat = new THREE.MeshStandardMaterial({ color: BODY_DARK, roughness: 0.6, metalness: 0.1 });
+    const mesh = new THREE.InstancedMesh(geo, mat, fillData.length);
+    const dummy = new THREE.Object3D();
+    fillData.forEach((pos, i) => {
+      dummy.position.copy(pos);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
+  }, [fillData]);
+
+  const eyeMesh = useMemo(() => {
+    const geo = new THREE.BoxGeometry(VOXEL_SIZE * 0.95, VOXEL_SIZE * 0.95, VOXEL_SIZE * 0.95);
+    const mat = new THREE.MeshStandardMaterial({
+      color: EYE_COLOR,
+      roughness: 0.2,
+      metalness: 0.5,
+      emissive: EYE_COLOR,
+      emissiveIntensity: 0.5,
+    });
+    const mesh = new THREE.InstancedMesh(geo, mat, eyeData.length);
+    const dummy = new THREE.Object3D();
+    eyeData.forEach((pos, i) => {
+      dummy.position.copy(pos);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+    });
+    mesh.instanceMatrix.needsUpdate = true;
+    return mesh;
+  }, [eyeData]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+
+    // Smooth follow mouse
+    targetRotation.current.y = mouseRef.current.x * 0.4;
+    targetRotation.current.x = mouseRef.current.y * -0.25;
+
+    if (groupRef.current) {
+      groupRef.current.rotation.y += (targetRotation.current.y - groupRef.current.rotation.y) * 0.05;
+      groupRef.current.rotation.x += (targetRotation.current.x - groupRef.current.rotation.x) * 0.05;
+      // Breathing
+      const breathe = 1 + Math.sin(t * 1.2) * 0.01;
+      groupRef.current.scale.setScalar(breathe);
+      // Gentle float
+      groupRef.current.position.y = Math.sin(t * 0.6) * 0.02;
+    }
+  });
 
   return (
     <group ref={groupRef}>
-      {/* Glow */}
-      <mesh geometry={glowGeo}>
-        <meshBasicMaterial color={CRIMSON} transparent opacity={0.12} />
-      </mesh>
-
-      {/* Outline */}
-      <mesh geometry={outlineGeo}>
-        <meshBasicMaterial color={CRIMSON} />
-      </mesh>
-
-      {/* Eyes */}
-      <mesh ref={leftEyeRef} position={[le[0], le[1], 0.01]}>
-        <circleGeometry args={[0.02, 24]} />
-        <meshBasicMaterial color={CRIMSON} />
-      </mesh>
-      <mesh ref={rightEyeRef} position={[re[0], re[1], 0.01]}>
-        <circleGeometry args={[0.02, 24]} />
-        <meshBasicMaterial color={CRIMSON} />
-      </mesh>
+      <primitive object={outlineMesh} />
+      <primitive object={fillMesh} />
+      <primitive object={eyeMesh} />
     </group>
   );
 };
 
 export default function PwnkitHero3D() {
   return (
-    <div className="mx-auto mb-4" style={{ width: '200px', height: '200px' }}>
+    <div className="mx-auto mb-4" style={{ width: '240px', height: '260px' }}>
       <Canvas
-        camera={{ position: [0, 0, 1.8], fov: 50 }}
+        camera={{ position: [0, 0, 4], fov: 45 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
       >
-        <Shield />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[3, 3, 5]} intensity={1.2} color="#ffffff" />
+        <directionalLight position={[-2, -1, 3]} intensity={0.4} color="#DC2626" />
+        <VoxelCharacter />
       </Canvas>
     </div>
   );
