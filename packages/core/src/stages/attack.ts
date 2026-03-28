@@ -8,6 +8,7 @@ import type {
 import { DEPTH_CONFIG } from "@pwnkit/shared";
 import type { Runtime, NativeRuntime, RuntimeContext, RuntimeType } from "../runtime/types.js";
 import { buildDeepScanPrompt, buildMcpAuditPrompt } from "../prompts.js";
+import { webPentestPrompt } from "../agent/prompts.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
 
@@ -26,6 +27,11 @@ function buildAttackAgentPrompt(
   ctx: ScanContext,
   templates: AttackTemplate[],
 ): string {
+  // Web pentesting mode: use dedicated web pentest prompt
+  if (ctx.config.mode === "web") {
+    return webPentestPrompt(ctx.config.target);
+  }
+
   const targetInfo = ctx.target;
   const templateContext = templates
     .map((t) => {
