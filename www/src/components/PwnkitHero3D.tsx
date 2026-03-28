@@ -4,150 +4,174 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 
-// The pwnkit shield shape — pentagon top with W-shaped fangs at bottom
-function createShieldShape(): THREE.Vector2[] {
-  // Shield outline: top center → right → lower right → right fang → center valley → left fang → lower left → left → back to top
-  // Normalized to roughly -1..1 range
-  return [
-    new THREE.Vector2(0, 1.1),       // top center
-    new THREE.Vector2(0.85, 0.55),   // upper right
-    new THREE.Vector2(0.85, -0.2),   // mid right
-    new THREE.Vector2(0.55, -0.65),  // lower right (start of W)
-    new THREE.Vector2(0.35, -0.45),  // right fang tip
-    new THREE.Vector2(0, -0.9),      // center valley (bottom of W)
-    new THREE.Vector2(-0.35, -0.45), // left fang tip
-    new THREE.Vector2(-0.55, -0.65), // lower left
-    new THREE.Vector2(-0.85, -0.2),  // mid left
-    new THREE.Vector2(-0.85, 0.55),  // upper left
-    new THREE.Vector2(0, 1.1),       // close back to top
-  ];
+/**
+ * The pwnkit fang character in 3D.
+ * SVG path: M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z
+ * Two eyes at (13,16) and (19,16), r=1.5
+ * Normalized to center around origin.
+ */
+
+const CRIMSON = '#DC2626';
+
+// Convert the SVG viewBox coords (6..26 x 5..27) to centered coords
+// SVG center is roughly (16, 16), so offset by that
+function svgToLocal(x: number, y: number): [number, number] {
+  // Normalize: SVG spans ~16 units wide, ~20 tall
+  // Center at (16, 16), flip Y, scale to ~2 units
+  const scale = 0.12;
+  return [(x - 16) * scale, -(y - 16) * scale];
 }
 
-// Glowing wireframe shield
 const Shield = () => {
   const groupRef = useRef<THREE.Group>(null);
-  const innerRef = useRef<THREE.Group>(null);
-  const eyeRef = useRef<THREE.Mesh>(null);
+  const leftEyeRef = useRef<THREE.Mesh>(null);
+  const rightEyeRef = useRef<THREE.Mesh>(null);
+  const scanRef = useRef<THREE.Line>(null);
   const particlesRef = useRef<THREE.Points>(null);
-  const scanRef = useRef(0);
 
-  // Shield outline geometry
+  // The fang outline as a line loop
   const outlineGeo = useMemo(() => {
-    const points = createShieldShape();
-    const points3d = points.map(p => new THREE.Vector3(p.x, p.y, 0));
+    // M8,12 L16,6 L24,12 L24,22 L20,26 L16,22 L12,26 L8,22 Z
+    const svgPoints: [number, number][] = [
+      [8, 12], [16, 6], [24, 12], [24, 22],
+      [20, 26], [16, 22], [12, 26], [8, 22],
+      [8, 12], // close
+    ];
+    const points3d = svgPoints.map(([x, y]) => {
+      const [lx, ly] = svgToLocal(x, y);
+      return new THREE.Vector3(lx, ly, 0);
+    });
     return new THREE.BufferGeometry().setFromPoints(points3d);
   }, []);
 
-  // Inner shield (slightly smaller, for depth)
+  // Inner outline (slightly smaller for depth)
   const innerGeo = useMemo(() => {
-    const points = createShieldShape();
-    const scale = 0.82;
-    const points3d = points.map(p => new THREE.Vector3(p.x * scale, p.y * scale, 0.1));
+    const svgPoints: [number, number][] = [
+      [8, 12], [16, 6], [24, 12], [24, 22],
+      [20, 26], [16, 22], [12, 26], [8, 22],
+      [8, 12],
+    ];
+    const s = 0.85;
+    const points3d = svgPoints.map(([x, y]) => {
+      const [lx, ly] = svgToLocal(x, y);
+      return new THREE.Vector3(lx * s, ly * s, 0.05);
+    });
     return new THREE.BufferGeometry().setFromPoints(points3d);
   }, []);
 
-  // Floating particles around the shield
+  // Floating particles
   const particleGeo = useMemo(() => {
-    const count = 200;
+    const count = 120;
     const positions = new Float32Array(count * 3);
-    const sizes = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      // Distribute in a sphere around the shield
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 1.2 + Math.random() * 2.5;
+      const r = 1.5 + Math.random() * 2;
       positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi) * 0.3; // flatten z
-      sizes[i] = Math.random() * 2 + 0.5;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     return geo;
   }, []);
 
-  // Scan line geometry (horizontal line that sweeps)
+  // Scan line
   const scanGeo = useMemo(() => {
-    const points = [
-      new THREE.Vector3(-1.2, 0, 0.05),
-      new THREE.Vector3(1.2, 0, 0.05),
-    ];
-    return new THREE.BufferGeometry().setFromPoints(points);
+    return new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-1.2, 0, 0.02),
+      new THREE.Vector3(1.2, 0, 0.02),
+    ]);
   }, []);
-  const scanLineRef = useRef<THREE.Line>(null);
 
   useFrame(({ clock, pointer }) => {
     const t = clock.getElapsedTime();
 
     if (groupRef.current) {
-      // Gentle floating + mouse follow
-      groupRef.current.rotation.y = Math.sin(t * 0.3) * 0.15 + pointer.x * 0.1;
-      groupRef.current.rotation.x = Math.sin(t * 0.2) * 0.05 + pointer.y * -0.05;
-      groupRef.current.position.y = Math.sin(t * 0.5) * 0.05;
+      // Gentle float + mouse follow
+      groupRef.current.rotation.y = Math.sin(t * 0.3) * 0.12 + pointer.x * 0.08;
+      groupRef.current.rotation.x = Math.cos(t * 0.25) * 0.04 + pointer.y * -0.04;
+      groupRef.current.position.y = Math.sin(t * 0.5) * 0.03;
+      // Breathing scale
+      const breathe = 1 + Math.sin(t * 1.2) * 0.015;
+      groupRef.current.scale.setScalar(breathe * 1.8);
     }
 
-    // Eye pulse
-    if (eyeRef.current) {
-      const scale = 1 + Math.sin(t * 2) * 0.15;
-      eyeRef.current.scale.set(scale, scale, 1);
+    // Eye blink
+    const blinkCycle = 2.5;
+    const blinkPhase = t % blinkCycle;
+    const blinkDur = 0.12;
+    let eyeScale = 1;
+    if (blinkPhase < blinkDur) {
+      eyeScale = blinkPhase < blinkDur / 2
+        ? 1 - (blinkPhase / (blinkDur / 2))
+        : (blinkPhase - blinkDur / 2) / (blinkDur / 2);
+    }
+    if (leftEyeRef.current) leftEyeRef.current.scale.set(1, eyeScale, 1);
+    // Right eye blinks slightly after
+    const blinkPhase2 = (t + 0.03) % blinkCycle;
+    let eyeScale2 = 1;
+    if (blinkPhase2 < blinkDur) {
+      eyeScale2 = blinkPhase2 < blinkDur / 2
+        ? 1 - (blinkPhase2 / (blinkDur / 2))
+        : (blinkPhase2 - blinkDur / 2) / (blinkDur / 2);
+    }
+    if (rightEyeRef.current) rightEyeRef.current.scale.set(1, eyeScale2, 1);
+
+    // Scan line
+    if (scanRef.current) {
+      const scanY = Math.sin(t * 0.6) * 1.2;
+      scanRef.current.position.y = scanY;
+      const mat = scanRef.current.material as THREE.LineBasicMaterial;
+      mat.opacity = (1 - Math.abs(scanY) / 1.2) * 0.35;
     }
 
-    // Particles drift
+    // Particles
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = t * 0.05;
-      particlesRef.current.rotation.x = t * 0.02;
-    }
-
-    // Scan line sweep
-    scanRef.current = (Math.sin(t * 0.8) * 0.5 + 0.5) * 2.2 - 1.1;
-    if (scanLineRef.current) {
-      scanLineRef.current.position.y = scanRef.current;
-      const mat = scanLineRef.current.material as THREE.LineBasicMaterial;
-      // Fade near edges
-      const edgeDist = 1 - Math.abs(scanRef.current) / 1.1;
-      mat.opacity = edgeDist * 0.6;
+      particlesRef.current.rotation.y = t * 0.03;
     }
   });
 
+  // Eye positions in local coords
+  const [leftEyeX, leftEyeY] = svgToLocal(13, 16);
+  const [rightEyeX, rightEyeY] = svgToLocal(19, 16);
+
   return (
-    <group ref={groupRef} scale={1.6}>
-      {/* Outer shield wireframe */}
+    <group ref={groupRef}>
+      {/* Main outline */}
       <line geometry={outlineGeo}>
-        <lineBasicMaterial color="#DC2626" linewidth={2} transparent opacity={0.8} />
+        <lineBasicMaterial color={CRIMSON} transparent opacity={0.6} />
       </line>
 
-      {/* Inner shield wireframe */}
-      <group ref={innerRef}>
-        <line geometry={innerGeo}>
-          <lineBasicMaterial color="#DC2626" linewidth={1} transparent opacity={0.25} />
-        </line>
-      </group>
+      {/* Inner outline */}
+      <line geometry={innerGeo}>
+        <lineBasicMaterial color={CRIMSON} transparent opacity={0.15} />
+      </line>
 
-      {/* Eye */}
-      <mesh ref={eyeRef} position={[0, 0.1, 0.05]}>
-        <circleGeometry args={[0.12, 32]} />
-        <meshBasicMaterial color="#DC2626" transparent opacity={0.7} />
+      {/* Left eye */}
+      <mesh ref={leftEyeRef} position={[leftEyeX, leftEyeY, 0.02]}>
+        <circleGeometry args={[0.018, 24]} />
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.8} />
       </mesh>
 
-      {/* Eye glow ring */}
-      <mesh position={[0, 0.1, 0.04]}>
-        <ringGeometry args={[0.12, 0.18, 32]} />
-        <meshBasicMaterial color="#DC2626" transparent opacity={0.15} />
+      {/* Right eye */}
+      <mesh ref={rightEyeRef} position={[rightEyeX, rightEyeY, 0.02]}>
+        <circleGeometry args={[0.018, 24]} />
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.8} />
       </mesh>
 
       {/* Scan line */}
-      <line ref={scanLineRef} geometry={scanGeo}>
-        <lineBasicMaterial color="#DC2626" linewidth={1} transparent opacity={0.4} />
+      <line ref={scanRef} geometry={scanGeo}>
+        <lineBasicMaterial color={CRIMSON} transparent opacity={0.3} />
       </line>
 
       {/* Particles */}
       <points ref={particlesRef} geometry={particleGeo}>
         <pointsMaterial
-          color="#DC2626"
-          size={0.02}
+          color={CRIMSON}
+          size={0.015}
           transparent
-          opacity={0.3}
+          opacity={0.2}
           sizeAttenuation
           depthWrite={false}
         />
@@ -158,9 +182,9 @@ const Shield = () => {
 
 export default function PwnkitHero3D() {
   return (
-    <div className="absolute inset-0 z-0" style={{ opacity: 0.5 }}>
+    <div className="absolute inset-0 z-0" style={{ opacity: 0.45 }}>
       <Canvas
-        camera={{ position: [0, 0, 3.5], fov: 50 }}
+        camera={{ position: [0, 0, 3], fov: 50 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
