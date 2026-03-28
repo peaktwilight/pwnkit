@@ -140,7 +140,12 @@ export class ProcessRuntime implements Runtime {
         return args;
       }
       case "codex":
-        return ["-q", prompt];
+        return [
+          "exec",
+          "--full-auto",
+          "--skip-git-repo-check",
+          prompt,
+        ];
       case "gemini":
         return ["-p", prompt];
       case "opencode":
