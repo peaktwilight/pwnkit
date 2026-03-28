@@ -123,14 +123,17 @@ const VoxelCharacter = () => {
   const offY = (ROWS * VS) / 2;
 
   // Body voxels (rows 0 to LEG_START_ROW)
-  const bodyMeshes = useMemo(() => {
-    const { outline, fill, eyes } = buildVoxels(0, LEG_START_ROW, 0, COLS, offX, offY);
-    return {
-      outline: createInstancedMesh(outline, CRIMSON),
-      fill: createInstancedMesh(fill, BODY_DARK, { roughness: 0.6, metalness: 0.1 }),
-      eyes: createInstancedMesh(eyes, EYE_COLOR, { emissive: true, roughness: 0.2, metalness: 0.5 }),
-    };
+  const bodyData = useMemo(() => {
+    return buildVoxels(0, LEG_START_ROW, 0, COLS, offX, offY);
   }, [offX, offY]);
+
+  const bodyMeshes = useMemo(() => {
+    return {
+      outline: createInstancedMesh(bodyData.outline, CRIMSON),
+      fill: createInstancedMesh(bodyData.fill, BODY_DARK, { roughness: 0.6, metalness: 0.1 }),
+      eyes: createInstancedMesh(bodyData.eyes, EYE_COLOR, { emissive: true, roughness: 0.2, metalness: 0.5 }),
+    };
+  }, [bodyData]);
 
   // Left leg voxels (rows LEG_START_ROW+, cols 0 to MID_COL)
   const leftLegMeshes = useMemo(() => {
@@ -177,18 +180,37 @@ const VoxelCharacter = () => {
     const sway = idleSway + mouseSway;
 
     if (leftLegRef.current) {
-      // Rotate around the hip pivot
       const targetRot = sway + Math.sin(t * 2) * 0.03;
       leftLegRef.current.rotation.z += (targetRot - leftLegRef.current.rotation.z) * 0.08;
-      // Slight spread based on mouse distance from center
-      leftLegRef.current.position.x = -Math.abs(mx) * 0.02;
     }
 
     if (rightLegRef.current) {
-      // Opposite sway for walking feel
-      const targetRot = -sway + Math.sin(t * 2 + Math.PI) * 0.03;
-      rightLegRef.current.rotation.z += (targetRot - rightLegRef.current.rotation.z) * 0.08;
-      rightLegRef.current.position.x = Math.abs(mx) * 0.02;
+      // Same direction, slightly delayed for natural feel
+      const targetRot = sway + Math.sin(t * 2 + 0.3) * 0.03;
+      rightLegRef.current.rotation.z += (targetRot - rightLegRef.current.rotation.z) * 0.07;
+    }
+
+    // Eye blink — squash Y scale of eye voxels
+    if (bodyMeshes.eyes && bodyData.eyes.length > 0) {
+      const blinkCycle = 2.5;
+      const blinkDur = 0.15;
+      const bp = t % blinkCycle;
+      let eyeScaleY = 1;
+      if (bp < blinkDur) {
+        eyeScaleY = bp < blinkDur / 2
+          ? 1 - (bp / (blinkDur / 2))
+          : (bp - blinkDur / 2) / (blinkDur / 2);
+        eyeScaleY = Math.max(0.05, eyeScaleY);
+      }
+
+      const dummy = new THREE.Object3D();
+      bodyData.eyes.forEach((pos, i) => {
+        dummy.position.copy(pos);
+        dummy.scale.set(1, eyeScaleY, 1);
+        dummy.updateMatrix();
+        bodyMeshes.eyes!.setMatrixAt(i, dummy.matrix);
+      });
+      bodyMeshes.eyes.instanceMatrix.needsUpdate = true;
     }
   });
 
