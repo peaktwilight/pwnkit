@@ -1,0 +1,344 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Nightfang Report Viewer">
+  <style>
+    /* Severity badge colors */
+    .badge-critical { background: rgba(220,38,38,0.18); color: #ef4444; border-color: rgba(220,38,38,0.35); }
+    .badge-high     { background: rgba(249,115,22,0.15); color: #fb923c; border-color: rgba(249,115,22,0.35); }
+    .badge-medium   { background: rgba(234,179,8,0.13); color: #facc15; border-color: rgba(234,179,8,0.35); }
+    .badge-low      { background: rgba(59,130,246,0.13); color: #60a5fa; border-color: rgba(59,130,246,0.35); }
+    .badge-info     { background: rgba(156,163,175,0.13); color: #9ca3af; border-color: rgba(156,163,175,0.25); }
+
+    /* Stat card severity accents */
+    .stat-critical { border-top: 2px solid #ef4444; }
+    .stat-high     { border-top: 2px solid #fb923c; }
+    .stat-medium   { border-top: 2px solid #facc15; }
+    .stat-low      { border-top: 2px solid #60a5fa; }
+    .stat-info     { border-top: 2px solid #6b7280; }
+
+    pre { white-space: pre-wrap; word-break: break-all; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s ease-out both; }
+
+    .finding-card:hover { border-color: rgba(220,38,38,0.3); }
+
+    .loading-dot {
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50%       { opacity: 1; }
+    }
+  </style>
+
+  <!-- Loading state -->
+  <div id="loading-state" class="min-h-screen flex flex-col items-center justify-center gap-6" style="background:#0a0a0a">
+    <div class="flex items-center gap-3">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
+        <path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="13" cy="16" r="1.5" fill="#DC2626"/>
+        <circle cx="19" cy="16" r="1.5" fill="#DC2626"/>
+      </svg>
+      <span style="font-family:'Outfit',sans-serif;color:#a3a3a3;font-size:1rem">Decoding report</span>
+      <span class="loading-dot" style="color:#DC2626;font-size:1.2rem">●</span>
+    </div>
+  </div>
+
+  <!-- Error state (hidden by default) -->
+  <div id="error-state" class="min-h-screen flex flex-col items-center justify-center gap-4" style="background:#0a0a0a;display:none!important">
+    <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
+      <path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="13" cy="16" r="1.5" fill="#DC2626"/>
+      <circle cx="19" cy="16" r="1.5" fill="#DC2626"/>
+    </svg>
+    <p id="error-message" style="font-family:'Outfit',sans-serif;color:#ef4444;font-size:1rem;text-align:center;max-width:420px;padding:0 1.5rem"></p>
+    <a href="https://nightfang.dev" style="color:#a3a3a3;font-size:0.875rem;font-family:'Outfit',sans-serif;text-decoration:underline">
+      Back to nightfang.dev
+    </a>
+  </div>
+
+  <!-- Report content (hidden until decoded) -->
+  <div id="report-root" style="display:none;background:#0a0a0a;min-height:100vh">
+
+    <!-- Top nav bar -->
+    <header style="border-bottom:1px solid rgba(255,255,255,0.07);padding:0.875rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;background:rgba(10,10,10,0.95);backdrop-filter:blur(8px)">
+      <a href="https://nightfang.dev" style="display:flex;align-items:center;gap:0.6rem;text-decoration:none">
+        <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="6" fill="#0a0a0a"/>
+          <path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="13" cy="16" r="1.5" fill="#DC2626"/>
+          <circle cx="19" cy="16" r="1.5" fill="#DC2626"/>
+        </svg>
+        <span style="font-family:'Outfit',sans-serif;font-weight:700;font-size:0.9rem;color:#DC2626">nightfang</span>
+      </a>
+      <span style="font-family:'Space Mono',monospace;font-size:0.7rem;color:#525252;letter-spacing:0.05em">SECURITY REPORT</span>
+    </header>
+
+    <main style="max-width:900px;margin:0 auto;padding:2.5rem 1.5rem 5rem">
+
+      <!-- Report header -->
+      <section class="fade-up" style="margin-bottom:2.5rem">
+        <div style="display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <h1 id="report-target" style="font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:700;color:#fff;word-break:break-all;margin:0 0 0.4rem"></h1>
+            <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">
+              <span id="report-date" style="font-family:'Space Mono',monospace;font-size:0.72rem;color:#525252"></span>
+              <span id="report-duration" style="font-family:'Space Mono',monospace;font-size:0.72rem;color:#525252"></span>
+              <span id="report-depth" style="font-family:'Space Mono',monospace;font-size:0.72rem;color:#525252"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary stat cards -->
+      <section class="fade-up" style="margin-bottom:2.5rem;animation-delay:0.08s">
+        <div id="stat-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:0.75rem">
+          <!-- Cards injected by JS -->
+        </div>
+      </section>
+
+      <!-- Findings list -->
+      <section class="fade-up" style="animation-delay:0.16s">
+        <h2 style="font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;color:#a3a3a3;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 1rem">Findings</h2>
+        <div id="findings-list" style="display:flex;flex-direction:column;gap:0.875rem">
+          <!-- Finding cards injected by JS -->
+        </div>
+        <div id="no-findings" style="display:none;padding:2rem;text-align:center;border:1px dashed rgba(255,255,255,0.1);border-radius:0.75rem">
+          <p style="font-family:'Outfit',sans-serif;color:#525252;font-size:0.9rem;margin:0">No findings — clean report!</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer style="border-top:1px solid rgba(255,255,255,0.07);padding:2rem 1.5rem;text-align:center">
+      <a href="https://nightfang.dev" style="display:inline-flex;align-items:center;gap:0.5rem;text-decoration:none;color:#525252;font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:0.04em;transition:color 0.2s">
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+          <path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="13" cy="16" r="1.5" fill="currentColor"/>
+          <circle cx="19" cy="16" r="1.5" fill="currentColor"/>
+        </svg>
+        Scanned with Nightfang &mdash; nightfang.dev
+      </a>
+    </footer>
+
+  </div>
+
+  <script is:inline>
+    (async function () {
+      function showError(msg) {
+        document.getElementById('loading-state').style.display = 'none';
+        const errEl = document.getElementById('error-state');
+        errEl.style.removeProperty('display');
+        document.getElementById('error-message').textContent = msg;
+      }
+
+      // ── Decode hash ──
+      const hash = window.location.hash.slice(1); // strip leading #
+      if (!hash) {
+        showError('No report data found in the URL. Generate a shareable link with: nightfang scan --target <url>');
+        return;
+      }
+
+      let report;
+      try {
+        // base64url → Uint8Array
+        const b64standard = hash.replace(/-/g, '+').replace(/_/g, '/');
+        const binaryStr = atob(b64standard);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+        // Gunzip using DecompressionStream (supported in all modern browsers)
+        const ds = new DecompressionStream('gzip');
+        const writer = ds.writable.getWriter();
+        writer.write(bytes);
+        writer.close();
+        const reader = ds.readable.getReader();
+        const chunks = [];
+        let totalLen = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          totalLen += value.length;
+        }
+        const merged = new Uint8Array(totalLen);
+        let offset = 0;
+        for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.length; }
+        const json = new TextDecoder().decode(merged);
+        report = JSON.parse(json);
+      } catch (e) {
+        showError('Failed to decode report data: ' + (e && e.message ? e.message : String(e)));
+        return;
+      }
+
+      // ── Helpers ──
+      function esc(str) {
+        if (str == null) return '';
+        return String(str)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+      }
+
+      function severityBadgeClass(sev) {
+        return 'badge-' + (sev || 'info').toLowerCase();
+      }
+
+      function severityLabel(sev) {
+        return (sev || 'info').toUpperCase();
+      }
+
+      function formatDate(ts) {
+        try {
+          return new Date(ts).toLocaleString(undefined, { dateStyle:'medium', timeStyle:'short' });
+        } catch { return String(ts); }
+      }
+
+      function formatDuration(ms) {
+        if (!ms) return '';
+        if (ms < 1000) return ms + 'ms';
+        if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+        return (ms / 60000).toFixed(1) + 'm';
+      }
+
+      // ── Detect report type and normalise ──
+      // ScanReport: has `target`, no `package`, no `repo`
+      // AuditReport: has `package`
+      // ReviewReport: has `repo`
+      let targetLabel = '';
+      let scanDepth = report.scanDepth || 'default';
+
+      if (report.package) {
+        targetLabel = report.package + (report.version ? '@' + report.version : '');
+        scanDepth = 'audit';
+      } else if (report.repo) {
+        targetLabel = report.repo;
+        scanDepth = 'review';
+      } else {
+        targetLabel = report.target || 'Unknown target';
+      }
+
+      const findings = Array.isArray(report.findings) ? report.findings : [];
+      const summary = report.summary || { critical:0, high:0, medium:0, low:0, info:0, totalFindings:0, totalAttacks:0 };
+
+      // ── Populate header ──
+      document.getElementById('report-target').textContent = targetLabel;
+      document.getElementById('report-date').textContent = report.startedAt ? formatDate(report.startedAt) : '';
+      document.getElementById('report-duration').textContent = report.durationMs ? formatDuration(report.durationMs) : '';
+      document.getElementById('report-depth').textContent = scanDepth ? scanDepth.toUpperCase() : '';
+
+      // ── Stat cards ──
+      const statsContainer = document.getElementById('stat-cards');
+      const stats = [
+        { key: 'critical', label: 'Critical', cls: 'stat-critical', textColor: '#ef4444' },
+        { key: 'high',     label: 'High',     cls: 'stat-high',     textColor: '#fb923c' },
+        { key: 'medium',   label: 'Medium',   cls: 'stat-medium',   textColor: '#facc15' },
+        { key: 'low',      label: 'Low',      cls: 'stat-low',      textColor: '#60a5fa' },
+        { key: 'info',     label: 'Info',     cls: 'stat-info',     textColor: '#6b7280' },
+      ];
+
+      let html = '';
+      for (const s of stats) {
+        const count = summary[s.key] || 0;
+        html += `
+          <div class="${s.cls}" style="background:#141414;border-radius:0.6rem;padding:1rem;border-left:1px solid rgba(255,255,255,0.06);border-right:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06)">
+            <div style="font-family:'Space Mono',monospace;font-size:1.6rem;font-weight:700;color:${s.textColor};line-height:1">${count}</div>
+            <div style="font-family:'Outfit',sans-serif;font-size:0.72rem;color:#525252;margin-top:0.3rem;text-transform:uppercase;letter-spacing:0.06em">${s.label}</div>
+          </div>`;
+      }
+      statsContainer.innerHTML = html;
+
+      // ── Findings ──
+      const findingsList = document.getElementById('findings-list');
+
+      if (findings.length === 0) {
+        document.getElementById('no-findings').style.removeProperty('display');
+      } else {
+        // Sort: critical > high > medium > low > info
+        const sevOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+        const sorted = [...findings].sort((a, b) => {
+          return (sevOrder[a.severity] ?? 99) - (sevOrder[b.severity] ?? 99);
+        });
+
+        let findingsHtml = '';
+        for (const f of sorted) {
+          const sev = (f.severity || 'info').toLowerCase();
+          const badgeCls = severityBadgeClass(sev);
+          const sevLabel = severityLabel(sev);
+          const category = f.category ? f.category.replace(/-/g, ' ') : '';
+          const ts = f.timestamp ? formatDate(f.timestamp) : '';
+
+          const evidenceReq = f.evidence && f.evidence.request ? esc(f.evidence.request) : '';
+          const evidenceRes = f.evidence && f.evidence.response ? esc(f.evidence.response) : '';
+          const evidenceAna = f.evidence && f.evidence.analysis ? esc(f.evidence.analysis) : '';
+
+          const hasEvidence = evidenceReq || evidenceRes || evidenceAna;
+          const evidenceId = 'evidence-' + esc(f.id || Math.random().toString(36).slice(2));
+
+          findingsHtml += `
+            <div class="finding-card" style="background:#141414;border:1px solid rgba(255,255,255,0.08);border-radius:0.75rem;overflow:hidden;transition:border-color 0.2s">
+              <!-- Finding header -->
+              <div style="padding:1.1rem 1.25rem 0.9rem;display:flex;align-items:flex-start;gap:0.875rem;flex-wrap:wrap">
+                <span class="${badgeCls}" style="flex-shrink:0;display:inline-block;padding:0.2rem 0.55rem;border-radius:0.35rem;border:1px solid;font-family:'Space Mono',monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;margin-top:0.15rem">${sevLabel}</span>
+                <div style="flex:1;min-width:0">
+                  <h3 style="font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;color:#f5f5f5;margin:0 0 0.3rem;word-break:break-word">${esc(f.title || 'Untitled finding')}</h3>
+                  <div style="display:flex;flex-wrap:wrap;gap:0.6rem;align-items:center">
+                    ${category ? `<span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:#525252;background:rgba(255,255,255,0.04);padding:0.15rem 0.45rem;border-radius:0.25rem;border:1px solid rgba(255,255,255,0.07)">${esc(category)}</span>` : ''}
+                    ${ts ? `<span style="font-family:'Space Mono',monospace;font-size:0.65rem;color:#3d3d3d">${ts}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Description -->
+              ${f.description ? `<div style="padding:0 1.25rem 1rem"><p style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:#a3a3a3;margin:0;line-height:1.65">${esc(f.description)}</p></div>` : ''}
+
+              <!-- Evidence toggle -->
+              ${hasEvidence ? `
+              <div style="border-top:1px solid rgba(255,255,255,0.06)">
+                <button
+                  onclick="(function(btn){var el=document.getElementById('${evidenceId}');var hidden=el.style.display==='none'||el.style.display==='';el.style.display=hidden?'block':'none';btn.querySelector('.chevron').style.transform=hidden?'rotate(180deg)':'rotate(0deg)';})(this)"
+                  style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:0.7rem 1.25rem;background:none;border:none;cursor:pointer;color:#525252;font-family:'Space Mono',monospace;font-size:0.68rem;letter-spacing:0.04em"
+                >
+                  <span>VIEW EVIDENCE</span>
+                  <svg class="chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" style="transition:transform 0.2s">
+                    <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+                <div id="${evidenceId}" style="display:none;padding:0 1.25rem 1.25rem;display:flex;flex-direction:column;gap:0.75rem;display:none">
+                  ${evidenceReq ? `
+                  <div>
+                    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#3d3d3d;margin-bottom:0.35rem;letter-spacing:0.06em">REQUEST</div>
+                    <pre style="font-family:'Space Mono',monospace;font-size:0.72rem;color:#737373;background:#0f0f0f;border:1px solid rgba(255,255,255,0.06);border-radius:0.4rem;padding:0.75rem;margin:0;max-height:200px;overflow-y:auto;line-height:1.6">${evidenceReq}</pre>
+                  </div>` : ''}
+                  ${evidenceRes ? `
+                  <div>
+                    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#3d3d3d;margin-bottom:0.35rem;letter-spacing:0.06em">RESPONSE</div>
+                    <pre style="font-family:'Space Mono',monospace;font-size:0.72rem;color:#737373;background:#0f0f0f;border:1px solid rgba(255,255,255,0.06);border-radius:0.4rem;padding:0.75rem;margin:0;max-height:200px;overflow-y:auto;line-height:1.6">${evidenceRes}</pre>
+                  </div>` : ''}
+                  ${evidenceAna ? `
+                  <div>
+                    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:#3d3d3d;margin-bottom:0.35rem;letter-spacing:0.06em">ANALYSIS</div>
+                    <div style="font-family:'Outfit',sans-serif;font-size:0.8rem;color:#737373;background:#0f0f0f;border:1px solid rgba(255,255,255,0.06);border-radius:0.4rem;padding:0.75rem;line-height:1.65">${evidenceAna}</div>
+                  </div>` : ''}
+                </div>
+              </div>` : ''}
+            </div>`;
+        }
+        findingsList.innerHTML = findingsHtml;
+      }
+
+      // ── Show report ──
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('report-root').style.removeProperty('display');
+
+    })();
+  </script>
+</Layout>

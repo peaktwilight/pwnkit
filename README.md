@@ -33,7 +33,7 @@
 
 ---
 
-Nightfang is an open-source pentesting toolkit that combines four autonomous AI agents with a template-driven attack engine. Point it at an API, an npm package, or a Git repo — it discovers vulnerabilities, attacks them, **re-exploits each finding to eliminate false positives**, and generates SARIF reports that plug straight into GitHub's Security tab.
+Nightfang is an open-source agentic security toolkit. Four AI agents autonomously discover, attack, verify, and report vulnerabilities. Point it at an API, an npm package, or a Git repo — the agents read code, craft payloads, analyze responses, and **prove every finding is exploitable**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
 
 One command. Zero config. Every finding verified with proof.
 
@@ -66,23 +66,23 @@ Nightfang ships five commands — from quick API probes to deep source-level aud
 
 ## How It Works
 
-Nightfang runs four specialized AI agents in sequence. Each agent builds on the previous one's output:
+Nightfang runs four specialized AI agents in sequence. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
 
 ```
   +-----------+     +-----------+     +-----------+     +-----------+
   | DISCOVER  | --> |  ATTACK   | --> |  VERIFY   | --> |  REPORT   |
   |  (Recon)  |     | (Offense) |     | (Confirm) |     | (Output)  |
   +-----------+     +-----------+     +-----------+     +-----------+
-   Maps endpoints    Runs 47+ test    Re-exploits       Generates SARIF,
-   Model detection   cases across     each finding       Markdown, and JSON
-   System prompt     7 categories     to kill false      with severity +
-   extraction        of attacks       positives          remediation
+   Maps endpoints    Agents craft      Re-exploits       Generates SARIF,
+   Model detection   payloads in       each finding       Markdown, and JSON
+   System prompt     multi-turn        to kill false      with severity +
+   extraction        conversations     positives          remediation
 ```
 
 | Agent | Role | What It Does |
 |-------|------|-------------|
 | **Discover** | Recon | Maps endpoints, detects models, extracts system prompts, enumerates MCP tool schemas |
-| **Attack** | Offense | Prompt injection, jailbreaks, tool poisoning, data exfiltration, encoding bypasses — 12 attack templates, 7 categories |
+| **Attack** | Offense | Agentic multi-turn attacks: prompt injection, jailbreaks, tool poisoning, data exfiltration, encoding bypasses — agent reads responses and adapts |
 | **Verify** | Validation | Re-exploits each finding independently. If it can't reproduce it, it's killed as a false positive |
 | **Report** | Output | SARIF for GitHub Security tab, Markdown for humans, JSON for pipelines — with severity scores and remediation |
 
@@ -135,7 +135,7 @@ npx nightfang scan --target https://your-app.com/api/chat --verbose
 | `default` | ~50 | ~3 min | $0.15–$0.50 |
 | `deep` | ~150 | ~10 min | $0.50–$1.00 |
 
-Cost depends on the LLM provider you configure. Nightfang supports OpenAI, Anthropic, and local models via Ollama.
+Default model is `anthropic/claude-sonnet-4.6` via [OpenRouter](https://openrouter.ai). Free tier available with `--model free`. You can also use OpenAI, Anthropic direct, or local models via Ollama.
 
 ```bash
 # Quick scan for CI
@@ -163,7 +163,7 @@ Bring your own agent CLI — Nightfang orchestrates it:
 
 | Runtime | Flag | Best For |
 |---------|------|----------|
-| `api` | `--runtime api` | CI, quick scans — fast, cheap, no dependencies (default) |
+| `api` | `--runtime api` | CI, quick scans — uses OpenRouter by default (`claude-sonnet-4.6`), no dependencies (default) |
 | `claude` | `--runtime claude` | Attack generation, deep analysis — spawns Claude Code CLI |
 | `codex` | `--runtime codex` | Verification, source analysis — spawns Codex CLI |
 | `gemini` | `--runtime gemini` | Large context source analysis — spawns Gemini CLI |
@@ -184,7 +184,7 @@ Combined with scan modes:
 
 | Feature | Nightfang | promptfoo | garak | semgrep | nuclei |
 |---------|-----------|-----------|-------|---------|--------|
-| **Autonomous multi-agent pipeline** | :white_check_mark: 4 specialized agents | :x: Single runner | :x: Single runner | :x: Rule-based | :x: Template runner |
+| **Agentic multi-turn pipeline** | :white_check_mark: 4 agents with tool use | :x: Single runner | :x: Single runner | :x: Rule-based | :x: Template runner |
 | **Verification (no false positives)** | :white_check_mark: Re-exploits to confirm | :x: | :x: | :x: | :x: |
 | **LLM endpoint scanning** | :white_check_mark: Prompt injection, jailbreaks, exfil | :white_check_mark: Red-teaming | :white_check_mark: Probes | :x: | :x: |
 | **MCP server security** | :white_check_mark: Tool poisoning, schema abuse | :x: | :x: | :x: | :x: |
@@ -279,7 +279,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 - [x] npm package auditing
 - [x] Source code review (local + GitHub)
 - [x] Multi-runtime support (Claude, Codex, Gemini, OpenCode)
-- [ ] Multi-turn conversation attacks
+- [x] Multi-turn agentic attacks (agents adapt payloads based on responses)
 - [ ] RAG pipeline security (poisoning, extraction)
 - [ ] Agentic workflow testing (multi-tool chains)
 - [ ] VS Code extension

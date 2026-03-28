@@ -359,52 +359,44 @@ import DataGridBackground from '../components/DataGridBackground';
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
             <div class="text-xs text-emerald-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">01 &middot; Discover</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Map the attack surface</h3>
-            <p class="text-smoke text-sm leading-relaxed">Crawls every endpoint, extracts system prompts, enumerates MCP tool schemas, identifies auth flows and model configurations. Builds a complete target map before any attack begins.</p>
+            <p class="text-smoke text-sm leading-relaxed">Maps endpoints, extracts system prompts, detects models, enumerates tools.</p>
             <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash space-y-1" style="font-family: 'Space Mono', monospace">
-              <div>&#8226; API surface mapping</div>
+              <div>&#8226; API mapping</div>
               <div>&#8226; System prompt extraction</div>
-              <div>&#8226; MCP tool enumeration</div>
-              <div>&#8226; Auth flow detection</div>
               <div>&#8226; Model fingerprinting</div>
             </div>
           </div>
 
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
             <div class="text-xs text-amber-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">02 &middot; Attack</div>
-            <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">42+ templates, multi-turn</h3>
-            <p class="text-smoke text-sm leading-relaxed">Runs injection, jailbreaks, tool poisoning, data exfiltration, and more. Adapts attack strategy based on target responses. Multi-turn conversations to bypass defenses that block single-shot attempts.</p>
+            <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Agentic multi-turn attacks</h3>
+            <p class="text-smoke text-sm leading-relaxed">AI agent crafts and adapts payloads across injection, jailbreaks, exfiltration, tool poisoning.</p>
             <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash space-y-1" style="font-family: 'Space Mono', monospace">
-              <div>&#8226; 42+ attack templates</div>
-              <div>&#8226; Adaptive multi-turn</div>
-              <div>&#8226; AI attack coverage</div>
+              <div>&#8226; Adaptive payloads</div>
+              <div>&#8226; Multi-turn conversations</div>
               <div>&#8226; Response-aware pivoting</div>
-              <div>&#8226; Encoding bypass chains</div>
             </div>
           </div>
 
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
             <div class="text-xs text-blue-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">03 &middot; Verify</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Re-exploit. Kill false positives.</h3>
-            <p class="text-smoke text-sm leading-relaxed">Every finding gets re-exploited independently to confirm it's real. Captures full proof artifacts &mdash; request/response pairs, extracted data, reproduction steps. If it can't be proven, it doesn't make the report.</p>
+            <p class="text-smoke text-sm leading-relaxed">Every finding gets independently reproduced. If it can't be proven, it's dropped.</p>
             <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash space-y-1" style="font-family: 'Space Mono', monospace">
               <div>&#8226; Independent re-exploitation</div>
-              <div>&#8226; Proof artifact capture</div>
+              <div>&#8226; Proof artifacts</div>
               <div>&#8226; Confidence scoring</div>
-              <div>&#8226; Reproduction steps</div>
-              <div>&#8226; Evidence chains</div>
             </div>
           </div>
 
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
             <div class="text-xs text-purple-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">04 &middot; Report</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">SARIF, JSON, Markdown</h3>
-            <p class="text-smoke text-sm leading-relaxed">SARIF for GitHub Security tab integration. JSON for CI/CD pipelines and automation. Markdown for human review. Every format includes severity, remediation guidance, and full proof of exploit.</p>
+            <p class="text-smoke text-sm leading-relaxed">Plugs into GitHub Security tab, CI pipelines, and human review. Severity, remediation, full evidence.</p>
             <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash space-y-1" style="font-family: 'Space Mono', monospace">
-              <div>&#8226; SARIF &rarr; GitHub Security tab</div>
-              <div>&#8226; JSON &rarr; CI/CD pipelines</div>
-              <div>&#8226; Markdown &rarr; human review</div>
+              <div>&#8226; GitHub Security tab</div>
+              <div>&#8226; CI/CD integration</div>
               <div>&#8226; Remediation guidance</div>
-              <div>&#8226; Severity classification</div>
             </div>
           </div>
         </div>
@@ -416,7 +408,7 @@ import DataGridBackground from '../components/DataGridBackground';
       <div class="max-w-4xl mx-auto px-6">
         <div class="text-center mb-12">
           <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">What it tests for</h2>
-          <p class="text-smoke text-lg">30+ attack templates across 7 categories. Every finding verified with a working exploit.</p>
+          <p class="text-smoke text-lg">30+ agentic attack scenarios across 7 categories. Every finding verified with a working exploit.</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -520,7 +512,7 @@ import DataGridBackground from '../components/DataGridBackground';
               </tr>
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">AI attack coverage</td>
-                <td class="py-3 px-3 text-center text-emerald-400">30+ templates</td>
+                <td class="py-3 px-3 text-center text-emerald-400">30+ agentic</td>
                 <td class="py-3 px-3 text-center text-ash">Partial</td>
                 <td class="py-3 px-3 text-center text-ash">Partial</td>
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>

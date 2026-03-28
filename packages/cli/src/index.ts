@@ -14,6 +14,18 @@ import { scan, agenticScan, createRuntime, packageAudit, sourceReview } from "@n
 import { formatReport, formatAuditReport, formatReviewReport } from "./formatters/index.js";
 import { renderProgressBar } from "./formatters/terminal.js";
 import { renderReplay, replayDataFromReport, createReplayCollector } from "./formatters/replay.js";
+import type { ScanReport, AuditReport, ReviewReport } from "@nightfang/shared";
+import { gzipSync } from "zlib";
+
+/**
+ * Encode a report as a base64url-encoded gzipped JSON string for use in a share URL.
+ */
+function buildShareUrl(report: ScanReport | AuditReport | ReviewReport): string {
+  const json = JSON.stringify(report);
+  const compressed = gzipSync(Buffer.from(json, "utf-8"));
+  const b64 = compressed.toString("base64url");
+  return `https://nightfang.dev/r#${b64}`;
+}
 
 // ── "Holy Shit" First-Run Interactive Menu ──
 async function showInteractiveMenu(): Promise<void> {
@@ -30,11 +42,11 @@ async function showInteractiveMenu(): Promise<void> {
   const action = await select({
     message: "What would you like to do?",
     options: [
-      { value: "demo",   label: "Scan demo target (30 sec)" },
-      { value: "scan",   label: "Scan an endpoint" },
-      { value: "audit",  label: "Audit an npm package" },
-      { value: "review", label: "Review a repository" },
-      { value: "docs",   label: "Read docs" },
+      { value: "scan",    label: "Scan an endpoint" },
+      { value: "audit",   label: "Audit an npm package" },
+      { value: "review",  label: "Review a codebase" },
+      { value: "history", label: "View past results" },
+      { value: "docs",    label: "Read the docs" },
     ],
   });
 
@@ -96,8 +108,8 @@ async function showInteractiveMenu(): Promise<void> {
 
   if (action === "review") {
     const repo = await text({
-      message: "Repository path:",
-      placeholder: "./my-project",
+      message: "Repository path or GitHub URL:",
+      placeholder: "./my-project  or  https://github.com/owner/repo",
       validate: (v) => {
         if (!v || v.trim().length === 0) return "Repository path is required";
       },
@@ -113,33 +125,9 @@ async function showInteractiveMenu(): Promise<void> {
     return;
   }
 
-  if (action === "demo") {
-    const { createVulnerableApp } = await import("@nightfang/test-targets/vulnerable");
-    const app = createVulnerableApp();
-
-    const server = await new Promise<import("http").Server>((resolve) => {
-      const s = app.listen(0, () => resolve(s));
-    });
-    const address = server.address() as import("net").AddressInfo;
-    const targetUrl = `http://localhost:${address.port}/v1/chat/completions`;
-
-    console.log("");
-    console.log(chalk.gray(`  Demo target running on port ${address.port}`));
-    console.log("");
-
-    process.argv = [process.argv[0], process.argv[1], "scan", "--target", targetUrl, "--depth", "quick"];
-
-    const origExit = process.exit.bind(process);
-    process.exit = ((code?: number) => {
-      server.close();
-      origExit(code);
-    }) as typeof process.exit;
-
-    try {
-      await program.parseAsync();
-    } finally {
-      server.close();
-    }
+  if (action === "history") {
+    process.argv = [process.argv[0], process.argv[1], "history"];
+    await program.parseAsync();
     return;
   }
 }
@@ -316,8 +304,21 @@ program
 
           switch (event.type) {
             case "stage:start":
-              if (event.stage === "attack") {
-                // Extract template count from message for progress bar
+              if (verbose) {
+                // In verbose mode, show each agent action as a visible log line
+                const msg = event.message;
+                if (msg.startsWith("Reading ")) {
+                  spinner?.stop();
+                  console.log(`    ${chalk.cyan("→")} ${chalk.cyan("read")} ${chalk.gray(msg.replace("Reading ", ""))}`);
+                  spinner?.start();
+                } else if (msg.startsWith("Running: ")) {
+                  spinner?.stop();
+                  console.log(`    ${chalk.magenta("→")} ${chalk.magenta("exec")} ${chalk.gray(msg.replace("Running: ", ""))}`);
+                  spinner?.start();
+                } else {
+                  spinner?.update(msg);
+                }
+              } else if (event.stage === "attack") {
                 const match = event.message.match(/(\d+)/);
                 if (match) attackTotal = parseInt(match[1], 10);
                 attacksDone = 0;
@@ -389,6 +390,13 @@ program
 
       const output = formatReport(report, format);
       console.log(output);
+
+      // Print shareable report URL
+      if (format === "terminal") {
+        console.log(
+          `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report))}\n`
+        );
+      }
 
       // Exit with non-zero if critical/high findings
       if (report.summary.critical > 0 || report.summary.high > 0) {
@@ -719,10 +727,22 @@ program
       if (format !== "terminal") return;
 
       switch (event.type) {
-        case "stage:start":
-          spinner?.update(event.message);
-          spinner?.start();
+        case "stage:start": {
+          const msg = event.message;
+          if (verbose && msg.startsWith("Reading ")) {
+            spinner?.stop();
+            console.log(`    ${chalk.cyan("→")} ${chalk.cyan("read")} ${chalk.gray(msg.replace("Reading ", ""))}`);
+            spinner?.start();
+          } else if (verbose && msg.startsWith("Running: ")) {
+            spinner?.stop();
+            console.log(`    ${chalk.magenta("→")} ${chalk.magenta("exec")} ${chalk.gray(msg.replace("Running: ", ""))}`);
+            spinner?.start();
+          } else {
+            spinner?.update(msg);
+            spinner?.start();
+          }
           break;
+        }
         case "stage:end":
           spinner?.succeed(event.message);
           break;
@@ -757,6 +777,13 @@ program
 
       const output = formatReviewReport(report, format);
       console.log(output);
+
+      // Print shareable report URL
+      if (format === "terminal") {
+        console.log(
+          `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report))}\n`
+        );
+      }
 
       // Exit with non-zero if critical/high findings
       if (report.summary.critical > 0 || report.summary.high > 0) {
@@ -842,10 +869,22 @@ program
       if (format !== "terminal") return;
 
       switch (event.type) {
-        case "stage:start":
-          spinner?.update(event.message);
-          spinner?.start();
+        case "stage:start": {
+          const msg = event.message;
+          if (verbose && msg.startsWith("Reading ")) {
+            spinner?.stop();
+            console.log(`    ${chalk.cyan("→")} ${chalk.cyan("read")} ${chalk.gray(msg.replace("Reading ", ""))}`);
+            spinner?.start();
+          } else if (verbose && msg.startsWith("Running: ")) {
+            spinner?.stop();
+            console.log(`    ${chalk.magenta("→")} ${chalk.magenta("exec")} ${chalk.gray(msg.replace("Running: ", ""))}`);
+            spinner?.start();
+          } else {
+            spinner?.update(msg);
+            spinner?.start();
+          }
           break;
+        }
         case "stage:end":
           spinner?.succeed(event.message);
           break;
@@ -881,6 +920,13 @@ program
 
       const output = formatAuditReport(report, format);
       console.log(output);
+
+      // Print shareable report URL
+      if (format === "terminal") {
+        console.log(
+          `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report))}\n`
+        );
+      }
 
       // Exit with non-zero if critical/high findings
       if (report.summary.critical > 0 || report.summary.high > 0) {

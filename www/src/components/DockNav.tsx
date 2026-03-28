@@ -87,7 +87,7 @@ export default function DockNav() {
 
         <div className="h-5 w-px bg-white/10 ml-0.5" />
 
-        <a href="/blog/why-i-built-nightfang" className="flex items-center h-9 rounded-lg px-2.5 text-[11px] font-medium text-white/35 hover:text-white/70 transition-colors">Blog</a>
+        <a href="/blog" className="flex items-center h-9 rounded-lg px-2.5 text-[11px] font-medium text-white/35 hover:text-white/70 transition-colors">Blog</a>
 
         <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-1.5 h-9 rounded-lg px-3 bg-white hover:bg-white/90 transition-colors ml-0.5">

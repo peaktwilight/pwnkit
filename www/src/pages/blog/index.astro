@@ -1,0 +1,72 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import DockNav from '../../components/DockNav.tsx';
+
+const posts = [
+  {
+    slug: 'why-i-built-nightfang',
+    title: 'Why I Built Nightfang',
+    date: 'March 27, 2026',
+    datetime: '2026-03-27',
+    description: 'From 7 CVEs and manual pentesting to autonomous AI agents that prove every vulnerability they find.',
+  },
+  {
+    slug: 'how-ai-agents-found-7-cves',
+    title: 'How AI Agents Found 7 CVEs in Popular npm Packages',
+    date: 'March 26, 2026',
+    datetime: '2026-03-26',
+    description: 'A systematic workflow using Claude Opus to audit open-source packages led to 73 findings, 7 published CVEs, and 40M+ weekly downloads affected.',
+  },
+  {
+    slug: 'the-age-of-agentic-security',
+    title: 'The Age of Agentic Security',
+    date: 'March 26, 2026',
+    datetime: '2026-03-26',
+    description: 'If AI agents can write 1,000 pull requests a week, AI agents should be testing 1,000 pull requests a week. The asymmetry is about to collapse.',
+  },
+];
+---
+
+<Layout title="Blog - Nightfang">
+
+  <DockNav client:load />
+
+  <main class="pt-28 pb-24">
+    <div class="max-w-2xl mx-auto px-6">
+
+      <header class="mb-16">
+        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight mb-3">Blog</h1>
+        <p class="text-smoke text-lg">Writing about AI security, agentic pentesting, and the vulnerabilities we find.</p>
+      </header>
+
+      <ul class="space-y-10 list-none pl-0">
+        {posts.map((post) => (
+          <li>
+            <a href={`/blog/${post.slug}`} class="group block">
+              <time datetime={post.datetime} class="text-sm text-ash">{post.date}</time>
+              <h2 class="text-xl font-semibold text-white mt-1 mb-2 group-hover:text-crimson transition-colors">{post.title}</h2>
+              <p class="text-smoke leading-relaxed">{post.description}</p>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+    </div>
+  </main>
+
+  <footer class="border-t border-white/5 py-8">
+    <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ash">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-sm bg-crimson inline-block"></span>
+        <span>nightfang</span>
+        <span>&middot;</span>
+        <span>MIT License</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/peaktwilight/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">GitHub</a>
+        <a href="https://github.com/peaktwilight/nightfang/issues" target="_blank" rel="noopener" class="hover:text-white transition-colors">Issues</a>
+        <a href="https://www.npmjs.com/package/nightfang" target="_blank" rel="noopener" class="hover:text-white transition-colors">npm</a>
+      </div>
+    </div>
+  </footer>
+</Layout>
