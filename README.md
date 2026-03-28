@@ -14,6 +14,7 @@
   <a href="https://github.com/peaktwilight/nightfang/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license" /></a>
   <a href="https://github.com/peaktwilight/nightfang/actions"><img src="https://img.shields.io/github/actions/workflow/status/peaktwilight/nightfang/ci.yml?style=flat-square" alt="CI" /></a>
   <a href="https://github.com/peaktwilight/nightfang/stargazers"><img src="https://img.shields.io/github/stars/peaktwilight/nightfang?style=flat-square&color=gold" alt="stars" /></a>
+  <a href="https://github.com/peaktwilight/nightfang/actions/workflows/self-scan.yml"><img src="https://nightfang.dev/badge/peaktwilight/nightfang" alt="nightfang verified" /></a>
 </p>
 
 <p align="center">
@@ -246,6 +247,21 @@ jobs:
 > **API Key Priority:** Nightfang checks for `OPENROUTER_API_KEY` first, then `ANTHROPIC_API_KEY`, then `OPENAI_API_KEY`. OpenRouter gives you access to many models (including free ones) through a single key at [openrouter.ai](https://openrouter.ai).
 
 Findings show up directly in the **Security** tab of your repository.
+
+### Badge
+
+Add a Nightfang badge to your README:
+
+```markdown
+[![nightfang](https://nightfang.dev/badge/YOUR_ORG/YOUR_REPO)](https://github.com/YOUR_ORG/YOUR_REPO/actions)
+```
+
+The badge auto-updates from your GitHub Actions scan results. Shows `verified` (green), finding counts (yellow/red), or `not scanned` (gray).
+
+Also available as a [shields.io endpoint](https://shields.io/endpoint):
+```
+https://img.shields.io/endpoint?url=https://nightfang.dev/badge/YOUR_ORG/YOUR_REPO/shield
+```
 
 ## Findings Management
 
