@@ -105,8 +105,6 @@ function createInstancedMesh(
 
 const VoxelCharacter = () => {
   const bodyRef = useRef<THREE.Group>(null);
-  const leftLegRef = useRef<THREE.Group>(null);
-  const rightLegRef = useRef<THREE.Group>(null);
   const wholeRef = useRef<THREE.Group>(null);
   const mouseRef = useRef({ x: 0, y: 0 });
 
@@ -245,25 +243,9 @@ const VoxelCharacter = () => {
         {bodyMeshes.eyes && <primitive object={bodyMeshes.eyes} />}
       </group>
 
-      {/* Left leg — pivots from hip */}
-      <group position={[0, legPivotY, 0]}>
-        <group ref={leftLegRef}>
-          <group position={[0, -legPivotY, 0]}>
-            {leftLegMeshes.outline && <primitive object={leftLegMeshes.outline} />}
-            {leftLegMeshes.fill && <primitive object={leftLegMeshes.fill} />}
-          </group>
-        </group>
-      </group>
-
-      {/* Right leg — pivots from hip */}
-      <group position={[0, legPivotY, 0]}>
-        <group ref={rightLegRef}>
-          <group position={[0, -legPivotY, 0]}>
-            {rightLegMeshes.outline && <primitive object={rightLegMeshes.outline} />}
-            {rightLegMeshes.fill && <primitive object={rightLegMeshes.fill} />}
-          </group>
-        </group>
-      </group>
+      {/* Legs (per-voxel shear animation, no group rotation) */}
+      {legMeshes.outline && <primitive object={legMeshes.outline} />}
+      {legMeshes.fill && <primitive object={legMeshes.fill} />}
     </group>
   );
 };
