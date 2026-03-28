@@ -59,10 +59,10 @@ export default function DockNav() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-50"
+      className="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-24px)]"
     >
       <div
-        className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-2xl px-1.5 py-1.5 shadow-2xl shadow-black/30"
+        className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-2xl px-1.5 py-1.5 shadow-2xl shadow-black/30 overflow-x-auto"
         style={{ fontFamily: "'Outfit', sans-serif" }}
       >
         <a href="/" className="flex items-center gap-1.5 h-9 rounded-lg px-2.5 mr-0.5 hover:bg-white/[0.04] transition-colors">
@@ -70,7 +70,7 @@ export default function DockNav() {
           <span className="text-[13px] font-bold text-white tracking-tight leading-none" style={{ fontFamily: "'Outfit', sans-serif" }}>pwnkit</span>
         </a>
 
-        <div className="h-5 w-px bg-white/10" />
+        <div className="h-5 w-px bg-white/10 hidden sm:block" />
 
         {SECTIONS.map((section, i) => {
           const isActive = i === active;
@@ -80,7 +80,7 @@ export default function DockNav() {
               onClick={() => handleClick(section.id)}
               layout="position"
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className={`group relative flex items-center h-9 rounded-lg px-2.5 transition-colors ${
+              className={`group relative hidden sm:flex items-center h-9 rounded-lg px-2.5 transition-colors ${
                 isActive ? "bg-white/[0.08]" : "hover:bg-white/[0.04]"
               }`}
             >
