@@ -5,9 +5,6 @@ on:
   schedule:
     - cron: '0 */6 * * *'  # Every 6 hours
 
-permissions:
-  contents: write
-
 jobs:
   scan:
     runs-on: ubuntu-latest
@@ -28,48 +25,9 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      # Update README
-      - run: |
-          node -e "
-          const fs = require('fs');
-          let results;
-          try {
-            results = JSON.parse(fs.readFileSync('scan-results.json', 'utf8'));
-          } catch {
-            results = { findings: [], summary: { totalFindings: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 } };
-          }
-          const findings = results.findings || [];
-          const summary = results.summary || {};
-          const critical = summary.critical ?? findings.filter(f => f.severity === 'critical').length;
-          const high = summary.high ?? findings.filter(f => f.severity === 'high').length;
-          const medium = summary.medium ?? findings.filter(f => f.severity === 'medium').length;
-          const total = findings.length;
-          const date = new Date().toISOString().slice(0,16).replace('T',' ');
-
-          const badge = '| Stage | Status | Details |' + '\n' +
-            '|-------|--------|---------|' + '\n' +
-            '| Install | Completed | Dependencies audited |' + '\n' +
-            '| npm audit | Completed | ' + total + ' advisories checked |' + '\n' +
-            '| Semgrep | Completed | Static analysis done |' + '\n' +
-            '| Summary | Completed | ' + critical + ' critical, ' + high + ' high, ' + medium + ' medium |' + '\n' +
-            '\n' +
-            '*Last audit: ' + date + ' UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*';
-
-          let readme = fs.readFileSync('README.md', 'utf8');
-          const start = '<!-- SELF-SCAN-START -->';
-          const end = '<!-- SELF-SCAN-END -->';
-          if (readme.includes(start) && readme.includes(end)) {
-            const before = readme.slice(0, readme.indexOf(start) + start.length);
-            const after = readme.slice(readme.indexOf(end));
-            readme = before + '\n\n' + badge + '\n\n' + after;
-            fs.writeFileSync('README.md', readme);
-          }
-          "
-
-      # Commit if changed
-      - run: |
-          git config user.name "Nightfang Self-Scan"
-          git config user.email "scan@nightfang.dev"
-          git add README.md
-          git diff --cached --quiet || git commit -m "chore: update self-scan results [skip ci]"
-          git push || true
+      - name: Upload scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-results
+          path: scan-results.json
+          retention-days: 30

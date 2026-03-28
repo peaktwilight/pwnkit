@@ -37,19 +37,6 @@ Nightfang is an open-source pentesting toolkit that combines four autonomous AI 
 
 One command. Zero config. Every finding verified with proof.
 
-<!-- SELF-SCAN-START -->
-
-| Stage | Status | Details |
-|-------|--------|---------|
-| Install | Completed | Dependencies audited |
-| npm audit | Completed | 0 advisories checked |
-| Semgrep | Completed | Static analysis done |
-| Summary | Completed | 0 critical, 0 high, 0 medium |
-
-*Last audit: 2026-03-28 00:45 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
-
-<!-- SELF-SCAN-END -->
-
 ## Quick Start
 
 ```bash
