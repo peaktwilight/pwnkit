@@ -184,9 +184,18 @@ import DataGridBackground from '../components/DataGridBackground';
     <!-- 5 Commands -->
     <section id="commands" data-section="commands" class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">Five commands. Full coverage.</h2>
-          <p class="text-smoke text-lg max-w-xl mx-auto">Each command is purpose-built for a different attack surface. Zero config, instant results.</p>
+        <div class="text-center mb-6">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">Just give it a target.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">pwnkit auto-detects what you're scanning. Or use explicit commands for full control.</p>
+        </div>
+
+        <!-- Auto-detect examples -->
+        <div class="bg-night-lighter border border-white/5 rounded-xl p-5 mb-8">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+            <div><span class="text-ash">npm package</span><br/><code class="text-white">pwnkit express</code></div>
+            <div><span class="text-ash">your repo</span><br/><code class="text-white">pwnkit ./my-app</code></div>
+            <div><span class="text-ash">website</span><br/><code class="text-white">pwnkit https://example.com --mode web</code></div>
+          </div>
         </div>
 
         <div class="space-y-4">
@@ -196,13 +205,12 @@ import DataGridBackground from '../components/DataGridBackground';
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-3 mb-2">
                   <span class="text-xs font-mono text-crimson bg-crimson/10 px-2 py-0.5 rounded uppercase tracking-wider">scan</span>
-                  <h3 class="font-semibold text-lg">Probe LLM endpoints &amp; MCP servers</h3>
+                  <h3 class="font-semibold text-lg">Scan endpoints, APIs, and web apps</h3>
                 </div>
-                <p class="text-smoke text-sm leading-relaxed mb-3">Discovers vulnerabilities in AI endpoints with 47+ test cases across prompt injection, jailbreaks, tool poisoning, data exfiltration, and more. Supports probe, deep, and MCP modes.</p>
+                <p class="text-smoke text-sm leading-relaxed mb-3">AI endpoints, MCP servers, REST APIs, or full web apps. Autonomous agents probe, attack, and verify. Web mode does SQLi, XSS, SSRF, auth bypass, IDOR.</p>
                 <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp</span>
+                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp|web</span>
                   <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--agentic</span>
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
