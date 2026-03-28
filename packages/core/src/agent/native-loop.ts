@@ -170,25 +170,32 @@ export async function runNativeAgentLoop(
         b.type === "tool_use",
     );
 
-    // If no tool calls and stop_reason is end_turn, agent is done talking
-    if (toolUseBlocks.length === 0 && result.stopReason === "end_turn") {
-      // Extract text summary
+    // If no tool calls, the model responded with text only
+    if (toolUseBlocks.length === 0) {
       const textBlocks = result.content.filter(
         (b): b is Extract<NativeContentBlock, { type: "text" }> => b.type === "text",
       );
-      state.summary = textBlocks.map((b) => b.text).join("\n");
-      state.done = true;
-      break;
-    }
+      const textContent = textBlocks.map((b) => b.text).join("\n");
 
-    // If no tool calls but not end_turn, prompt for action
-    if (toolUseBlocks.length === 0) {
+      // Only allow early exit if the agent has done meaningful work:
+      // - At least 4 turns (read files, ran commands, analyzed code)
+      // - OR explicitly called the done tool (handled below in tool execution)
+      const minTurns = Math.min(4, config.maxTurns);
+      if (state.turnCount >= minTurns && result.stopReason === "end_turn") {
+        state.summary = textContent;
+        state.done = true;
+        break;
+      }
+
+      // Push the agent to keep working
       state.messages.push({
         role: "user",
         content: [
           {
             type: "text",
-            text: "Please use your tools to take action, or call the done tool if you are finished.",
+            text: state.turnCount < 2
+              ? "You must use your tools to analyze the target. Start by reading files and running commands. Do not just describe what you would do — actually do it."
+              : "Continue your analysis. Use read_file to examine source code, run_command to search for patterns, and save_finding for any vulnerabilities. Call the done tool only when you have thoroughly analyzed the code.",
           },
         ],
       });

@@ -1,7 +1,7 @@
 import type { ScanContext, StageResult, TargetInfo } from "@nightfang/shared";
 import type { NativeRuntime, RuntimeType } from "../runtime/types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
-import { ClaudeApiRuntime } from "../runtime/claude-api.js";
+import { LlmApiRuntime } from "../runtime/llm-api.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
 
@@ -17,7 +17,7 @@ export async function runDiscovery(
   // Try agentic discovery first
   let discoveryRuntime: NativeRuntime | null = null;
   try {
-    const rt = new ClaudeApiRuntime({
+    const rt = new LlmApiRuntime({
       type: "api" as RuntimeType,
       timeout: 30_000,
       apiKey: ctx.config.apiKey,

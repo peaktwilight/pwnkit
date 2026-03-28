@@ -1,7 +1,7 @@
 import type { ScanConfig, ScanReport, Finding } from "@nightfang/shared";
 import { loadTemplates } from "@nightfang/templates";
 import { createRuntime } from "./runtime/index.js";
-import { ClaudeApiRuntime } from "./runtime/claude-api.js";
+import { LlmApiRuntime } from "./runtime/llm-api.js";
 // DB lazy-loaded to avoid native module issues
 import { runAgentLoop } from "./agent/loop.js";
 import { runNativeAgentLoop } from "./agent/native-loop.js";
@@ -69,7 +69,7 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
   });
 
   // Try to use native Claude API runtime for structured tool_use
-  const claudeRuntime = new ClaudeApiRuntime({
+  const claudeRuntime = new LlmApiRuntime({
     type: "api",
     timeout: config.timeout ?? 120_000,
     model: config.model,

@@ -12,7 +12,7 @@ import type {
 
 const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-4.6";
-const FREE_OPENROUTER_MODEL = "nvidia/nemotron-3-nano-30b-a3b:free";
+const FREE_OPENROUTER_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 const DEFAULT_OPENAI_MODEL = "gpt-4o";
 
 type ApiProvider = "openrouter" | "anthropic" | "openai";
@@ -110,7 +110,7 @@ function detectProvider(configApiKey?: string): {
  * - Legacy: single-prompt execute() for backward compat with existing agent loop
  * - Native: structured multi-turn messages with tool_use for the new agent loop
  */
-export class ClaudeApiRuntime implements Runtime, NativeRuntime {
+export class LlmApiRuntime implements Runtime, NativeRuntime {
   readonly type = "api" as const;
   private config: RuntimeConfig;
   private provider: ApiProvider;
@@ -266,7 +266,9 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
       // Extract text from response (different formats)
       let text: string;
       if (this.isOpenAICompat) {
-        text = json.choices?.[0]?.message?.content ?? "";
+        const msg = json.choices?.[0]?.message;
+        // Some models (reasoning models) return content: null with reasoning field
+        text = msg?.content ?? msg?.reasoning ?? "";
       } else {
         text =
           json.content
@@ -441,8 +443,10 @@ export class ClaudeApiRuntime implements Runtime, NativeRuntime {
         const msg = choice?.message;
         content = [];
 
-        if (msg?.content) {
-          content.push({ type: "text", text: msg.content });
+        // Handle reasoning models that return content: null with reasoning field
+        const textContent = msg?.content ?? msg?.reasoning;
+        if (textContent) {
+          content.push({ type: "text", text: textContent });
         }
         if (msg?.tool_calls) {
           for (const tc of msg.tool_calls) {

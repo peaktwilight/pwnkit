@@ -7,7 +7,7 @@ import type {
 } from "@nightfang/shared";
 import { loadTemplateById } from "@nightfang/templates";
 import type { NativeRuntime, RuntimeType } from "../runtime/types.js";
-import { ClaudeApiRuntime } from "../runtime/claude-api.js";
+import { LlmApiRuntime } from "../runtime/llm-api.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
 
@@ -100,7 +100,7 @@ export async function runVerification(
   // Try to create a verification runtime
   let verifyRuntime: NativeRuntime | null = null;
   try {
-    const rt = new ClaudeApiRuntime({
+    const rt = new LlmApiRuntime({
       type: "api" as RuntimeType,
       timeout: 60_000,
       apiKey: ctx.config.apiKey,

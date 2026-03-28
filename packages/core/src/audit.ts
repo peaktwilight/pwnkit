@@ -16,7 +16,7 @@ import type { ScanEvent, ScanListener } from "./scanner.js";
 // DB lazy-loaded to avoid native module issues
 import { createRuntime } from "./runtime/index.js";
 import type { RuntimeType } from "./runtime/index.js";
-import { ClaudeApiRuntime } from "./runtime/claude-api.js";
+import { LlmApiRuntime } from "./runtime/llm-api.js";
 import { detectAvailableRuntimes, pickRuntimeForStage } from "./runtime/registry.js";
 import { runAgentLoop } from "./agent/loop.js";
 import { runNativeAgentLoop } from "./agent/native-loop.js";
@@ -639,7 +639,7 @@ async function runAuditAgent(
       message: "Running agentic source code analysis via API...",
     });
 
-    const apiRuntime = new ClaudeApiRuntime({
+    const apiRuntime = new LlmApiRuntime({
       type: "api" as RuntimeType,
       timeout: config.timeout ?? 120_000,
       apiKey: config.apiKey,
