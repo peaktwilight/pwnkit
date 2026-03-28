@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/pwnkit"><img src="https://img.shields.io/npm/v/pwnkit?color=crimson&style=flat-square" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/pwnkit-cli"><img src="https://img.shields.io/npm/v/pwnkit-cli?color=crimson&style=flat-square" alt="npm version" /></a>
   <a href="https://github.com/peaktwilight/pwnkit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="license" /></a>
   <a href="https://github.com/peaktwilight/pwnkit/actions"><img src="https://img.shields.io/github/actions/workflow/status/peaktwilight/pwnkit/ci.yml?style=flat-square" alt="CI" /></a>
   <a href="https://github.com/peaktwilight/pwnkit/stargazers"><img src="https://img.shields.io/github/stars/peaktwilight/pwnkit?style=flat-square&color=gold" alt="stars" /></a>
@@ -41,13 +41,13 @@ One command. Zero config. Every finding re-exploited or dropped.
 
 ```bash
 # Scan an LLM endpoint
-npx pwnkit scan --target https://your-app.com/api/chat
+npx pwnkit-cli scan --target https://your-app.com/api/chat
 
 # Audit an npm package for vulnerabilities
-npx pwnkit audit lodash
+npx pwnkit-cli audit lodash
 
 # Deep security review of a codebase
-npx pwnkit review ./my-ai-app
+npx pwnkit-cli review ./my-ai-app
 ```
 
 That's it. pwnkit discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
@@ -58,11 +58,11 @@ pwnkit ships five commands — from quick API probes to deep source-level audits
 
 | Command | What It Does | Example |
 |---------|-------------|---------|
-| **`scan`** | Probe LLM endpoints, MCP servers, and AI APIs for vulnerabilities | `npx pwnkit scan --target https://api.example.com/chat` |
-| **`audit`** | Install and security-audit any npm package with static analysis + AI review | `npx pwnkit audit express@4.18.2` |
-| **`review`** | Deep source code security review of a local repo or GitHub URL | `npx pwnkit review https://github.com/user/repo` |
-| **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit history --limit 20` |
-| **`findings`** | Query, filter, and inspect verified findings across all scans | `npx pwnkit findings list --severity critical` |
+| **`scan`** | Probe LLM endpoints, MCP servers, and AI APIs for vulnerabilities | `npx pwnkit-cli scan --target https://api.example.com/chat` |
+| **`audit`** | Install and security-audit any npm package with static analysis + AI review | `npx pwnkit-cli audit express@4.18.2` |
+| **`review`** | Deep source code security review of a local repo or GitHub URL | `npx pwnkit-cli review https://github.com/user/repo` |
+| **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit-cli history --limit 20` |
+| **`findings`** | Query, filter, and inspect verified findings across all scans | `npx pwnkit-cli findings list --severity critical` |
 
 ## How It Works
 
@@ -103,13 +103,13 @@ The **verification step is the differentiator.** No more triaging 200 "possible 
 See the [demo GIF above](#) for real scan output, or run it yourself:
 
 ```bash
-npx pwnkit scan --target https://your-app.com/api/chat --depth quick
+npx pwnkit-cli scan --target https://your-app.com/api/chat --depth quick
 ```
 
 For a verbose view with the animated attack replay:
 
 ```bash
-npx pwnkit scan --target https://your-app.com/api/chat --verbose
+npx pwnkit-cli scan --target https://your-app.com/api/chat --verbose
 ```
 
 ## Scan Depth & Cost
@@ -124,22 +124,22 @@ Default model is `anthropic/claude-sonnet-4.6` via [OpenRouter](https://openrout
 
 ```bash
 # Quick scan for CI
-npx pwnkit scan --target https://api.example.com/chat --depth quick
+npx pwnkit-cli scan --target https://api.example.com/chat --depth quick
 
 # Deep audit before launch
-npx pwnkit scan --target https://api.example.com/chat --depth deep
+npx pwnkit-cli scan --target https://api.example.com/chat --depth deep
 
 # Source + API scan with Claude Code
-npx pwnkit scan --target https://api.example.com/chat --runtime claude --mode deep --repo ./src
+npx pwnkit-cli scan --target https://api.example.com/chat --runtime claude --mode deep --repo ./src
 
 # MCP server audit
-npx pwnkit scan --target https://mcp-server.example.com --mode mcp --runtime claude
+npx pwnkit-cli scan --target https://mcp-server.example.com --mode mcp --runtime claude
 
 # Audit an npm package
-npx pwnkit audit react --depth deep --runtime claude
+npx pwnkit-cli audit react --depth deep --runtime claude
 
 # Review a GitHub repo
-npx pwnkit review https://github.com/user/repo --runtime codex --depth deep
+npx pwnkit-cli review https://github.com/user/repo --runtime codex --depth deep
 ```
 
 ## Runtime Modes
@@ -177,7 +177,7 @@ Combined with scan modes:
 | **Source code review** | Yes — AI-powered deep analysis | No | No | Yes — Rules only | No |
 | **OWASP LLM Top 10** | Yes — 8/10 covered | Partial | Partial | N/A | N/A |
 | **SARIF + GitHub Security tab** | Yes — | Yes — | No | Yes — | Yes — |
-| **One command, zero config** | Yes — `npx pwnkit scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
+| **One command, zero config** | Yes — `npx pwnkit-cli scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
 | **Open source** | Yes — MIT | Yes — (acquired by OpenAI) | Yes — | Yes — | Yes — |
 | **Cost per scan** | $0.05–$1.00 | Varies | Free (local) | Free (OSS) / Paid (Pro) | Free |
 
@@ -241,16 +241,16 @@ Every finding is persisted in a local SQLite database. Query across scans:
 
 ```bash
 # List critical findings
-npx pwnkit findings list --severity critical
+npx pwnkit-cli findings list --severity critical
 
 # Filter by category
-npx pwnkit findings list --category prompt-injection --status confirmed
+npx pwnkit-cli findings list --category prompt-injection --status confirmed
 
 # Inspect a specific finding with full evidence
-npx pwnkit findings show NF-001
+npx pwnkit-cli findings show NF-001
 
 # Browse scan history
-npx pwnkit history --limit 10
+npx pwnkit-cli history --limit 10
 ```
 
 Finding lifecycle: `discovered → verified → confirmed → scored → reported` (or `false-positive` if verification fails).
