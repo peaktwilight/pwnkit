@@ -17,7 +17,7 @@ export function registerScanCommand(program: Command): void {
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md", "terminal")
     .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, opencode, auto", "api")
-    .option("--mode <mode>", "Scan mode: probe, deep, mcp", "probe")
+    .option("--mode <mode>", "Scan mode: probe, deep, mcp, web", "probe")
     .option("--repo <path>", "Path to target repo for deep scan source analysis")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
     .option("--agentic", "Use multi-turn agentic scan with tool use and SQLite persistence", false)
@@ -94,8 +94,8 @@ export function registerScanCommand(program: Command): void {
         process.exit(2);
       }
 
-      // Deep and MCP modes require a process runtime
-      if (mode !== "probe" && runtime === "api") {
+      // Deep and MCP modes require a process runtime (web mode works with api runtime)
+      if (mode !== "probe" && mode !== "web" && runtime === "api") {
         console.error(
           chalk.red(`Mode '${mode}' requires a process runtime (claude, codex, gemini, opencode, or auto)`)
         );

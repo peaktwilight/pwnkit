@@ -132,14 +132,46 @@ async function showInteractiveMenu(): Promise<void> {
   }
 }
 
-// ── Entry point: interactive menu or standard CLI ──
+// ── Smart target detection: pwnkit <target> auto-routes ──
+function detectAndRoute(target: string): string[] | null {
+  // Local directory → review
+  if (target.startsWith("./") || target.startsWith("/") || target === ".") {
+    return ["review", target];
+  }
+  // GitHub URL → review
+  if (target.startsWith("https://github.com/") || target.startsWith("git@")) {
+    return ["review", target];
+  }
+  // HTTP URL → scan (user can add --mode web for web pentest)
+  if (target.startsWith("http://") || target.startsWith("https://")) {
+    return ["scan", "--target", target];
+  }
+  // Looks like npm package (letters, hyphens, scoped) → audit
+  if (/^(@[a-z0-9-]+\/)?[a-z0-9][a-z0-9._-]*(@.*)?$/.test(target)) {
+    return ["audit", target];
+  }
+  return null;
+}
+
+// ── Entry point ──
 const userArgs = process.argv.slice(2);
+const knownCommands = ["scan", "replay", "history", "findings", "review", "audit", "help"];
 
 if (userArgs.length === 0) {
   showInteractiveMenu().catch((err) => {
     console.error(chalk.red(err instanceof Error ? err.message : String(err)));
     process.exit(2);
   });
+} else if (userArgs.length >= 1 && !knownCommands.includes(userArgs[0]) && !userArgs[0].startsWith("-")) {
+  // Smart routing: pwnkit <target> → auto-detect command
+  const route = detectAndRoute(userArgs[0]);
+  if (route) {
+    const extraArgs = userArgs.slice(1); // pass through any flags
+    process.argv = [process.argv[0], process.argv[1], ...route, ...extraArgs];
+    program.parse();
+  } else {
+    program.parse(); // let commander handle unknown commands
+  }
 } else {
   program.parse();
 }

@@ -1,7 +1,7 @@
 {
   "name": "pwnkit-cli",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "AI-powered agentic security scanner. Scan endpoints, audit packages, review source code. Autonomous agents discover, attack, verify, and report.",
   "bin": {
     "pwnkit": "dist/index.js"

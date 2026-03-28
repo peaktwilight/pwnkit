@@ -5,7 +5,7 @@ import DockNav from '../components/DockNav';
 import DataGridBackground from '../components/DataGridBackground';
 ---
 
-<Layout title="pwnkit - Open-source agentic harness for autonomous security research">
+<Layout title="pwnkit - Open-source agentic framework for autonomous security research">
 
 
   <main>
@@ -21,16 +21,25 @@ import DataGridBackground from '../components/DataGridBackground';
             AI writes the code.<br/><span class="text-crimson">pwnkit hacks it.</span>
           </h1>
           <p class="text-lg sm:text-xl text-smoke max-w-2xl mx-auto mb-4 leading-relaxed">
-            Open-source agentic harness for autonomous security research.
+            Open-source agentic framework for autonomous security research.
           </p>
-          <p class="text-sm text-ash max-w-xl mx-auto mb-10">
-            Agents that read code, craft attacks, and re-exploit to kill false positives &middot; Built from <a href="https://doruk.ch/blog" class="text-white/70 underline underline-offset-2 decoration-white/20 hover:decoration-white/50 transition-colors">7 real CVEs</a> in packages with 40M+ downloads
+          <p class="text-sm text-white/50 max-w-lg mx-auto mb-3">
+            Not just detection &mdash; exploit-backed proof of every finding.
+          </p>
+          <p class="text-xs text-ash max-w-md mx-auto mb-10">
+            Built from <a href="https://doruk.ch/blog" class="text-white/60 underline underline-offset-2 decoration-white/20 hover:decoration-white/50 transition-colors">7 real CVEs</a> in packages with 40M+ downloads &middot; General-purpose autonomous pentesting
           </p>
         </div>
 
         <!-- CTA -->
         <div class="flex flex-col items-center gap-4 mb-16 animate-fade-up" style="animation-delay: 0.2s">
-          <code class="bg-night-lighter border border-white/10 rounded-lg px-5 py-3 text-sm font-mono text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">npx pwnkit-cli audit <span class="text-crimson/70">your-package</span></code>
+          <div class="copy-wrap relative inline-flex items-center group">
+            <code class="bg-night-lighter border border-white/10 rounded-lg px-5 py-3 pr-11 text-sm font-mono text-white select-all cursor-pointer hover:border-crimson/30 transition-colors" data-copy="npx pwnkit-cli audit your-package">npx pwnkit-cli audit <span class="text-crimson/70">your-package</span></code>
+            <button class="copy-btn absolute right-2 p-1.5 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli audit your-package">
+              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <svg class="w-4 h-4 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+            </button>
+          </div>
           <a href="https://github.com/peaktwilight/pwnkit" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white hover:bg-white/90 text-black font-medium rounded-lg px-6 py-3 transition-colors text-sm">
             View on GitHub
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -128,8 +137,8 @@ import DataGridBackground from '../components/DataGridBackground';
     <section class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
         <div class="text-center mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">One toolkit. Five attack surfaces.</h2>
-          <p class="text-smoke text-lg max-w-xl mx-auto">From LLM endpoints to npm packages to git repos &mdash; pwnkit finds what scanners miss.</p>
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">General-purpose autonomous pentesting.</h2>
+          <p class="text-smoke text-lg max-w-xl mx-auto">Web apps, APIs, npm packages, source code, AI endpoints &mdash; pwnkit finds what scanners miss.</p>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -166,7 +175,7 @@ import DataGridBackground from '../components/DataGridBackground';
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">Web Apps</h3>
-            <p class="text-xs text-ash">AI copilots, RAG pipelines, agent APIs</p>
+            <p class="text-xs text-ash">SQLi, XSS, SSRF, auth bypass, IDOR, full pentest</p>
           </div>
         </div>
       </div>
@@ -197,7 +206,13 @@ import DataGridBackground from '../components/DataGridBackground';
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all overflow-x-auto">npx pwnkit-cli scan --target &lt;url&gt;</code>
+                <div class="copy-wrap relative flex items-center">
+                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli scan --target <url>">npx pwnkit-cli scan --target &lt;url&gt;</code>
+                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli scan --target <url>">
+                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -217,7 +232,13 @@ import DataGridBackground from '../components/DataGridBackground';
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all overflow-x-auto">npx pwnkit-cli audit &lt;package&gt;</code>
+                <div class="copy-wrap relative flex items-center">
+                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli audit <package>">npx pwnkit-cli audit &lt;package&gt;</code>
+                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli audit <package>">
+                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -237,7 +258,13 @@ import DataGridBackground from '../components/DataGridBackground';
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all overflow-x-auto">npx pwnkit-cli review &lt;repo&gt;</code>
+                <div class="copy-wrap relative flex items-center">
+                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli review <repo>">npx pwnkit-cli review &lt;repo&gt;</code>
+                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli review <repo>">
+                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -257,7 +284,13 @@ import DataGridBackground from '../components/DataGridBackground';
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all overflow-x-auto">npx pwnkit-cli findings list</code>
+                <div class="copy-wrap relative flex items-center">
+                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli findings list">npx pwnkit-cli findings list</code>
+                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli findings list">
+                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -277,7 +310,13 @@ import DataGridBackground from '../components/DataGridBackground';
                 </div>
               </div>
               <div class="lg:w-[340px] shrink-0">
-                <code class="block bg-night border border-white/5 rounded-lg px-4 py-3 font-mono text-xs text-smoke select-all overflow-x-auto">npx pwnkit-cli history</code>
+                <div class="copy-wrap relative flex items-center">
+                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli history">npx pwnkit-cli history</code>
+                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli history">
+                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -549,9 +588,15 @@ import DataGridBackground from '../components/DataGridBackground';
         </h2>
         <p class="text-smoke text-lg mb-10">Five commands. Real vulnerabilities. Proof of exploitability.</p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 font-mono text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">
-            npx pwnkit-cli scan --target &lt;url&gt;
-          </code>
+          <div class="copy-wrap relative inline-flex items-center group">
+            <code class="block bg-night-lighter border border-white/10 rounded-lg px-6 py-3 pr-12 font-mono text-sm text-white select-all cursor-pointer hover:border-crimson/30 transition-colors" data-copy="npx pwnkit-cli scan --target <url>">
+              npx pwnkit-cli scan --target &lt;url&gt;
+            </code>
+            <button class="copy-btn absolute right-2 p-1.5 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli scan --target <url>">
+              <svg class="w-4 h-4 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              <svg class="w-4 h-4 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+            </button>
+          </div>
           <a href="https://github.com/peaktwilight/pwnkit" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white hover:bg-white/90 text-black font-medium rounded-lg px-6 py-3 transition-colors">
             Star on GitHub
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
@@ -578,4 +623,24 @@ import DataGridBackground from '../components/DataGridBackground';
     </div>
   </footer>
   <DockNav client:load />
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const text = (btn as HTMLElement).dataset.copy || '';
+      await navigator.clipboard.writeText(text);
+      const copyIcon = btn.querySelector('.copy-icon') as HTMLElement;
+      const checkIcon = btn.querySelector('.check-icon') as HTMLElement;
+      copyIcon.classList.add('hidden');
+      checkIcon.classList.remove('hidden');
+      checkIcon.style.color = '#22c55e';
+      setTimeout(() => {
+        copyIcon.classList.remove('hidden');
+        checkIcon.classList.add('hidden');
+        checkIcon.style.color = '';
+      }, 1500);
+    });
+  });
+</script>
 </Layout>
