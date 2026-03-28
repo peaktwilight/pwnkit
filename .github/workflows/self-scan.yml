@@ -20,8 +20,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
 
-      # Audit nightfang's own dependencies (dogfooding)
-      - run: node packages/cli/dist/index.js audit better-sqlite3 --format json --runtime api --model free > scan-results.json 2>&1 || true
+      # Review nightfang's own source code (dogfooding)
+      - run: node packages/cli/dist/index.js review . --format json --runtime api --model free --depth default > scan-results.json 2>&1 || true
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
