@@ -56,11 +56,16 @@ export class ProcessRuntime implements Runtime {
                   if (block.type === "text") {
                     resultText += block.text;
                   } else if (block.type === "tool_use") {
-                    // Show tool calls live
+                    // Show tool calls live with clean formatting
                     if (process.stderr.isTTY) {
                       const name = block.name || "tool";
-                      const input = typeof block.input === "object" ? JSON.stringify(block.input).slice(0, 80) : "";
-                      process.stderr.write(dim(`    → ${name} ${input}\n`));
+                      const inp = block.input as Record<string, unknown> | undefined;
+                      let detail = "";
+                      if (inp?.file_path) detail = String(inp.file_path).split("/").slice(-2).join("/");
+                      else if (inp?.command) detail = String(inp.command).slice(0, 60);
+                      else if (inp?.pattern) detail = String(inp.pattern).slice(0, 40);
+                      else if (inp?.content) detail = "(writing file)";
+                      process.stderr.write(dim(`    ${name}${detail ? ": " + detail : ""}\n`));
                     }
                   }
                 }
