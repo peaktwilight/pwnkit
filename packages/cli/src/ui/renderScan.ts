@@ -59,7 +59,7 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
       rerender = () => setTick((t) => t + 1);
       return () => { rerender = null; };
     }, []);
-    return React.createElement(ScanUI, { stages, summary, thinking });
+    return React.createElement(ScanUI, { stages, summary, thinking, target: opts.target, mode: opts.mode });
   }
 
   const instance = render(React.createElement(App));

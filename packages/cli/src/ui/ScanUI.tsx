@@ -161,11 +161,40 @@ function SummaryBar({ summary }: { summary: ScanSummary }) {
   );
 }
 
+// ── Banner with animated fang character ──
+
+function Banner({ target, mode }: { target: string; mode: string }) {
+  // Fang character in ASCII — the pwnkit mascot
+  const fang = [
+    "   ╱▔▔╲   ",
+    "  ╱ ◉◉ ╲  ",
+    " ╱ ╲▁▁╱ ╲ ",
+    " ╲ ╱  ╲ ╱ ",
+    "  ▔    ▔  ",
+  ];
+
+  return (
+    <Box flexDirection="row" marginBottom={1}>
+      <Box flexDirection="column" marginRight={2}>
+        {fang.map((line, i) => (
+          <Text key={i} color={CRIMSON}>{line}</Text>
+        ))}
+      </Box>
+      <Box flexDirection="column" justifyContent="center">
+        <Text color={CRIMSON} bold>pwnkit</Text>
+        <Text color={GRAY}>{mode} {target}</Text>
+        <Text color={GRAY} dimColor>Apache 2.0 — pwnkit.com</Text>
+      </Box>
+    </Box>
+  );
+}
+
 // ── Main ──
 
-export function ScanUI({ stages, summary, thinking }: ScanUIProps) {
+export function ScanUI({ stages, summary, thinking, target, mode }: ScanUIProps & { target?: string; mode?: string }) {
   return (
     <Box flexDirection="column">
+      <Banner target={target ?? ""} mode={mode ?? ""} />
       {stages.map((stage) => (
         <StageRow key={stage.id} stage={stage} />
       ))}
