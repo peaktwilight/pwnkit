@@ -161,26 +161,11 @@ function SummaryBar({ summary }: { summary: ScanSummary }) {
   );
 }
 
-// ── Banner ──
-
-function Banner({ target, mode }: { target: string; mode: string }) {
-  return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Box gap={1}>
-        <Text color={CRIMSON} bold>pwnkit</Text>
-        <Text color={GRAY}>{mode}</Text>
-        <Text color={GRAY} dimColor>{target}</Text>
-      </Box>
-    </Box>
-  );
-}
-
 // ── Main ──
 
-export function ScanUI({ stages, summary, thinking, target, mode }: ScanUIProps & { target?: string; mode?: string }) {
+export function ScanUI({ stages, summary, thinking }: ScanUIProps) {
   return (
     <Box flexDirection="column">
-      <Banner target={target ?? ""} mode={mode ?? ""} />
       {stages.map((stage) => (
         <StageRow key={stage.id} stage={stage} />
       ))}

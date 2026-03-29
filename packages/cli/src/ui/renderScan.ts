@@ -53,13 +53,25 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   // Track which discovery sub-step we're on (install vs npm-audit)
   let discoveryStep = 0; // 0 = install, 1 = npm-audit
 
+  // Static banner — printed once before Ink takes over (won't re-render)
+  const r = "\x1b[31m";    // red/crimson
+  const d = "\x1b[2m";     // dim
+  const b = "\x1b[1m";     // bold
+  const x = "\x1b[0m";     // reset
+  const c = "\x1b[36m";    // cyan
+
+  console.log("");
+  console.log(`  ${r}${b}◆ pwnkit${x} ${d}${opts.mode}${x}`);
+  console.log(`  ${d}${opts.target}${x}`);
+  console.log("");
+
   function App() {
     const [tick, setTick] = useState(0);
     useEffect(() => {
       rerender = () => setTick((t) => t + 1);
       return () => { rerender = null; };
     }, []);
-    return React.createElement(ScanUI, { stages, summary, thinking, target: opts.target, mode: opts.mode });
+    return React.createElement(ScanUI, { stages, summary, thinking });
   }
 
   const instance = render(React.createElement(App));
