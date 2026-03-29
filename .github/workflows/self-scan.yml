@@ -29,7 +29,9 @@ jobs:
             --runtime api \
             --depth default \
             --timeout 300000 \
+            --verbose \
             > scan-results.json 2> scan-stderr.log || true
+          echo "Exit code: $?"
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
@@ -69,8 +71,8 @@ jobs:
           fi
           if [ -s scan-stderr.log ]; then
             echo ""
-            echo "=== Stderr ==="
-            tail -20 scan-stderr.log
+            echo "=== Stderr (last 50 lines) ==="
+            tail -50 scan-stderr.log
           fi
 
       - name: Upload scan results

@@ -491,6 +491,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     const availableRuntimes = await detectAvailableRuntimes();
     const hasCliRuntime = availableRuntimes.size > 0;
 
+    emit({ type: "stage:start", stage: "research", message: `AI capabilities: apiKey=${hasApiKey}, cliRuntimes=[${[...availableRuntimes].join(",")}], runtime=${opts.runtime ?? "auto"}` });
+
     if (!hasApiKey && !hasCliRuntime) {
       warnings.push({ stage: "research", message: "No API key or CLI runtime available. AI analysis skipped. Set OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY." });
       emit({ type: "stage:end", stage: "research", message: "Skipped — no API key or CLI runtime" });
