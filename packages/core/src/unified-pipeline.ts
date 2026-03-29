@@ -594,7 +594,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
               });
 
               const confirmed = verifiedFindings.length > 0;
-              return { finding, confirmed, verifiedFinding: verifiedFindings[0] ?? null };
+              const rejectionReason = confirmed ? undefined : "Could not independently reproduce";
+              return { finding, confirmed, verifiedFinding: verifiedFindings[0] ?? null, rejectionReason };
             } catch (err) {
               // If verification fails, keep the finding (fail-open)
               const msg = err instanceof Error ? err.message : String(err);
@@ -609,7 +610,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
         let rejectedCount = 0;
 
         findings = verifyResults
-          .map(({ finding, confirmed, verifiedFinding }) => {
+          .map(({ finding, confirmed, verifiedFinding, rejectionReason }) => {
             if (confirmed) {
               confirmedCount++;
               emit({ type: "verify:result", message: `Confirmed: ${finding.title}`, data: { confirmed: true, title: finding.title } });
@@ -621,7 +622,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
               };
             } else {
               rejectedCount++;
-              emit({ type: "verify:result", message: `Rejected: ${finding.title}`, data: { confirmed: false, title: finding.title } });
+              emit({ type: "verify:result", message: `Rejected: ${finding.title}`, data: { confirmed: false, title: finding.title, reason: rejectionReason ?? "Could not independently reproduce" } });
               return { ...finding, status: "false-positive" as Finding["status"] };
             }
           });

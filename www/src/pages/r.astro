@@ -116,6 +116,15 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </section>
 
+      <!-- Verification section (injected by JS if findings have verify data) -->
+      <section id="verification-section" class="fade-up" style="animation-delay:0.24s;margin-top:2.5rem;display:none">
+        <h2 style="font-family:'Outfit',sans-serif;font-size:1rem;font-weight:600;color:#a3a3a3;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 0.5rem">Verification</h2>
+        <p id="verification-summary" style="font-family:'Space Mono',monospace;font-size:0.72rem;color:#525252;margin:0 0 1rem"></p>
+        <div id="verification-list" style="display:flex;flex-direction:column;gap:0.5rem">
+          <!-- Verification items injected by JS -->
+        </div>
+      </section>
+
     </main>
 
     <!-- Footer -->

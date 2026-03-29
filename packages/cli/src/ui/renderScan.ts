@@ -167,10 +167,12 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     if (event.type === "verify:result") {
       const data = event.data as any;
       const confirmed = data?.confirmed;
-      const msg2 = event.message ?? "";
+      const title = data?.title ?? event.message;
+      const reason = data?.reason;
+      const label = confirmed ? `\u2713 ${title}` : `\u2717 ${title}${reason ? ` \u2014 ${reason}` : ""}`;
       updateStage("verify", (s) => ({
         ...s,
-        actions: [...s.actions, `${confirmed ? "\u2713" : "\u2717"} ${msg2}`],
+        actions: [...s.actions, label],
       }));
       return;
     }
