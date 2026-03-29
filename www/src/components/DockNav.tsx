@@ -13,7 +13,8 @@ export default function DockNav() {
   const [active, setActive] = useState(-1);
   const [isHomepage, setIsHomepage] = useState(false);
   const [isBlogPage, setIsBlogPage] = useState(false);
-  const [showLogo, setShowLogo] = useState(false);
+  const [showLogo, setShowLogo] = useState(true); // default true for mobile/SSR
+  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -21,15 +22,20 @@ export default function DockNav() {
     setIsHomepage(onHome);
     setIsBlogPage(path.startsWith("/blog"));
 
+    // Check if mobile (no hover = touch device, or narrow viewport)
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
     if (!onHome) {
       setShowLogo(true);
       setActive(-1);
-      return;
+      return () => window.removeEventListener("resize", checkMobile);
     }
 
     const onScroll = () => {
-      // Show logo once scrolled past the 3D character area (~350px)
-      setShowLogo(window.scrollY > 350);
+      // On mobile: always show logo. On desktop: show after scrolling past character
+      setShowLogo(isMobile || window.scrollY > 350);
 
       // Active section tracking
       const ids = [...SECTIONS.map(s => s.id)].reverse();
@@ -47,8 +53,11 @@ export default function DockNav() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, [isMobile]);
 
   const handleClick = (id: string) => {
     if (isHomepage) {
