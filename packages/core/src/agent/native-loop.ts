@@ -195,9 +195,7 @@ export async function runNativeAgentLoop(
         content: [
           {
             type: "text",
-            text: state.turnCount < 2
-              ? "You must use your tools to analyze the target. Start by reading files and running commands. Do not just describe what you would do — actually do it."
-              : "Continue your analysis. Use read_file to examine source code, run_command to search for patterns, and save_finding for any vulnerabilities. Call the done tool only when you have thoroughly analyzed the code.",
+            text: buildContinuePrompt(config, state.turnCount),
           },
         ],
       });
@@ -303,6 +301,23 @@ function buildInitialPrompt(config: NativeAgentConfig): string {
     "",
     "Use your tools to accomplish your task. When done, call the done tool with a summary.",
   ].join("\n");
+}
+
+function buildContinuePrompt(config: NativeAgentConfig, turnCount: number): string {
+  switch (config.role) {
+    case "discovery":
+    case "attack":
+    case "verify":
+      return turnCount < 2
+        ? "You must use your target interaction tools. Start by sending prompts or HTTP requests to the configured target. Do not just describe what you would do."
+        : "Continue testing the configured target. Use send_prompt or http_request, record confirmed findings with save_finding, and call done only when the target has been thoroughly assessed.";
+    case "audit":
+    case "review":
+    default:
+      return turnCount < 2
+        ? "You must use your tools to analyze the target. Start by reading files and running commands. Do not just describe what you would do — actually do it."
+        : "Continue your analysis. Use read_file to examine source code, run_command to search for patterns, and save_finding for any vulnerabilities. Call the done tool only when you have thoroughly analyzed the code.";
+  }
 }
 
 function toNativeToolDef(tool: ToolDefinition): NativeToolDef {

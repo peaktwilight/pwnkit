@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { isAbsolute, resolve } from "node:path";
+import { isIP } from "node:net";
 import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
@@ -261,6 +262,17 @@ function isCommandAllowed(tokens: string[]): boolean {
   return true;
 }
 
+function validateCommandTokens(tokens: string[]): void {
+  if (tokens[0] === "find") {
+    const dangerousFindArgs = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
+    for (const token of tokens.slice(1)) {
+      if (dangerousFindArgs.has(token)) {
+        throw new Error(`find subcommand ${token} is not allowed`);
+      }
+    }
+  }
+}
+
 function resolveScopedPath(scopePath: string, inputPath: string): string {
   const root = resolve(scopePath);
   const candidate = isAbsolute(inputPath)
@@ -283,6 +295,57 @@ function validateScopedCommand(tokens: string[]): void {
       throw new Error(`Parent-path traversal is not allowed in scoped commands: ${token}`);
     }
   }
+}
+
+function normalizeLoopbackHost(hostname: string): string {
+  if (hostname === "::1") return "127.0.0.1";
+  return hostname.toLowerCase();
+}
+
+function isPrivateIpv4(hostname: string): boolean {
+  const normalized = normalizeLoopbackHost(hostname);
+  if (isIP(normalized) !== 4) return false;
+
+  const [a, b] = normalized.split(".").map((part) => Number(part));
+  return a === 10
+    || a === 127
+    || (a === 169 && b === 254)
+    || (a === 172 && b >= 16 && b <= 31)
+    || (a === 192 && b === 168);
+}
+
+function isPrivateIpv6(hostname: string): boolean {
+  const normalized = hostname.toLowerCase();
+  return normalized === "::1" || normalized.startsWith("fc") || normalized.startsWith("fd") || normalized.startsWith("fe80:");
+}
+
+function isLocalHostname(hostname: string): boolean {
+  const normalized = normalizeLoopbackHost(hostname);
+  return normalized === "localhost" || normalized.endsWith(".localhost");
+}
+
+function validateTargetUrl(baseUrl: string, requestedUrl: string): string {
+  const base = new URL(baseUrl);
+  const candidate = new URL(requestedUrl, base);
+
+  if (!["http:", "https:"].includes(candidate.protocol)) {
+    throw new Error(`Unsupported protocol for http_request: ${candidate.protocol}`);
+  }
+
+  if (candidate.origin !== base.origin) {
+    throw new Error(`Cross-origin http_request blocked: ${candidate.origin}`);
+  }
+
+  const hostname = candidate.hostname.toLowerCase();
+  const baseHostname = base.hostname.toLowerCase();
+  const baseIsLocal = isLocalHostname(baseHostname) || isPrivateIpv4(baseHostname) || isPrivateIpv6(baseHostname);
+  const candidateIsLocal = isLocalHostname(hostname) || isPrivateIpv4(hostname) || isPrivateIpv6(hostname);
+
+  if (candidateIsLocal && !baseIsLocal) {
+    throw new Error(`Local/internal http_request blocked: ${candidate.hostname}`);
+  }
+
+  return candidate.toString();
 }
 
 // ── Tool Executor ──
@@ -327,7 +390,7 @@ export class ToolExecutor {
   }
 
   private async httpRequest(args: Record<string, unknown>): Promise<ToolResult> {
-    const url = args.url as string;
+    const url = validateTargetUrl(this.ctx.target, args.url as string);
     const method = (args.method as string) ?? "POST";
     const body = args.body as string | undefined;
     const headers = (args.headers as Record<string, string>) ?? {};
@@ -341,6 +404,7 @@ export class ToolExecutor {
         headers: { "Content-Type": "application/json", ...headers },
         body: body ?? undefined,
         signal: controller.signal,
+        redirect: "manual",
       });
 
       clearTimeout(timer);
@@ -432,11 +496,17 @@ export class ToolExecutor {
   }
 
   private readFile(args: Record<string, unknown>): ToolResult {
+    if (!this.ctx.scopePath) {
+      return {
+        success: false,
+        output: null,
+        error: "read_file requires a scoped local directory and is not available for remote target scanning",
+      };
+    }
+
     const requestedPath = args.path as string;
     const maxLines = (args.max_lines as number) ?? 500;
-    const path = this.ctx.scopePath
-      ? resolveScopedPath(this.ctx.scopePath, requestedPath)
-      : requestedPath;
+    const path = resolveScopedPath(this.ctx.scopePath, requestedPath);
 
     const content = readFileSync(path, "utf-8");
     const lines = content.split("\n");
@@ -450,6 +520,14 @@ export class ToolExecutor {
   }
 
   private runCommand(args: Record<string, unknown>): ToolResult {
+    if (!this.ctx.scopePath) {
+      return {
+        success: false,
+        output: null,
+        error: "run_command requires a scoped local directory and is not available for remote target scanning",
+      };
+    }
+
     const command = args.command as string;
     if (DISALLOWED_SHELL_CHARS.test(command)) {
       return {
@@ -480,21 +558,18 @@ export class ToolExecutor {
         };
       }
 
-      if (this.ctx.scopePath) {
-        try {
-          validateScopedCommand(tokens);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          return { success: false, output: null, error: msg };
-        }
+      try {
+        validateCommandTokens(tokens);
+        validateScopedCommand(tokens);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        return { success: false, output: null, error: msg };
       }
     }
 
     const requestedCwd = args.cwd as string | undefined;
     const timeout = (args.timeout as number) ?? 30_000;
-    const cwd = this.ctx.scopePath
-      ? resolveScopedPath(this.ctx.scopePath, requestedCwd ?? ".")
-      : requestedCwd;
+    const cwd = resolveScopedPath(this.ctx.scopePath, requestedCwd ?? ".");
 
     try {
       // Use shell execution for piped commands, direct spawn for simple ones
@@ -584,17 +659,13 @@ export class ToolExecutor {
 export function getToolsForRole(role: string): ToolDefinition[] {
   const common = ["query_findings", "done"];
 
-  // All agents get all tools — the agent decides what to use based on its prompt.
-  // Restricting tools caused agents to loop when they needed a tool they didn't have.
-  const allTools = Object.keys(TOOL_DEFINITIONS);
-
   const roleTools: Record<string, string[]> = {
-    discovery: allTools,
-    attack: allTools,
-    verify: allTools,
+    discovery: ["http_request", "send_prompt", "update_target", "save_finding", ...common],
+    attack: ["http_request", "send_prompt", "save_finding", "update_target", ...common],
+    verify: ["http_request", "send_prompt", "save_finding", "update_finding", "update_target", ...common],
     report: [...common],
-    audit: allTools,
-    review: allTools,
+    audit: Object.keys(TOOL_DEFINITIONS),
+    review: Object.keys(TOOL_DEFINITIONS),
   };
 
   const toolNames = roleTools[role] ?? Object.keys(TOOL_DEFINITIONS);
