@@ -130,9 +130,10 @@ export default function DockNav() {
         <div className="h-5 w-px bg-white/10 ml-0.5 hidden sm:block" />
 
         <div className="flex items-center sm:ml-0">
-          <a href="/blog" className={`flex items-center h-9 rounded-lg px-3 text-[11px] font-medium transition-colors ${
-            isBlogPage ? "text-white bg-white/[0.08]" : "text-white/60 hover:text-white hover:bg-white/[0.04]"
-          }`}>Blog</a>
+          <a href="/blog"
+            className="flex items-center h-9 rounded-lg px-3 bg-white hover:bg-white/90 transition-colors">
+            <span className="text-[11px] font-bold text-black">Blog</span>
+          </a>
         </div>
       </div>
     </motion.header>
