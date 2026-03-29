@@ -161,29 +161,15 @@ function SummaryBar({ summary }: { summary: ScanSummary }) {
   );
 }
 
-// ── Banner with animated fang character ──
+// ── Banner ──
 
 function Banner({ target, mode }: { target: string; mode: string }) {
-  // Fang character in ASCII — the pwnkit mascot
-  const fang = [
-    "   ╱▔▔╲   ",
-    "  ╱ ◉◉ ╲  ",
-    " ╱ ╲▁▁╱ ╲ ",
-    " ╲ ╱  ╲ ╱ ",
-    "  ▔    ▔  ",
-  ];
-
   return (
-    <Box flexDirection="row" marginBottom={1}>
-      <Box flexDirection="column" marginRight={2}>
-        {fang.map((line, i) => (
-          <Text key={i} color={CRIMSON}>{line}</Text>
-        ))}
-      </Box>
-      <Box flexDirection="column" justifyContent="center">
+    <Box flexDirection="column" marginBottom={1}>
+      <Box gap={1}>
         <Text color={CRIMSON} bold>pwnkit</Text>
-        <Text color={GRAY}>{mode} {target}</Text>
-        <Text color={GRAY} dimColor>Apache 2.0 — pwnkit.com</Text>
+        <Text color={GRAY}>{mode}</Text>
+        <Text color={GRAY} dimColor>{target}</Text>
       </Box>
     </Box>
   );
