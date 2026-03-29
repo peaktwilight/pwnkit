@@ -196,8 +196,10 @@ export class ProcessRuntime implements Runtime {
         args.push(prompt);
         return args;
       }
-      case "gemini":
-        return ["-p", prompt];
+      case "gemini": {
+        const args = ["-p", prompt, "--output-format", "stream-json"];
+        return args;
+      }
       case "opencode":
         return ["-p", prompt, "--output", "text"];
       default:
