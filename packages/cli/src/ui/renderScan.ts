@@ -170,10 +170,13 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     }
 
     if (event.type === "finding") {
-      const running = stages.find((s) => s.status === "running");
+      const running = stages.find((s) => s.status === "running") ?? stages.find((s) => s.id === "ai-agent" || s.id === "attack");
       if (running) {
         const severity = (event.data as any)?.severity ?? "info";
-        const title = msg.length > 80 ? msg.slice(0, 80) + "..." : msg;
+        // Clean up title — remove [severity] prefix if present, truncate
+        let title = msg.replace(/^\[[\w]+\]\s*/g, "").trim();
+        if (title.length > 60) title = title.slice(0, 60) + "...";
+        if (!title || title === "Untitled finding") title = "Finding from AI analysis";
         updateStage(running.id, (s) => ({
           ...s,
           findings: [...s.findings, { severity, title }],

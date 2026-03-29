@@ -98,11 +98,11 @@ function StageRow({ stage }: { stage: StageState }) {
         )}
       </Box>
 
-      {/* Tool call actions */}
-      {stage.status === "running" && stage.actions.length > 0 && (
+      {/* Tool call actions — visible during and after execution */}
+      {stage.actions.length > 0 && (
         <Box flexDirection="column" marginLeft={6}>
           {stage.actions.map((action, i) => (
-            <Text key={i} color={CYAN} dimColor>
+            <Text key={i} color={stage.status === "done" ? GRAY : CYAN} dimColor={stage.status === "done"}>
               {"→ "}{action}
             </Text>
           ))}
