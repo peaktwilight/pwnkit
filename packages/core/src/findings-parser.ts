@@ -32,10 +32,23 @@ export function parseFindingsFromCliOutput(
     ) {
       return [];
     }
-    // Agent wrote prose findings — create a single finding from the whole output
+    // Agent wrote prose findings — extract a meaningful title
     if (output.trim().length > 50) {
       const lines = output.trim().split("\n").filter((l) => l.trim().length > 10);
-      const title = lines[0]?.trim().slice(0, 100) || "Security finding from AI analysis";
+      // Skip generic intro lines, find the first substantive title
+      let title = "Security finding from AI analysis";
+      for (const line of lines) {
+        const clean = line.replace(/^#+\s*/, "").replace(/^\*+\s*/, "").replace(/\*+$/, "").trim();
+        if (clean.length < 10) continue;
+        if (clean.toLowerCase().startsWith("based on")) continue;
+        if (clean.toLowerCase().startsWith("i've")) continue;
+        if (clean.toLowerCase().startsWith("here is")) continue;
+        if (clean.toLowerCase().startsWith("here's")) continue;
+        if (clean.toLowerCase().startsWith("the package")) continue;
+        if (clean.toLowerCase().startsWith("audit")) continue;
+        title = clean.slice(0, 80);
+        break;
+      }
       findings.push({
         id: randomUUID(),
         templateId: `${prefix}-${Date.now()}`,
