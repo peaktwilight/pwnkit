@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import DockNav from '../../components/DockNav.tsx';
 ---
 
-<Layout title="Why We Built Blind Verification - How pwnkit Eliminates False Positives" description="The story of how we went from template-based scanning to agentic pentesting to blind verification — and finally killed false positives for good.">
+<Layout title="Why I Built Blind Verification - How pwnkit Eliminates False Positives" description="The story of how I went from template-based scanning to agentic pentesting to blind verification — and finally killed false positives for good.">
 
   <DockNav client:load />
 
@@ -18,10 +18,10 @@ import DockNav from '../../components/DockNav.tsx';
           <span>10 min read</span>
         </div>
         <h1 class="text-3xl sm:text-4xl font-bold tracking-tight leading-tight mb-4">
-          Why We Built Blind Verification
+          Why I Built Blind Verification
         </h1>
         <p class="text-xl text-smoke leading-relaxed">
-          Every security scanner drowns you in false positives. We tried three approaches before we found one that actually works.
+          Every security scanner drowns you in false positives. I tried three approaches before I found one that actually works.
         </p>
       </header>
 
@@ -112,11 +112,11 @@ import DockNav from '../../components/DockNav.tsx';
         </p>
 
         <p>
-          What if we did the same thing with vulnerability verification?
+          What if I did the same thing with vulnerability verification?
         </p>
 
         <p>
-          The research agent does its thing &mdash; discovers attack surfaces, crafts payloads, launches multi-turn attacks, writes PoC code. One long agent session. Then we take <strong class="text-white">only</strong> the PoC code and the file path, strip out all the reasoning and context, and hand it to a completely separate verify agent.
+          The research agent does its thing &mdash; discovers attack surfaces, crafts payloads, launches multi-turn attacks, writes PoC code. One long agent session. Then I take <strong class="text-white">only</strong> the PoC code and the file path, strip out all the reasoning and context, and hand it to a completely separate verify agent.
         </p>
 
         <p>
@@ -239,7 +239,7 @@ const confirmed = verified.filter(v =&gt; v.status === "confirmed");</code>`} />
         </p>
 
         <p>
-          By making it blind, we force the verify agent to build its own understanding from the ground up. It has to:
+          By making it blind, I force the verify agent to build its own understanding from the ground up. It has to:
         </p>
 
         <ul class="list-none space-y-2 pl-0">
@@ -286,7 +286,7 @@ interface VerifyResult {
         </div>
 
         <p>
-          The structured output schema means we get machine-parseable results from every verify agent. No regex parsing of natural language. No "let me summarize my findings" that might miss details. Just a typed verdict we can pipe straight into the report.
+          The structured output schema means I get machine-parseable results from every verify agent. No regex parsing of natural language. No "let me summarize my findings" that might miss details. Just a typed verdict I can pipe straight into the report.
         </p>
 
         <p>
