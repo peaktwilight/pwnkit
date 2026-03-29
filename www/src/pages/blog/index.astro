@@ -1,37 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import DockNav from '../../components/DockNav.tsx';
+import { getCollection } from 'astro:content';
 
-const posts = [
-  {
-    slug: 'blind-verification',
-    title: 'Why I Built Blind Verification',
-    date: 'March 29, 2026',
-    datetime: '2026-03-29',
-    description: 'Every security scanner drowns you in false positives. I tried three approaches before we found one that actually works.',
-  },
-  {
-    slug: 'why-i-built-pwnkit',
-    title: 'Why I Built pwnkit',
-    date: 'March 27, 2026',
-    datetime: '2026-03-27',
-    description: 'From 7 CVEs and manual pentesting to autonomous AI agents that re-exploit every finding to kill false positives.',
-  },
-  {
-    slug: 'how-ai-agents-found-7-cves',
-    title: 'How AI Agents Found 7 CVEs in Popular npm Packages',
-    date: 'March 26, 2026',
-    datetime: '2026-03-26',
-    description: 'A systematic workflow using Claude Opus to audit open-source packages led to 73 findings, 7 published CVEs, and 40M+ weekly downloads affected.',
-  },
-  {
-    slug: 'the-age-of-agentic-security',
-    title: 'The Age of Agentic Security',
-    date: 'March 26, 2026',
-    datetime: '2026-03-26',
-    description: 'If AI agents can write 1,000 pull requests a week, AI agents should be testing 1,000 pull requests a week. The asymmetry is about to collapse.',
-  },
-];
+const posts = (await getCollection('blog')).sort((a, b) =>
+  new Date(b.data.date).getTime() - new Date(a.data.date).getTime()
+);
 ---
 
 <Layout title="Blog - pwnkit">
@@ -47,15 +21,22 @@ const posts = [
       </header>
 
       <ul class="space-y-10 list-none pl-0">
-        {posts.map((post) => (
-          <li>
-            <a href={`/blog/${post.slug}`} class="group block">
-              <time datetime={post.datetime} class="text-sm text-ash">{post.date}</time>
-              <h2 class="text-xl font-semibold text-white mt-1 mb-2 group-hover:text-crimson transition-colors">{post.title}</h2>
-              <p class="text-smoke leading-relaxed">{post.description}</p>
-            </a>
-          </li>
-        ))}
+        {posts.map((post) => {
+          const displayDate = new Date(post.data.date + 'T00:00:00').toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+          return (
+            <li>
+              <a href={`/blog/${post.id}`} class="group block">
+                <time datetime={post.data.date} class="text-sm text-ash">{displayDate}</time>
+                <h2 class="text-xl font-semibold text-white mt-1 mb-2 group-hover:text-crimson transition-colors">{post.data.title}</h2>
+                <p class="text-smoke leading-relaxed">{post.data.description}</p>
+              </a>
+            </li>
+          );
+        })}
       </ul>
 
     </div>
