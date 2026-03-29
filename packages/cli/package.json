@@ -1,9 +1,8 @@
 {
-  "name": "pwnkit",
-  "version": "0.1.0",
+  "name": "pwnkit-cli",
+  "version": "0.3.2",
   "type": "module",
   "bin": {
-    "pwnkit": "dist/index.js",
     "pwnkit-cli": "dist/index.js"
   },
   "files": [
