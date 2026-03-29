@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { render } from "ink";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import cfonts from "cfonts";
+import { VERSION } from "@pwnkit/shared";
 import { ScanUI } from "./ScanUI.js";
 import { buildShareUrl } from "../utils.js";
 import type { ScanEvent, ScanSummary, StageState, StageStatusKind } from "./ScanUI.js";
@@ -20,38 +25,22 @@ interface RenderScanResult {
   setReport: (report: Record<string, unknown>) => void;
 }
 
-function getStages(mode: CommandMode): StageState[] {
-  if (mode === "audit") {
-    return [
-      { id: "install", label: "Install", status: "pending", actions: [], findings: [] },
-      { id: "npm-audit", label: "npm audit", status: "pending", actions: [], findings: [] },
-      { id: "semgrep", label: "Semgrep", status: "pending", actions: [], findings: [] },
-      { id: "ai-agent", label: "AI Agent", status: "pending", actions: [], findings: [] },
-    ];
-  }
-  if (mode === "review") {
-    return [
-      { id: "semgrep", label: "Semgrep", status: "pending", actions: [], findings: [] },
-      { id: "ai-agent", label: "AI Agent", status: "pending", actions: [], findings: [] },
-    ];
-  }
-  // scan
+// Same 4 stages for everything — the pipeline adapts internally
+function getStages(): StageState[] {
   return [
-    { id: "discovery", label: "Discovery", status: "pending", actions: [], findings: [] },
-    { id: "attack", label: "Attack", status: "pending", actions: [], findings: [] },
-    { id: "verify", label: "Verify", status: "pending", actions: [], findings: [] },
-    { id: "report", label: "Report", status: "pending", actions: [], findings: [] },
+    { id: "prepare", label: "Prepare", status: "pending", actions: [], findings: [] },
+    { id: "analyze", label: "Analyze", status: "pending", actions: [], findings: [] },
+    { id: "agent",   label: "Agent",   status: "pending", actions: [], findings: [] },
+    { id: "verify",  label: "Verify",  status: "pending", actions: [], findings: [] },
   ];
 }
 
 export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
-  let stages = getStages(opts.mode);
+  let stages = getStages();
   let summary: ScanSummary | null = null;
   let thinking: string | null = null;
   let rerender: (() => void) | null = null;
 
-  // Track which discovery sub-step we're on (install vs npm-audit)
-  let discoveryStep = 0; // 0 = install, 1 = npm-audit
 
   // Static banner — printed once before Ink takes over (won't re-render)
   const r = "\x1b[31m";    // red/crimson
@@ -59,14 +48,21 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   const b = "\x1b[1m";     // bold
   const x = "\x1b[0m";     // reset
 
+  // Banner
   console.log("");
-  console.log(`${r}      ▄▀▀▀▀▀▄${x}`);
-  console.log(`${r}    ▄▀       ▀▄${x}`);
-  console.log(`${r}   █  ${b}■${x}${r}   ${b}■${x}${r}  █${x}   ${b}pwnkit${x} ${d}${opts.mode}${x}`);
-  console.log(`${r}   █         █${x}   ${d}${opts.target}${x}`);
-  console.log(`${r}    ▀▄     ▄▀${x}    ${d}pwnkit.com${x}`);
-  console.log(`${r}     █▄ ▄█${x}`);
-  console.log(`${r}     ▀▄ ▄▀${x}`);
+  try {
+    cfonts.say(`pwnkit|v${VERSION}`, {
+      font: "tiny",
+      colors: ["red", "gray"],
+      space: false,
+    });
+  } catch {
+    console.log(`  ${r}${b}pwnkit${x} ${d}v${VERSION}${x}`);
+  }
+  const modeLabel = opts.mode === "audit" ? "auditing npm package"
+    : opts.mode === "review" ? "reviewing source code"
+    : "scanning target";
+  console.log(`  ${d}${modeLabel} ${x}${b}${opts.target}${x}`);
   console.log("");
 
   function App() {
@@ -85,104 +81,64 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     rerender?.();
   }
 
+  // Map old event stage names to unified stage IDs
+  function mapStageId(coreStage: string | undefined, msg: string): string | undefined {
+    // New unified pipeline uses these directly
+    if (coreStage === "prepare" || coreStage === "analyze" || coreStage === "agent" || coreStage === "verify") {
+      return coreStage;
+    }
+    // Old event names → unified stages (backwards compat during migration)
+    if (coreStage === "discovery" || coreStage === "source-analysis") {
+      if (msg.toLowerCase().includes("install") || msg.toLowerCase().includes("clone") || msg.toLowerCase().includes("resolv")) return "prepare";
+      return "analyze";
+    }
+    if (coreStage === "attack") return "agent";
+    if (coreStage === "report") return undefined; // handled by setReport
+    return coreStage;
+  }
+
   function onEvent(event: { type: string; stage?: string; message: string; data?: unknown }): void {
     const msg = event.message ?? "";
-    const coreStage = event.stage;
-
-    // === ROUTE EVENTS TO UI STAGES ===
+    const stageId = mapStageId(event.stage, msg);
 
     if (event.type === "stage:start") {
-      // Discovery stage is reused for install + npm-audit
-      if (coreStage === "discovery") {
-        if (discoveryStep === 0) {
-          updateStage("install", (s) => ({ ...s, status: "running", detail: msg }));
-        } else {
-          updateStage("npm-audit", (s) => ({ ...s, status: "running", detail: msg }));
-        }
-        return;
-      }
+      if (!stageId) return;
+      const current = stages.find((s) => s.id === stageId);
 
-      if (coreStage === "source-analysis") {
-        updateStage("semgrep", (s) => ({ ...s, status: "running", detail: msg }));
-        return;
-      }
-
-      if (coreStage === "attack") {
-        // Check if AI Agent is already running — if so, this is a tool call
-        const aiStage = stages.find((s) => s.id === "ai-agent" || s.id === "attack");
-        if (aiStage && aiStage.status === "running") {
-          // Tool call action
-          updateStage(aiStage.id, (s) => ({
-            ...s,
-            actions: [...s.actions, msg].slice(-6),
-          }));
-        } else {
-          // First start of AI agent
-          const id = stages.find((s) => s.id === "ai-agent") ? "ai-agent" : "attack";
-          const detail = msg.replace("claude", "Claude Code").replace("codex", "Codex");
-          updateStage(id, (s) => ({ ...s, status: "running", detail }));
+      if (current?.status === "running") {
+        // Already running — this is a tool call / sub-action
+        updateStage(stageId, (s) => ({
+          ...s,
+          actions: [...s.actions, msg].slice(-6),
+        }));
+      } else {
+        // New stage start
+        let detail = msg;
+        if (stageId === "agent") {
+          // Show which runtime was picked
+          const lower = msg.toLowerCase();
+          if (lower.includes("claude")) detail = "Claude Code (auto-detected)";
+          else if (lower.includes("codex")) detail = "Codex (auto-detected)";
+          else if (lower.includes("gemini")) detail = "Gemini (auto-detected)";
+          else if (lower.includes("agentic") || lower.includes("api")) detail = "API agent (OpenRouter)";
         }
-        return;
+        updateStage(stageId, (s) => ({ ...s, status: "running", detail }));
       }
-
-      // Scan mode stages
-      if (coreStage === "verify" || coreStage === "report" || coreStage === "discovery") {
-        const id = coreStage;
-        if (stages.find((s) => s.id === id)) {
-          const current = stages.find((s) => s.id === id);
-          if (current?.status === "running") {
-            updateStage(id, (s) => ({ ...s, actions: [...s.actions, msg].slice(-6) }));
-          } else {
-            updateStage(id, (s) => ({ ...s, status: "running", detail: msg }));
-          }
-        }
-        return;
-      }
+      return;
     }
 
     if (event.type === "stage:end") {
-      if (coreStage === "discovery") {
-        if (discoveryStep === 0) {
-          updateStage("install", (s) => ({
-            ...s, status: "done", detail: msg, duration: (event.data as any)?.durationMs,
-          }));
-          discoveryStep = 1;
-        } else {
-          updateStage("npm-audit", (s) => ({
-            ...s, status: "done", detail: msg, duration: (event.data as any)?.durationMs,
-          }));
-        }
-        return;
-      }
-
-      if (coreStage === "source-analysis") {
-        updateStage("semgrep", (s) => ({
-          ...s, status: "done", detail: msg, duration: (event.data as any)?.durationMs,
-        }));
-        return;
-      }
-
-      if (coreStage === "attack") {
-        const id = stages.find((s) => s.id === "ai-agent") ? "ai-agent" : "attack";
-        updateStage(id, (s) => ({
-          ...s, status: "done", detail: msg, duration: (event.data as any)?.durationMs,
-        }));
-        return;
-      }
-
-      if (coreStage === "report") {
-        // "Audit complete" / "Review complete" — this is the final event
-        // Don't update a stage, it'll be handled by setReport
-        return;
-      }
-
-      // Generic stage end
-      if (coreStage && stages.find((s) => s.id === coreStage)) {
-        updateStage(coreStage, (s) => ({
-          ...s, status: "done", detail: msg, duration: (event.data as any)?.durationMs,
-        }));
-        return;
-      }
+      if (!stageId) return;
+      // Truncate long detail text and clean up
+      let detail = msg.length > 60 ? msg.slice(0, 60) + "..." : msg;
+      updateStage(stageId, (s) => ({
+        ...s,
+        status: "done",
+        detail,
+        actions: s.actions.slice(0, 4), // keep max 4 actions after completion
+        duration: (event.data as any)?.durationMs ?? s.duration,
+      }));
+      return;
     }
 
     if (event.type === "finding") {

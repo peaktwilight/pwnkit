@@ -1,7 +1,7 @@
 export { runAgentLoop, parseToolCalls } from "./loop.js";
 export { runNativeAgentLoop } from "./native-loop.js";
 export { ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./tools.js";
-export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt } from "./prompts.js";
+export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt, sourceVerifyPrompt } from "./prompts.js";
 export type {
   AgentRole,
   AgentConfig,

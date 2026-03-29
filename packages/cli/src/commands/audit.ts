@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import chalk from "chalk";
 import { VERSION } from "@pwnkit/shared";
 import type { ScanDepth, OutputFormat, RuntimeMode } from "@pwnkit/shared";
-import { createRuntime, packageAudit } from "@pwnkit/core";
+import { createRuntime, packageAudit, runPipeline } from "@pwnkit/core";
 import { formatAuditReport } from "../formatters/index.js";
 import { createpwnkitSpinner } from "../spinner.js";
 import { createEventHandler } from "../event-handler.js";
@@ -75,33 +75,47 @@ export function registerAuditCommand(program: Command): void {
       }
 
       try {
-        const report = await packageAudit({
-          config: {
-            package: packageName,
-            version: opts.version as string | undefined,
-            depth,
-            format,
-            runtime,
-            timeout: parseInt(opts.timeout as string, 10),
-            verbose,
-            dbPath: opts.dbPath as string | undefined,
-            apiKey: opts.apiKey as string | undefined,
-            model: opts.model as string | undefined,
-          },
-          onEvent: eventHandler,
-        });
+        // Use unified pipeline for Ink TUI, legacy packageAudit for json/md
+        const report = useInkUI
+          ? await runPipeline({
+              target: packageName,
+              targetType: "npm-package",
+              depth,
+              format,
+              runtime,
+              onEvent: eventHandler,
+              dbPath: opts.dbPath as string | undefined,
+              apiKey: opts.apiKey as string | undefined,
+              model: opts.model as string | undefined,
+              timeout: parseInt(opts.timeout as string, 10),
+              packageVersion: opts.version as string | undefined,
+            })
+          : await packageAudit({
+              config: {
+                package: packageName,
+                version: opts.version as string | undefined,
+                depth,
+                format,
+                runtime,
+                timeout: parseInt(opts.timeout as string, 10),
+                verbose,
+                dbPath: opts.dbPath as string | undefined,
+                apiKey: opts.apiKey as string | undefined,
+                model: opts.model as string | undefined,
+              },
+              onEvent: eventHandler,
+            });
 
         if (inkUI) {
-          // Set report data for Ink UI to render summary
           inkUI.setReport(report as any);
           await inkUI.waitForExit();
         } else {
-          const output = formatAuditReport(report, format);
+          const output = formatAuditReport(report as any, format);
           console.log(output);
 
           if (format === "terminal") {
             console.log(
-              `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report))}\n`
+              `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report as any))}\n`
             );
           }
         }

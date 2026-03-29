@@ -23,9 +23,19 @@ export type { PackageAuditOptions } from "./audit.js";
 export { sourceReview } from "./review.js";
 export type { SourceReviewOptions } from "./review.js";
 
+// Unified pipeline: prepare + static analysis
+export { prepare, detectTargetType } from "./prepare.js";
+export type { TargetType, PrepareResult, PrepareOptions } from "./prepare.js";
+export { runStaticAnalysis } from "./static-analysis.js";
+export type { StaticAnalysisResult } from "./static-analysis.js";
+
+// Unified pipeline
+export { runPipeline } from "./unified-pipeline.js";
+export type { PipelineOptions, PipelineReport } from "./unified-pipeline.js";
+
 // Agent system
 export { runAgentLoop, runNativeAgentLoop, ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./agent/index.js";
-export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt } from "./agent/prompts.js";
+export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt, sourceVerifyPrompt } from "./agent/prompts.js";
 export type {
   AgentRole,
   AgentConfig,
