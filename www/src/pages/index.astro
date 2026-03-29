@@ -12,11 +12,19 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
   <main>
 
     <!-- Hero -->
-    <section data-section="hero" class="relative min-h-screen pt-24 pb-16 overflow-hidden">
+    <section data-section="hero" class="relative min-h-screen pt-12 pb-16 overflow-hidden">
       <div class="max-w-6xl mx-auto px-6 text-center">
         <!-- 3D pwnkit character -->
         <div class="animate-fade-up">
           <PwnkitHero3D client:only="react" />
+        </div>
+
+        <!-- Sentinel: when this scrolls out of view, nav becomes sticky -->
+        <div id="nav-sentinel"></div>
+
+        <!-- Nav sits here in flow, below the character -->
+        <div class="flex justify-center animate-fade-up mb-8">
+          <DockNav client:load />
         </div>
 
         <div class="animate-fade-up">
@@ -490,7 +498,6 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
       </div>
     </div>
   </footer>
-  <DockNav client:load />
 
 <script>
   document.querySelectorAll('.copy-btn').forEach(btn => {
