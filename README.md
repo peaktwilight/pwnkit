@@ -134,15 +134,15 @@ For a verbose view with the animated attack replay:
 npx pwnkit-cli scan --target https://your-app.com/api/chat --verbose
 ```
 
-## Scan Depth & Cost
+## Scan Depth
 
-| Depth | Test Cases | Time | Estimated Cost |
-|-------|-----------|------|----------------|
-| `quick` | ~15 | ~1 min | $0.05–$0.15 |
-| `default` | ~50 | ~3 min | $0.15–$0.50 |
-| `deep` | ~150 | ~10 min | $0.50–$1.00 |
+| Depth | Test Cases | Time |
+|-------|-----------|------|
+| `quick` | ~15 | ~1 min |
+| `default` | ~50 | ~3 min |
+| `deep` | ~150 | ~10 min |
 
-Default model is `anthropic/claude-sonnet-4.6` via [OpenRouter](https://openrouter.ai). Free tier available with `--model free`. You can also use OpenAI, Anthropic direct, or local models via Ollama.
+pwnkit is an agentic harness — bring your own AI. Use your API key (OpenRouter, Anthropic, OpenAI, Ollama), or use the Claude Code CLI or Codex CLI with your existing subscription via `--runtime claude` or `--runtime codex`.
 
 ```bash
 # Quick scan for CI
@@ -206,7 +206,7 @@ Combined with scan modes:
 | **SARIF + GitHub Security tab** | Yes | Yes | No | Yes | Yes |
 | **One command, zero config** | Yes — `npx pwnkit-cli scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
 | **Open source** | Yes — Apache-2.0 | Yes — (acquired by OpenAI) | Yes — MIT | Yes — LGPL / Paid Pro | Yes — MIT |
-| **Cost per scan** | $0.05–$1.00 | Varies | Free (local) | Free (OSS) / Paid (Pro) | Free |
+| **Pricing** | Free + bring your own AI | Varies | Free (local) | Free (OSS) / Paid (Pro) | Free |
 
 pwnkit isn't replacing semgrep or nuclei — it covers the AI-specific attack surface they can't see. Use them together.
 

@@ -147,30 +147,29 @@ import DockNav from '../../components/DockNav.tsx';
           That's why pwnkit has five commands, not one. <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">scan</code> for endpoints, <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">audit</code> for packages, <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">review</code> for source code, plus <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">findings</code> and <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">history</code> to track everything.
         </p>
 
-        <h2 class="text-xl font-semibold text-white mt-10 mb-4">The cost question</h2>
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">Bring your own tools</h2>
 
         <p>
-          AI-powered tools have a cost problem. Most teams won't adopt something that burns $50 per scan. pwnkit is designed to be cheap enough for CI/CD:
+          pwnkit is an agentic harness &mdash; it doesn't come with its own AI model. You bring your own:
         </p>
 
         <ul class="list-none space-y-2 pl-0">
           <li class="flex items-start gap-3">
             <span class="text-ash mt-1 shrink-0">&mdash;</span>
-            <span><strong class="text-white">Quick scan:</strong> ~$0.05, under 1 minute. Run it on every PR.</span>
+            <span><strong class="text-white">API mode:</strong> Use your own API key (OpenRouter, Anthropic, OpenAI). Pay per token.</span>
           </li>
           <li class="flex items-start gap-3">
             <span class="text-ash mt-1 shrink-0">&mdash;</span>
-            <span><strong class="text-white">Default scan:</strong> ~$0.15, 3 minutes. Balanced coverage for staging.</span>
+            <span><strong class="text-white">Claude Code CLI:</strong> Use <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">--runtime claude</code> to run scans through your Claude Code subscription.</span>
           </li>
           <li class="flex items-start gap-3">
             <span class="text-ash mt-1 shrink-0">&mdash;</span>
-            <span><strong class="text-white">Deep scan:</strong> ~$1.00, 10 minutes. Pre-launch audit.</span>
+            <span><strong class="text-white">Codex CLI:</strong> Use <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">--runtime codex</code> to run through Codex. Great for verification and code review.</span>
           </li>
         </ul>
 
         <p>
-          That's cheaper than one hour of manual pentesting. And it runs every time you push, not once a quarter.
-        </p>
+          The harness orchestrates the 4-agent pipeline. The model does the thinking. You choose what powers it.</p>
 
         <h2 class="text-xl font-semibold text-white mt-10 mb-4">Try it now</h2>
 
