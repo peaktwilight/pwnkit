@@ -491,7 +491,10 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     const availableRuntimes = await detectAvailableRuntimes();
     const hasCliRuntime = availableRuntimes.size > 0;
 
-    emit({ type: "stage:start", stage: "research", message: `AI capabilities: apiKey=${hasApiKey}, cliRuntimes=[${[...availableRuntimes].join(",")}], runtime=${opts.runtime ?? "auto"}` });
+    // Log pipeline decisions to stderr for CI visibility
+    if (process.env.CI || process.env.PWNKIT_DEBUG) {
+      process.stderr.write(`[pwnkit] Research: apiKey=${hasApiKey}, runtimes=[${[...availableRuntimes].join(",")}], config=${opts.runtime ?? "auto"}\n`);
+    }
 
     if (!hasApiKey && !hasCliRuntime) {
       warnings.push({ stage: "research", message: "No API key or CLI runtime available. AI analysis skipped. Set OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY." });
@@ -527,30 +530,35 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
         targetLabel,
       );
 
-      findings = await runAnalysisAgent({
-        role: prepared.resolvedType === "npm-package" ? "audit" : "review",
-        scopePath: prepared.scopePath,
-        target: prepared.resolvedTarget,
-        scanId,
-        config: {
-          runtime: opts.runtime,
-          timeout: opts.timeout,
-          depth: opts.depth,
-          apiKey: opts.apiKey,
-          model: opts.model,
-        },
-        db,
-        emit: researchEmit,
-        cliPrompt: buildCliPrompt(
-          prepared.scopePath,
-          semgrepFindings,
-          npmAuditFindings,
-          targetLabel,
-        ),
-        agentSystemPrompt,
-        cliSystemPrompt:
-          "You are a security researcher performing an authorized source code audit. For EACH vulnerability you find, output it using the exact ---FINDING--- / ---END--- format specified in the prompt. Do NOT write prose analysis — only output structured finding blocks. If you find no vulnerabilities, say 'No vulnerabilities found.' and nothing else.",
-      });
+      try {
+        findings = await runAnalysisAgent({
+          role: prepared.resolvedType === "npm-package" ? "audit" : "review",
+          scopePath: prepared.scopePath,
+          target: prepared.resolvedTarget,
+          scanId,
+          config: {
+            runtime: opts.runtime,
+            timeout: opts.timeout,
+            depth: opts.depth,
+            apiKey: opts.apiKey,
+            model: opts.model,
+          },
+          db,
+          emit: researchEmit,
+          cliPrompt: buildCliPrompt(
+            prepared.scopePath,
+            semgrepFindings,
+            npmAuditFindings,
+            targetLabel,
+          ),
+          agentSystemPrompt,
+          cliSystemPrompt:
+            "You are a security researcher performing an authorized source code audit. For EACH vulnerability you find, output it using the exact ---FINDING--- / ---END--- format specified in the prompt. Do NOT write prose analysis — only output structured finding blocks. If you find no vulnerabilities, say 'No vulnerabilities found.' and nothing else.",
+        });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        warnings.push({ stage: "research", message: `AI analysis failed: ${msg}` });
+      }
     } else {
       // URL / web-app targets — not supported yet in unified pipeline
       warnings.push({

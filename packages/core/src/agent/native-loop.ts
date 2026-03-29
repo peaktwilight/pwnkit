@@ -148,6 +148,7 @@ export async function runNativeAgentLoop(
     // Handle error or empty response
     if (result.error || (result.content.length === 0 && (!result.usage || result.usage.outputTokens === 0))) {
       const errorMsg = result.error || "API returned empty response (0 tokens) — model may be rate-limited or unavailable";
+      process.stderr.write(`[pwnkit] Agent loop error on turn ${state.turnCount}: ${errorMsg}\n`);
       onEvent?.("agent_error", { turn: state.turnCount, error: errorMsg });
       state.summary = `Error: ${errorMsg}`;
       if (db) {

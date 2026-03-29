@@ -87,6 +87,10 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
     runtimeType = (config.runtime ?? "api") as RuntimeType;
   }
 
+  if (process.env.CI || process.env.PWNKIT_DEBUG) {
+    process.stderr.write(`[pwnkit] agent-runner: type=${runtimeType}, available=[${[...available].join(",")}]\n`);
+  }
+
   // ── Branch 1: CLI runtime fast path (claude/codex/etc.) ──
   if (CLI_RUNTIME_TYPES.has(runtimeType) && available.has(runtimeType)) {
     emit({
@@ -190,6 +194,9 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
 
     // Check if runtime supports native tool_use (multi-turn agentic loop)
     const supportsNative = typeof (apiRuntime as NativeRuntime).executeNative === "function";
+    if (process.env.CI || process.env.PWNKIT_DEBUG) {
+      process.stderr.write(`[pwnkit] API runtime: native=${supportsNative}, model=${config.model ?? "default"}\n`);
+    }
 
     if (supportsNative) {
       const maxTurns = getMaxTurns(role, config.depth, "native");
@@ -230,6 +237,15 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
           }
         },
       });
+
+      // Surface agent errors
+      if (agentState.summary.startsWith("Error:")) {
+        emit({
+          type: "error",
+          stage: "attack",
+          message: agentState.summary,
+        });
+      }
 
       emit({
         type: "stage:end",

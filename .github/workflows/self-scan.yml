@@ -24,14 +24,15 @@ jobs:
       # Dogfood: review pwnkit's own source code
       - name: Run pwnkit self-scan
         run: |
+          # Run with terminal format first to see all output, then extract JSON
           node packages/cli/dist/index.js review . \
             --format json \
             --runtime api \
             --depth default \
             --timeout 300000 \
-            --verbose \
-            > scan-results.json 2> scan-stderr.log || true
-          echo "Exit code: $?"
+            2> scan-stderr.log | tee scan-results.json || true
+          echo "--- stderr ---"
+          cat scan-stderr.log || true
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
