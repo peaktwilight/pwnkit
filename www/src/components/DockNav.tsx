@@ -127,9 +127,7 @@ export default function DockNav() {
           );
         })}
 
-        <div className="h-5 w-px bg-white/10 ml-0.5 hidden sm:block" />
-
-        <div className="flex items-center gap-1 sm:ml-0">
+        <div className="flex items-center gap-1 sm:ml-0.5">
           <a href="/blog"
             className={`flex items-center h-9 rounded-lg px-3 transition-colors ${
               showLogo
