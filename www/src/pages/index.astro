@@ -203,37 +203,34 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
       </div>
     </section>
 
-    <!-- Value props -->
+    <!-- Why pwnkit -->
     <section class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-8">
-          <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        <div class="text-center mb-12">
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">Why pwnkit</h2>
+        </div>
+
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-crimson/20 transition-colors">
+            <div class="w-8 h-8 mb-4 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
             </div>
-            <h3 class="text-lg font-semibold">One command, zero config</h3>
-            <p class="text-smoke text-sm leading-relaxed">No YAML files. No Python environments. Just <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">npx pwnkit-cli your-target</code> and you're running.</p>
+            <h3 class="font-semibold text-sm mb-2">Zero config</h3>
+            <p class="text-xs text-ash leading-relaxed">No YAML. No Python. Just <code class="text-white/60 bg-white/5 px-1 py-0.5 rounded text-[10px]">npx pwnkit-cli</code> and you're running.</p>
           </div>
-          <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-crimson/20 transition-colors">
+            <div class="w-8 h-8 mb-4 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
             </div>
-            <h3 class="text-lg font-semibold">Zero false positives</h3>
-            <p class="text-smoke text-sm leading-relaxed">Every finding is re-exploited with proof before it hits the report. No more triaging 200 "possible prompt injections."</p>
+            <h3 class="font-semibold text-sm mb-2">Blind verification</h3>
+            <p class="text-xs text-ash leading-relaxed">Every finding is independently re-exploited. Can't reproduce it? Killed as a false positive.</p>
           </div>
-          <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-crimson/20 transition-colors">
+            <div class="w-8 h-8 mb-4 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             </div>
-            <h3 class="text-lg font-semibold">Use your own tools</h3>
-            <p class="text-smoke text-sm leading-relaxed">Bring your API key, or use the agentic harness with Claude Code CLI or Codex CLI &mdash; works directly with your existing subscription.</p>
-          </div>
-          <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
-              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-            </div>
-            <h3 class="text-lg font-semibold">LLM agnostic</h3>
-            <p class="text-smoke text-sm leading-relaxed">Works with any model &mdash; Claude, GPT, Ollama, Gemini, or your own fine-tune. Swap providers without changing a single config line.</p>
+            <h3 class="font-semibold text-sm mb-2">Bring your own AI</h3>
+            <p class="text-xs text-ash leading-relaxed">Your API key, or use Claude Code CLI / Codex CLI with your subscription. Any model, any provider.</p>
           </div>
         </div>
       </div>
