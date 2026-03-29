@@ -1,9 +1,10 @@
 name: Self-Scan
+
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
+    - cron: '0 0 * * 1'  # Weekly on Monday
 
 jobs:
   scan:
@@ -20,14 +21,77 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
 
-      # Review pwnkit's own source code (dogfooding)
-      - run: node packages/cli/dist/index.js review . --format json --runtime api --model free --depth default > scan-results.json 2>&1 || true
+      # Dogfood: review pwnkit's own source code
+      - name: Run pwnkit self-scan
+        run: |
+          node packages/cli/dist/index.js review . \
+            --format json \
+            --runtime api \
+            --depth default \
+            --timeout 300000 \
+            > scan-results.json 2> scan-stderr.log || true
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      # Print results in CI
+      - name: Show scan summary
+        run: |
+          echo "=== Scan Results ==="
+          if [ -f scan-results.json ]; then
+            node -e "
+              const r = JSON.parse(require('fs').readFileSync('scan-results.json','utf8'));
+              console.log('Duration: ' + (r.durationMs/1000).toFixed(1) + 's');
+              console.log('Semgrep findings: ' + (r.semgrepFindings ?? 0));
+              console.log('AI findings: ' + r.summary.totalFindings);
+              console.log('  Critical: ' + r.summary.critical);
+              console.log('  High: ' + r.summary.high);
+              console.log('  Medium: ' + r.summary.medium);
+              console.log('  Low: ' + r.summary.low);
+              console.log('  Info: ' + r.summary.info);
+              if (r.findings.length > 0) {
+                console.log('');
+                console.log('=== Findings ===');
+                for (const f of r.findings) {
+                  console.log('[' + f.severity.toUpperCase() + '] ' + f.title);
+                  if (f.file) console.log('  File: ' + f.file);
+                  console.log('  ' + (f.description || '').slice(0, 200));
+                  console.log('');
+                }
+              }
+              if (r.warnings?.length > 0) {
+                console.log('');
+                console.log('=== Warnings ===');
+                for (const w of r.warnings) console.log('[' + w.stage + '] ' + w.message);
+              }
+            "
+          else
+            echo "No scan results file found"
+          fi
+          if [ -s scan-stderr.log ]; then
+            echo ""
+            echo "=== Stderr ==="
+            tail -20 scan-stderr.log
+          fi
 
       - name: Upload scan results
         uses: actions/upload-artifact@v4
         with:
           name: scan-results
-          path: scan-results.json
+          path: |
+            scan-results.json
+            scan-stderr.log
           retention-days: 30
+
+      # Fail CI if critical or high findings
+      - name: Check for critical findings
+        run: |
+          if [ -f scan-results.json ]; then
+            node -e "
+              const r = JSON.parse(require('fs').readFileSync('scan-results.json','utf8'));
+              if (r.summary.critical > 0 || r.summary.high > 0) {
+                console.error('FAIL: ' + r.summary.critical + ' critical, ' + r.summary.high + ' high findings');
+                process.exit(1);
+              }
+              console.log('PASS: no critical/high findings');
+            "
+          fi
