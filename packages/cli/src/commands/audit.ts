@@ -52,25 +52,9 @@ export function registerAuditCommand(program: Command): void {
         }
       }
 
-      // ── Banner ──
-      if (format === "terminal") {
-        console.log("");
-        console.log(
-          chalk.red.bold("  \u25C6 pwnkit audit") + chalk.gray(` v${VERSION}`)
-        );
-        console.log("");
-        console.log(
-          `  ${chalk.gray("Package:")} ${chalk.white.bold(packageName)}${opts.version ? chalk.gray(`@${opts.version}`) : ""}`
-        );
-        console.log(
-          `  ${chalk.gray("Depth:")}   ${chalk.white(depth)}`
-        );
-        if (runtime !== "api") {
-          console.log(
-            `  ${chalk.gray("Runtime:")} ${chalk.white(runtime)}`
-          );
-        }
-        console.log("");
+      // Banner only for non-Ink output (json/md)
+      if (format !== "terminal") {
+        // no banner for json/md
       }
 
       if (format === "terminal") checkRuntimeAvailability();

@@ -199,33 +199,10 @@ function SummaryBar({ summary }: { summary: ScanSummary }) {
 // ── Main Component ──
 
 export function ScanUI({ version, stages, summary }: ScanUIProps) {
-  // Split into completed and active stages
-  const completedStages = stages.filter(
-    (s) => s.status === "done" || s.status === "error"
-  );
-  const activeStages = stages.filter(
-    (s) => s.status !== "done" && s.status !== "error"
-  );
-
   return (
     <Box flexDirection="column">
-      {/* Header */}
-      <Box marginBottom={1}>
-        <Text color={CRIMSON} bold>
-          {"  \u25C6 pwnkit"}
-        </Text>
-        <Text color={GRAY}> v{version}</Text>
-      </Box>
-
-      {/* Completed stages (won't re-render) */}
-      <Static items={completedStages}>
-        {(stage) => (
-          <StageRow key={stage.name} stage={stage} />
-        )}
-      </Static>
-
-      {/* Active + pending stages */}
-      {activeStages.map((stage) => (
+      {/* All stages in order */}
+      {stages.map((stage) => (
         <StageRow key={stage.name} stage={stage} />
       ))}
 
