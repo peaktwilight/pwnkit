@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { writeFileSync } from "node:fs";
-import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult } from "./types.js";
+import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType } from "./types.js";
 
 // Dim the subprocess output so it's visually distinct from pwnkit's own output
 const dim = (text: string) => `\x1b[2m${text}\x1b[0m`;
@@ -38,16 +38,15 @@ const RUNTIME_COMMANDS: Record<string, string> = {
   claude: "claude",
   codex: "codex",
   gemini: "gemini",
-  opencode: "opencode",
 };
 
 export class ProcessRuntime implements Runtime {
-  readonly type: "claude" | "codex" | "gemini" | "opencode";
+  readonly type: RuntimeType;
   private config: RuntimeConfig;
   private command: string;
 
   constructor(config: RuntimeConfig) {
-    this.type = config.type as "claude" | "codex" | "gemini" | "opencode";
+    this.type = config.type as RuntimeType;
     this.config = config;
     this.command = RUNTIME_COMMANDS[config.type] ?? config.type;
   }
@@ -200,8 +199,6 @@ export class ProcessRuntime implements Runtime {
         const args = ["-p", prompt, "--output-format", "stream-json"];
         return args;
       }
-      case "opencode":
-        return ["-p", prompt, "--output", "text"];
       default:
         return ["-p", prompt];
     }

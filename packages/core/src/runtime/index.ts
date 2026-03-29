@@ -32,7 +32,6 @@ export function createRuntime(config: RuntimeConfig): Runtime {
     case "claude":
     case "codex":
     case "gemini":
-    case "opencode":
       return new ProcessRuntime(config);
   }
 }

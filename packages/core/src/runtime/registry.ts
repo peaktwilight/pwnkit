@@ -37,22 +37,15 @@ export const RUNTIME_REGISTRY: readonly RuntimeInfo[] = [
     strengths: ["source-analysis", "report", "discovery"],
     supportsSystemPrompt: false,
   },
-  {
-    type: "opencode",
-    command: "opencode",
-    description: "OpenCode CLI — multi-provider runtime with flexible model selection",
-    strengths: ["source-analysis", "verify", "attack"],
-    supportsSystemPrompt: false,
-  },
 ] as const;
 
 /** Default stage-to-runtime preferences for `--runtime auto`. */
 const STAGE_PREFERENCES: Record<PipelineStage, RuntimeType[]> = {
-  "discovery": ["claude", "codex", "gemini", "opencode"],
-  "source-analysis": ["claude", "gemini", "codex", "opencode"],
-  "attack": ["claude", "codex", "gemini", "opencode"],
-  "verify": ["codex", "claude", "gemini", "opencode"],
-  "report": ["claude", "gemini", "codex", "opencode"],
+  "discovery": ["claude", "codex", "gemini"],
+  "source-analysis": ["claude", "gemini", "codex"],
+  "attack": ["claude", "codex", "gemini"],
+  "verify": ["codex", "claude", "gemini"],
+  "report": ["claude", "gemini", "codex"],
 };
 
 /**

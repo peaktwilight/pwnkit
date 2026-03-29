@@ -8,7 +8,7 @@ import type { ScanListener } from "./scanner.js";
  * run commands, and do multi-turn analysis natively. We bypass our own agent
  * loop and let the CLI handle everything, then parse findings from its output.
  */
-export const CLI_RUNTIME_TYPES = new Set<RuntimeType>(["claude", "codex", "gemini", "opencode"]);
+export const CLI_RUNTIME_TYPES = new Set<RuntimeType>(["claude", "codex", "gemini", ]);
 
 export function bufferToString(value: Buffer | string | undefined): string {
   if (!value) {

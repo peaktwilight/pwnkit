@@ -16,7 +16,7 @@ export function registerAuditCommand(program: Command): void {
     .option("--version <version>", "Specific version to audit (default: latest)")
     .option("--depth <depth>", "Audit depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md", "terminal")
-    .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, opencode, api", "auto")
+    .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, api", "auto")
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider (or set OPENROUTER_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY)")
     .option("--model <model>", "LLM model to use (or set PWNKIT_MODEL)")
@@ -28,7 +28,7 @@ export function registerAuditCommand(program: Command): void {
       const runtime = opts.runtime as RuntimeMode;
       const verbose = opts.verbose as boolean;
 
-      const validRuntimes = ["api", "claude", "codex", "gemini", "opencode", "auto"];
+      const validRuntimes = ["api", "claude", "codex", "gemini", "auto"];
       if (!validRuntimes.includes(runtime)) {
         console.error(
           chalk.red(`Unknown runtime '${runtime}'. Valid: ${validRuntimes.join(", ")}`)

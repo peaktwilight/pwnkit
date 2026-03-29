@@ -485,6 +485,22 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     });
 
     // ── PHASE 3: RESEARCH (single agent: discover + attack + PoC) ──
+    // Check if AI analysis is available
+    const hasApiKey = !!(opts.apiKey || process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY);
+    const { detectAvailableRuntimes } = await import("./runtime/registry.js");
+    const availableRuntimes = await detectAvailableRuntimes();
+    const hasCliRuntime = availableRuntimes.size > 0;
+
+    if (!hasApiKey && !hasCliRuntime) {
+      warnings.push({ stage: "research", message: "No API key or CLI runtime available. AI analysis skipped. Set OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY." });
+      emit({ type: "stage:end", stage: "research", message: "Skipped — no API key or CLI runtime" });
+      emit({ type: "stage:end", stage: "verify", message: "Skipped" });
+      // Skip research + verify, go straight to report
+    }
+
+    let findings: Finding[] = [];
+
+    if (hasApiKey || hasCliRuntime) {
     emit({ type: "stage:start", stage: "research", message: "Researching vulnerabilities..." });
 
     const researchEmit: ScanListener = (event) => {
@@ -495,7 +511,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       }
     };
 
-    let findings: Finding[] = [];
+    
 
     if (prepared.resolvedType === "npm-package" || prepared.resolvedType === "source-code") {
       const targetLabel = prepared.resolvedType === "npm-package"
@@ -638,6 +654,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
         emit({ type: "stage:end", stage: "verify", message: `Verification failed: ${msg}` });
       }
     }
+
+    } // end of hasApiKey || hasCliRuntime else block
 
     // ── BUILD REPORT ──
     const confirmedFindings = findings.filter((f) => f.status !== "false-positive");

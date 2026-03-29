@@ -15,7 +15,7 @@ export function registerReviewCommand(program: Command): void {
     .argument("<repo>", "Local path or git URL to review")
     .option("--depth <depth>", "Review depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md", "terminal")
-    .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, opencode, api", "auto")
+    .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, api", "auto")
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider (or set OPENROUTER_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY)")
     .option("--model <model>", "LLM model to use (or set PWNKIT_MODEL)")

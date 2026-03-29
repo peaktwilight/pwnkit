@@ -2,7 +2,7 @@
 
 export type ScanDepth = "quick" | "default" | "deep";
 export type OutputFormat = "terminal" | "json" | "markdown";
-export type RuntimeMode = "api" | "claude" | "codex" | "gemini" | "opencode" | "auto";
+export type RuntimeMode = "api" | "claude" | "codex" | "gemini" | "auto";
 export type ScanMode = "probe" | "deep" | "mcp" | "web";
 
 export interface ScanConfig {
