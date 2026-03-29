@@ -49,6 +49,7 @@ export interface ScanSummary {
   medium: number;
   low: number;
   info?: number;
+  duration?: number;
   shareUrl?: string;
 }
 

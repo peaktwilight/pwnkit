@@ -4,17 +4,31 @@ import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult } from "./ty
 // Dim the subprocess output so it's visually distinct from pwnkit's own output
 const dim = (text: string) => `\x1b[2m${text}\x1b[0m`;
 
-function showToolCall(name: string | undefined, input: unknown): void {
-  if (!process.stderr.isTTY) return;
-  const toolName = name || "tool";
+function formatToolDetail(input: unknown): string {
   const inp = input as Record<string, unknown> | undefined;
-  let detail = "";
-  if (inp?.file_path) detail = String(inp.file_path).split("/").slice(-2).join("/");
-  else if (inp?.command) detail = String(inp.command).slice(0, 60);
-  else if (inp?.pattern) detail = String(inp.pattern).slice(0, 40);
-  else if (inp?.path) detail = String(inp.path).slice(0, 60);
-  else if (inp?.content) detail = "(writing file)";
-  process.stderr.write(dim(`    ${toolName}${detail ? ": " + detail : ""}\n`));
+  if (inp?.file_path) return String(inp.file_path).split("/").slice(-2).join("/");
+  if (inp?.command) return String(inp.command).slice(0, 60);
+  if (inp?.pattern) return String(inp.pattern).slice(0, 40);
+  if (inp?.path) return String(inp.path).slice(0, 60);
+  if (inp?.content) return "(writing file)";
+  return "";
+}
+
+let _onToolCall: ((name: string, detail: string) => void) | null = null;
+
+function showToolCall(name: string | undefined, input: unknown): void {
+  const toolName = name || "tool";
+  const detail = formatToolDetail(input);
+
+  // Callback for structured consumers (Ink UI)
+  if (_onToolCall) {
+    _onToolCall(toolName, detail);
+  }
+
+  // Fallback: write to stderr for raw terminal display
+  if (process.stderr.isTTY && !_onToolCall) {
+    process.stderr.write(dim(`    ${toolName}${detail ? ": " + detail : ""}\n`));
+  }
 }
 
 const RUNTIME_COMMANDS: Record<string, string> = {
@@ -39,6 +53,9 @@ export class ProcessRuntime implements Runtime {
     const start = Date.now();
     const args = this.buildArgs(prompt, context);
     const env = this.buildEnv(context);
+
+    // Set the tool call callback for this execution
+    _onToolCall = this.config.onToolCall ?? null;
 
     return new Promise((resolve) => {
       let stdout = "";

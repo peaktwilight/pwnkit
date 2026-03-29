@@ -98,8 +98,15 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
     const { ProcessRuntime } = await import("./runtime/process.js");
     const cliRuntime = new ProcessRuntime({
       type: runtimeType,
-      timeout: config.timeout ?? 600_000, // 10 min for deep analysis
+      timeout: config.timeout ?? 600_000,
       cwd: scopePath,
+      onToolCall: (name, detail) => {
+        emit({
+          type: "stage:start",
+          stage: "attack",
+          message: `${name}${detail ? ": " + detail : ""}`,
+        });
+      },
     });
 
     const result = await cliRuntime.execute(cliPrompt, {

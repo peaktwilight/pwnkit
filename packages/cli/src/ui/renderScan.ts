@@ -1,6 +1,7 @@
 import React from "react";
 import { render } from "ink";
 import { ScanUI } from "./ScanUI.js";
+import { buildShareUrl } from "../utils.js";
 import type { ScanEvent, ScanSummary, StageName, StageStatusKind, StageState, StageFinding } from "./ScanUI.js";
 
 // Re-export types for consumers
@@ -111,17 +112,38 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     const stageName = detectStage(event);
 
     switch (event.type) {
-      case "stage:start":
-        if (stageName) {
+      case "stage:start": {
+        if (!stageName) break;
+
+        // Check if this is a tool call action on an already-running stage
+        const currentStage = stages.find((s) => s.name === stageName);
+        const msg = event.message ?? "";
+        const isToolCall = currentStage?.status === "running" && (
+          msg.includes(":") && (
+            msg.startsWith("Read") || msg.startsWith("shell") || msg.startsWith("Bash") ||
+            msg.startsWith("Write") || msg.startsWith("Grep") || msg.startsWith("Glob") ||
+            msg.startsWith("tool") || /^[A-Z][a-z]+:/.test(msg)
+          )
+        );
+
+        if (isToolCall) {
+          // Add as action to running stage
+          updateStage(stageName, (s) => ({
+            ...s,
+            actions: [...(s.actions ?? []), msg].slice(-6),
+          }));
+        } else {
+          // New stage start
           updateStage(stageName, (s) => ({
             ...s,
             status: "running",
-            detail: event.message,
+            detail: msg,
             actions: [],
             findings: [],
           }));
         }
         break;
+      }
 
       case "stage:end":
         if (stageName) {
@@ -182,15 +204,24 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
 
   function setReport(report: {
     summary: { critical: number; high: number; medium: number; low: number; info?: number };
-    shareUrl?: string;
-  }): void {
+    durationMs?: number;
+  } & Record<string, unknown>): void {
+    // Auto-complete any still-pending or running stages
+    stages = stages.map((s) =>
+      s.status === "pending" ? { ...s, status: "done" as StageStatusKind, detail: "skipped" } :
+      s.status === "running" ? { ...s, status: "done" as StageStatusKind } : s
+    );
+
+    const shareUrl = buildShareUrl(report as any);
+
     summary = {
       critical: report.summary.critical,
       high: report.summary.high,
       medium: report.summary.medium,
       low: report.summary.low,
       info: report.summary.info,
-      shareUrl: report.shareUrl,
+      duration: report.durationMs,
+      shareUrl,
     };
     rerender?.();
   }
