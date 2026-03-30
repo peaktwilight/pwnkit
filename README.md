@@ -201,7 +201,7 @@ pwnkit isn't replacing semgrep or nuclei — it covers the AI-specific attack su
 
 ## GitHub Action
 
-Add pwnkit to your CI/CD pipeline:
+Add pwnkit to CI with a single root action. It can review source code, audit npm packages, or scan endpoints, posts a stable PR comment on reruns, and can upload SARIF directly when you set `format: sarif`.
 
 ```yaml
 name: AI Security Scan
@@ -209,6 +209,7 @@ on: [push, pull_request]
 
 permissions:
  contents: read
+ issues: write
  security-events: write
 
 jobs:
@@ -218,23 +219,21 @@ jobs:
    - uses: actions/checkout@v4
 
    - name: Run pwnkit
-    uses: peaktwilight/pwnkit/action@v1
+    uses: peaktwilight/pwnkit@main
     with:
-     target: ${{ secrets.STAGING_API_URL }}
+     mode: review
+     path: .
      depth: default # quick | default | deep
-     fail-on-severity: high # critical | high | medium | low | info | none
+     severity-threshold: high # critical | high | medium | low | info | none
+     threshold: 0 # fail if qualifying findings exceed this count
+     format: sarif # json | sarif
     env:
      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-
-   - name: Upload SARIF
-    uses: github/codeql-action/upload-sarif@v3
-    with:
-     sarif_file: pwnkit-report/report.sarif
 ```
 
 > **API Key Priority:** pwnkit checks for `OPENROUTER_API_KEY` first, then `ANTHROPIC_API_KEY`, then `OPENAI_API_KEY`. OpenRouter gives you access to many models (including free ones) through a single key at [openrouter.ai](https://openrouter.ai).
 
-Findings show up directly in the **Security** tab of your repository.
+Use `mode: audit` with `package: express@latest` for dependency review, or `mode: scan` with `target: https://example.com/api/chat` for endpoint scanning. When `format: sarif` is enabled, findings also show up in the **Security** tab of your repository.
 
 ### Badge
 

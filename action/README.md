@@ -1,6 +1,6 @@
 # pwnkit GitHub Action
 
-Run pwnkit in CI, generate JSON + SARIF artifacts, and fail builds on a configurable severity threshold.
+Run pwnkit in CI from the repo root action, generate JSON + SARIF artifacts, update a single PR comment on reruns, and fail builds on a configurable finding threshold.
 
 ## Usage
 
@@ -10,6 +10,7 @@ on: [push, pull_request]
 
 permissions:
  contents: read
+ issues: write
  security-events: write
 
 jobs:
@@ -19,59 +20,59 @@ jobs:
    - uses: actions/checkout@v4
 
    - name: Run pwnkit
-    uses: peaktwilight/pwnkit/action@v1
+    uses: peaktwilight/pwnkit@main
     with:
-     target: ${{ secrets.STAGING_API_URL }}
+     mode: review
+     path: .
      depth: default
      runtime: api
-     mode: probe
-     fail-on-severity: high
-
-   - name: Upload SARIF
-    uses: github/codeql-action/upload-sarif@v3
-    with:
-     sarif_file: pwnkit-report/report.sarif
+     format: sarif
+     severity-threshold: high
+     threshold: 0
 ```
 
-## Deep Scan Example
+## Endpoint Scan Example
 
-`deep` and `mcp` modes require a process runtime and any needed CLI to already be available on the runner.
+Use `mode: scan` for URLs and choose a scanner sub-mode with `scan-mode`.
 
 ```yaml
 jobs:
- pwnkit-deep:
+ pwnkit-scan:
   runs-on: ubuntu-latest
   steps:
    - uses: actions/checkout@v4
 
-   - name: Install Claude Code CLI
-    run: npm install --global @anthropic-ai/claude-code
-
-   - name: Run pwnkit deep scan
-    uses: peaktwilight/pwnkit/action@v1
+   - name: Run pwnkit scan
+    uses: peaktwilight/pwnkit@main
     with:
+     mode: scan
      target: ${{ secrets.STAGING_API_URL }}
-     runtime: claude
-     mode: deep
-     repo-path: .
-     timeout: 60000
-     fail-on-severity: high
+     scan-mode: probe
+     runtime: api
+     format: sarif
+     threshold: 0
 ```
 
 ## Inputs
 
-- `target` (required): Target URL to scan.
+- `mode` (optional, default `review`): `review`, `audit`, or `scan`.
+- `path` (optional, default `.`): local path to review when `mode=review`.
+- `package` (optional): npm package spec to audit when `mode=audit`.
+- `target` (optional): target URL or `mcp://` endpoint when `mode=scan`.
+- `scan-mode` (optional, default `probe`): `probe`, `deep`, `mcp`, or `web` when `mode=scan`.
 - `depth` (optional, default `default`): `quick`, `default`, or `deep`.
-- `runtime` (optional, default `api`): `api`, `claude`, `codex`, `gemini`, ``, or `auto`.
-- `mode` (optional, default `probe`): `probe`, `deep`, or `mcp`.
-- `repo-path` (optional): Local repo path to analyze during `deep` mode.
-- `timeout` (optional, default `30000`): Request/runtime timeout in milliseconds.
-- `fail-on-severity` (optional, default `high`): `critical`, `high`, `medium`, `low`, `info`, or `none`.
+- `runtime` (optional, default `api`): `api`, `claude`, `codex`, `gemini`, `opencode`, or `auto`.
+- `timeout` (optional, default `300000`): Request/runtime timeout in milliseconds.
+- `format` (optional, default `json`): `json` or `sarif`.
+- `severity-threshold` (optional, default `high`): `critical`, `high`, `medium`, `low`, `info`, or `none`.
+- `threshold` (optional, default `0`): allowed number of findings at or above `severity-threshold` before failing.
 - `report-dir` (optional, default `pwnkit-report`): Output directory for reports.
+- `comment-pr` (optional, default `true`): update a single PR comment with the current findings summary.
 - `pwnkit-version` (optional, default `latest`): npm version of pwnkit-cli to install.
 
 ## Outputs
 
+- `report-file`: Primary report file path.
 - `json-report-file`: Absolute path to generated JSON report.
 - `sarif-report-file`: Absolute path to generated SARIF report.
 - `total-findings`: Number of findings in the report.
