@@ -5,6 +5,7 @@ import { LlmApiRuntime } from "../runtime/llm-api.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
 import { discoverMcpTarget } from "../mcp.js";
+import { runWebDiscoveryProbe } from "./web.js";
 
 export interface DiscoveryResult {
   target: TargetInfo;
@@ -14,6 +15,32 @@ export async function runDiscovery(
   ctx: ScanContext
 ): Promise<StageResult<DiscoveryResult>> {
   const start = Date.now();
+
+  if (ctx.config.mode === "web") {
+    try {
+      const target = await runWebDiscoveryProbe(ctx);
+      ctx.target = target;
+      return {
+        stage: "discovery",
+        success: true,
+        data: { target },
+        durationMs: Date.now() - start,
+      };
+    } catch (err) {
+      return {
+        stage: "discovery",
+        success: false,
+        data: {
+          target: {
+            url: ctx.config.target,
+            type: "web-app",
+          },
+        },
+        durationMs: Date.now() - start,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
 
   if (isMcpTarget(ctx.config.target)) {
     try {

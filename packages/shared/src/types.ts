@@ -42,7 +42,9 @@ export type AttackCategory =
   | "information-disclosure"
   | "ssrf"
   | "sql-injection"
-  | "xss";
+  | "xss"
+  | "cors"
+  | "security-misconfiguration";
 
 export interface AttackTemplate {
   id: string;
@@ -86,7 +88,7 @@ export interface ScanContext {
 
 export interface TargetInfo {
   url: string;
-  type: "api" | "chatbot" | "agent" | "mcp" | "unknown";
+  type: "api" | "chatbot" | "agent" | "mcp" | "web-app" | "unknown";
   endpoints?: string[];
   systemPrompt?: string;
   model?: string;

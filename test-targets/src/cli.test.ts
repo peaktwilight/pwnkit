@@ -81,6 +81,7 @@ describe("CLI E2E", () => {
     const result = run(["scan", "--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("--target");
+    expect(result.stdout).toContain("--mode");
   });
 
   it("share URL generated in audit output", () => {

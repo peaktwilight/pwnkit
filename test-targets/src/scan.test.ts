@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import type { Server } from "http";
+import { createServer, type Server } from "http";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,6 +11,10 @@ let vulnTarget = "";
 let safeTarget = "";
 let vulnMcpTarget = "";
 let safeMcpTarget = "";
+let vulnWebServer: Server;
+let safeWebServer: Server;
+let vulnWebTarget = "";
+let safeWebTarget = "";
 let runScan: (typeof import("../../packages/core/src/scanner.js"))["scan"];
 const testTargetsRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -58,14 +62,82 @@ beforeAll(async () => {
   safeTarget = `http://localhost:${safeStarted.port}/v1/chat/completions`;
   vulnMcpTarget = `http://localhost:${vulnStarted.port}/mcp`;
   safeMcpTarget = `http://localhost:${safeStarted.port}/mcp`;
+
+  const vulnWebStarted = await startWebServer("vulnerable");
+  const safeWebStarted = await startWebServer("safe");
+  vulnWebServer = vulnWebStarted.server;
+  safeWebServer = safeWebStarted.server;
+  vulnWebTarget = vulnWebStarted.target;
+  safeWebTarget = safeWebStarted.target;
 });
 
 afterAll(async () => {
   await Promise.all([
     new Promise<void>((resolve) => vulnServer.close(() => resolve())),
     new Promise<void>((resolve) => safeServer.close(() => resolve())),
+    new Promise<void>((resolve) => vulnWebServer.close(() => resolve())),
+    new Promise<void>((resolve) => safeWebServer.close(() => resolve())),
   ]);
 });
+
+function startWebServer(mode: "vulnerable" | "safe"): Promise<{ server: Server; target: string }> {
+  return new Promise((resolve) => {
+    const server = createServer((req, res) => {
+      if (mode === "vulnerable") {
+        res.setHeader("Server", "nginx/1.24.0");
+        res.setHeader("X-Powered-By", "Express");
+      } else {
+        res.setHeader("Content-Security-Policy", "default-src 'self'");
+        res.setHeader("X-Frame-Options", "DENY");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+      }
+
+      if (req.url === "/") {
+        if (mode === "vulnerable") {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+        }
+        res.statusCode = 200;
+        res.end("<html><body><form action='/login'></form></body></html>");
+        return;
+      }
+
+      if (req.method === "OPTIONS" && req.url === "/") {
+        if (mode === "vulnerable") {
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          res.setHeader("Access-Control-Allow-Credentials", "true");
+          res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+        }
+        res.statusCode = 204;
+        res.end();
+        return;
+      }
+
+      if (req.url === "/.git/config" && mode === "vulnerable") {
+        res.statusCode = 200;
+        res.end("[core]\n\trepositoryformatversion = 0\n[remote \"origin\"]\n\turl = https://example.com/repo.git\n");
+        return;
+      }
+
+      if (req.url === "/server-status" && mode === "vulnerable") {
+        res.statusCode = 200;
+        res.end("Server Version: Apache/2.4.58\nTotal Accesses: 12\nBusyWorkers: 1\n");
+        return;
+      }
+
+      res.statusCode = 404;
+      res.end("Not found");
+    });
+
+    server.listen(0, () => {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        throw new Error("Failed to bind web test server");
+      }
+      resolve({ server, target: `http://localhost:${address.port}/` });
+    });
+  });
+}
 
 describe("Vulnerable server responses", () => {
   it("leaks system prompt on direct ask", async () => {
@@ -255,6 +327,33 @@ describe("pwnkit scan integration", () => {
       depth: "quick",
       format: "json",
       mode: "mcp",
+      timeout: 5000,
+    });
+
+    expect(report.summary.totalFindings).toBe(0);
+  });
+
+  it("finds baseline web issues in web mode", async () => {
+    const report = await runScan({
+      target: vulnWebTarget,
+      depth: "quick",
+      format: "json",
+      mode: "web",
+      timeout: 5000,
+    });
+
+    expect(report.summary.totalFindings).toBeGreaterThanOrEqual(3);
+    expect(report.findings.some((finding) => finding.category === "cors")).toBe(true);
+    expect(report.findings.some((finding) => finding.title.includes("security headers"))).toBe(true);
+    expect(report.findings.some((finding) => finding.title.includes("Git metadata"))).toBe(true);
+  });
+
+  it("returns a clean report for a hardened web target", async () => {
+    const report = await runScan({
+      target: safeWebTarget,
+      depth: "quick",
+      format: "json",
+      mode: "web",
       timeout: 5000,
     });
 

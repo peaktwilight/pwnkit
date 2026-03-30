@@ -12,6 +12,7 @@ import { webPentestPrompt } from "../agent/prompts.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
 import { runMcpSecurityChecks } from "../mcp.js";
+import { runBaselineWebChecks } from "./web.js";
 
 export interface AttackStageResult {
   results: AttackResult[];
@@ -100,6 +101,23 @@ export async function runAttacks(
   runtime: Runtime
 ): Promise<StageResult<AttackStageResult>> {
   const start = Date.now();
+
+  if (ctx.config.mode === "web") {
+    const { results, findings } = await runBaselineWebChecks(ctx);
+    ctx.attacks.push(...results);
+    ctx.findings.push(...findings);
+
+    return {
+      stage: "attack",
+      success: true,
+      data: {
+        results,
+        templatesRun: results.length,
+        payloadsRun: results.length,
+      },
+      durationMs: Date.now() - start,
+    };
+  }
 
   if (ctx.config.mode === "mcp") {
     const { results, findings } = await runMcpSecurityChecks(ctx);

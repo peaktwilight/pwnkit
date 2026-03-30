@@ -32,20 +32,15 @@ case "$RUNTIME" in
 esac
 
 case "$MODE" in
-  probe|deep|mcp) ;;
+  probe|deep|mcp|web) ;;
   *)
-    echo "::error::Invalid mode '$MODE'. Expected one of: probe, deep, mcp"
+    echo "::error::Invalid mode '$MODE'. Expected one of: probe, deep, mcp, web"
     exit 1
     ;;
 esac
 
 if [[ ! "$TIMEOUT" =~ ^[0-9]+$ ]]; then
   echo "::error::Invalid timeout '$TIMEOUT'. Expected an integer number of milliseconds"
-  exit 1
-fi
-
-if [[ "$MODE" != "probe" && "$RUNTIME" == "api" ]]; then
-  echo "::error::Mode '$MODE' requires a process runtime (claude, codex, gemini, opencode, or auto)"
   exit 1
 fi
 

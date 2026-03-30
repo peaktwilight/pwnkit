@@ -15,7 +15,7 @@ inputs:
   required: false
   default: api
  mode:
-  description: Scan mode (probe, deep, mcp).
+  description: Scan mode (probe, deep, mcp, web).
   required: false
   default: probe
  repo-path:

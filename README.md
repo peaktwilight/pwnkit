@@ -43,6 +43,9 @@ One command. Zero config. Every finding re-exploited or dropped.
 # Scan an LLM endpoint
 npx pwnkit-cli scan --target https://your-app.com/api/chat
 
+# Scan a traditional web app for CORS, header, and exposure issues
+npx pwnkit-cli scan --target https://example.com --mode web
+
 # Audit an npm package for vulnerabilities
 npx pwnkit-cli audit lodash
 
@@ -78,7 +81,7 @@ pwnkit ships five commands — from quick API probes to deep source-level audits
 
 | Command | What It Does | Example |
 |---------|-------------|---------|
-| **`scan`** | Probe LLM endpoints and AI APIs for vulnerabilities | `npx pwnkit-cli scan --target https://api.example.com/chat` |
+| **`scan`** | Probe LLM endpoints or web apps for vulnerabilities | `npx pwnkit-cli scan --target https://api.example.com/chat` |
 | **`audit`** | Install and security-audit any npm package with static analysis + AI review | `npx pwnkit-cli audit express@4.18.2` |
 | **`review`** | Deep source code security review of a local repo or GitHub URL | `npx pwnkit-cli review https://github.com/user/repo` |
 | **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit-cli history --limit 20` |
@@ -113,6 +116,7 @@ The **blind verification is the differentiator.** The verify agent can't be bias
 | Target | Command | How |
 |--------|---------|-----|
 | **LLM Endpoints** — ChatGPT, Claude, Llama APIs, custom chatbots | `pwnkit-cli scan --target <url>` | HTTP probing + multi-turn agent attacks |
+| **Web Apps** — Traditional websites and HTTP services | `pwnkit-cli scan --target <url> --mode web` | Deterministic checks for CORS, security headers, exposed files, and fingerprint leakage |
 | **npm Packages** — Dependency supply chain, malicious code | `pwnkit-cli audit <package>` | Installs in sandbox, runs semgrep + AI code review |
 | **Git Repositories** — Source-level security review | `pwnkit-cli review <path-or-url>` | Deep analysis with Claude Code, Codex, or Gemini CLI |
 | **Auto-detect** — Give it anything | `pwnkit-cli <target>` | URL, package name, or path — pwnkit-cli figures it out |
@@ -144,6 +148,9 @@ pwnkit is an agentic harness — bring your own AI. Use your API key (OpenRouter
 ```bash
 # Quick scan for CI
 npx pwnkit-cli scan --target https://api.example.com/chat --depth quick
+
+# Baseline web app pentest
+npx pwnkit-cli scan --target https://example.com --mode web
 
 # Deep audit before launch
 npx pwnkit-cli scan --target https://api.example.com/chat --depth deep

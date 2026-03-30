@@ -12,6 +12,7 @@ export function registerScanCommand(program: Command): void {
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md", "terminal")
     .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, auto", "auto")
+    .option("--mode <mode>", "Scan mode: probe, deep, mcp, web")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider")
@@ -55,7 +56,16 @@ export function registerScanCommand(program: Command): void {
         }
       }
 
-      const mode = (String(opts.target).startsWith("mcp://") ? "mcp" : "deep") as ScanMode;
+      const mode = (opts.mode
+        ? String(opts.mode)
+        : String(opts.target).startsWith("mcp://")
+          ? "mcp"
+          : "deep") as ScanMode;
+      const validModes = new Set<ScanMode>(["probe", "deep", "mcp", "web"]);
+      if (!validModes.has(mode)) {
+        console.error(chalk.red(`Unknown mode '${mode}'. Valid: ${[...validModes].join(", ")}`));
+        process.exit(2);
+      }
 
       await runUnified({
         target: opts.target,

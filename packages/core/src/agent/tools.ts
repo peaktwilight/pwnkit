@@ -76,6 +76,8 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
           "ssrf",
           "sql-injection",
           "xss",
+          "cors",
+          "security-misconfiguration",
         ],
       },
       template_id: { type: "string", description: "ID of the attack template used" },
@@ -151,7 +153,7 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
       type: {
         type: "string",
         description: "Target type",
-        enum: ["api", "chatbot", "agent", "unknown"],
+        enum: ["api", "chatbot", "agent", "mcp", "web-app", "unknown"],
       },
       model: { type: "string", description: "Detected model name" },
       system_prompt: { type: "string", description: "Extracted system prompt" },
