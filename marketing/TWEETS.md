@@ -6,7 +6,7 @@ Each tweet works independently. Pair each with the indicated screenshot.
 
 ## Tweet 1: The Self-Roast (vibechecked)
 
-**Screenshot:** `screenshots/vibechecked-self-roast.png`
+**Screenshot:** `screenshots/vibechecked-self-roast-freeze.png`
 
 > i built a tool that roasts vibe-coded landing pages
 >
@@ -23,7 +23,7 @@ Each tweet works independently. Pair each with the indicated screenshot.
 
 ## Tweet 2: The 197 Console Logs (unfcked)
 
-**Screenshot:** `screenshots/unfcked-scan-vibechecked.txt` (take terminal screenshot)
+**Screenshot:** `screenshots/unfcked-scan-vibechecked.png`
 
 > AI gets you 80% of the way there. the other 20% is where things break.
 >
@@ -41,7 +41,7 @@ Each tweet works independently. Pair each with the indicated screenshot.
 
 ## Tweet 3: The Session Recap (whatdiditdo)
 
-**Screenshot:** `screenshots/whatdiditdo-last3.txt` (take terminal screenshot)
+**Screenshot:** `screenshots/whatdiditdo-last3.png`
 
 > you let cursor cook for 20 minutes. it touched 15 files, added 1030 lines, created 3 new files.
 >
@@ -73,7 +73,7 @@ Each tweet works independently. Pair each with the indicated screenshot.
 
 ## Tweet 5: The Meta-Irony
 
-**Screenshot:** `screenshots/vibechecked-self-roast.png` (the verdict close-up)
+**Screenshot:** `screenshots/vibechecked-self-roast-freeze.png` (the verdict close-up)
 
 > the most vibe-coded thing about vibe coding:
 >
