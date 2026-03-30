@@ -1,0 +1,46 @@
+────────────────────────────────────────────────────────────
+
+  VIBECHECK  —  is your UI actually good?
+
+  URL: https://vibechecked.doruk.ch
+
+────────────────────────────────────────────────────────────
+
+  SCORES
+
+  Originality   ███████░░░░░░░░░░░░░ 35
+  Layout        ████████████░░░░░░░░ 60
+  Typography    ██████████░░░░░░░░░░ 50
+  Color         ██████░░░░░░░░░░░░░░ 30
+
+  Overall       ████████░░░░░░░░░░░░ 42
+
+────────────────────────────────────────────────────────────
+
+  VIBE-CODED PROBABILITY
+
+  ██████████████████████░░░░░░░░ 72% PROBABLY VIBE-CODED
+
+────────────────────────────────────────────────────────────
+
+  THE ROAST
+
+  Detected 1 red flag. This site has "I prompted it in 20 minutes" energy.
+
+────────────────────────────────────────────────────────────
+
+  RED FLAGS
+
+  ✖  Purple/violet hues detected — classic vibe-coded gradient
+
+────────────────────────────────────────────────────────────
+
+  WHAT'S ACTUALLY GOOD
+
+  ✔  Rich visual content detected
+
+────────────────────────────────────────────────────────────
+
+  VERDICT:  GENERIC AF
+
+────────────────────────────────────────────────────────────

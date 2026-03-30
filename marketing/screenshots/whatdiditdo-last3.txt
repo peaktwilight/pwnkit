@@ -1,0 +1,54 @@
+──────────────────────────────────────────────────────
+  WHATDIDITDO  —  your AI session recap
+──────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────
+
+  FILES CHANGED
+
+  ✎ packages/cli/package.json  (+1 -1)
+  ✎ packages/cli/src/commands/run.ts  (+49 -16)
+  ✎ packages/cli/src/commands/scan.ts  (+6 -3)
+  ✚ packages/cli/src/formatters/html.ts  (new, 427 lines)
+  ✎ packages/cli/src/formatters/index.ts  (+3 -0)
+  ✎ packages/cli/src/index.ts  (+3 -0)
+  ✎ packages/core/src/http.ts  (+4 -0)
+  ✎ packages/core/src/index.ts  (+2 -1)
+  ✚ packages/core/src/mcp.ts  (new, 387 lines)
+  ✎ packages/core/src/stages/attack.ts  (+23 -1)
+  ✎ packages/core/src/stages/discovery.ts  (+28 -1)
+  ✎ packages/shared/src/types.ts  (+2 -2)
+  ✎ test-targets/src/scan.test.ts  (+25 -0)
+  ✚ www/src/content/blog/i-vibe-coded-3-tools-for-the-vibe-coding-era.md  (new, 69 lines)
+  ✎ www/src/layouts/Layout.astro  (+1 -1)
+
+──────────────────────────────────────────────────────
+
+  STATS
+
+  Files changed:  15
+  Lines added:    +1030
+  Lines removed:  -26
+
+──────────────────────────────────────────────────────
+
+  WHAT HAPPENED (AI Summary)
+
+  Added MCP (Model Context Protocol) server scanning
+  support — pwnkit can now target mcp:// endpoints,
+  enumerate tools, detect prompt injection in tool
+  descriptions, and probe for SSRF/data exfiltration
+  vulnerabilities. Also added an HTML report formatter
+  that generates a styled single-file report and
+  auto-opens it in the browser. Version bumped to 0.3.3,
+  with integration tests for both vulnerable and safe
+  MCP targets, plus a new blog post about the author's
+  vibe-coding tool suite.
+
+──────────────────────────────────────────────────────
+
+──────────────────────────────────────────────────────
+  QUICK SHARE  (copy this)
+
+  🤖 AI session: 15 files changed (+1030 -26)
+──────────────────────────────────────────────────────

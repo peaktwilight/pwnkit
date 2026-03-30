@@ -1,0 +1,43 @@
+──────────────────────────────────────────────────────
+  UNFUCK  —  fix the last 20% of your vibe-coded project
+──────────────────────────────────────────────────────
+
+  Project: vibechecked (Node.js)
+  Files scanned: 8
+
+──────────────────────────────────────────────────────
+
+  🟠 HIGH (fix before deploying)
+
+  1. No tests found
+     No *.test.*, *.spec.*, or __tests__/ files — you are deploying without a safety net
+
+
+──────────────────────────────────────────────────────
+
+  🟡 MEDIUM (should fix soon)
+
+  2. Dev dependency in wrong section
+     playwright — should be in "devDependencies"
+
+  3. Lockfile may be outdated
+     package-lock.json is older than package.json — run npm install
+
+  4. 1 file over 300 lines
+     src/scorecard.ts (358 lines)
+
+
+──────────────────────────────────────────────────────
+
+  🔵 LOW (nice to have)
+
+  5. 197 console.log statements found
+     src/scorecard.ts:46, src/scorecard.ts:47, ...
+
+──────────────────────────────────────────────────────
+
+  SCORE: 73/100  —  MOSTLY GOOD
+
+  Found 5 issues: 1 high, 3 medium, 1 low
+
+──────────────────────────────────────────────────────

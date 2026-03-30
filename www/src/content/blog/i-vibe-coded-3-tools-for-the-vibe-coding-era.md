@@ -19,7 +19,7 @@ so i built **[vibechecked](https://vibechecked.doruk.ch)** — a brutal AI desig
 npx vibechecked https://your-app.vercel.app
 ```
 
-it detects 11 specific patterns that scream "an AI designed this." the irony of vibe-coding a tool that judges vibe-coded design is not lost on me.
+it detects 11 specific patterns that scream "an AI designed this." we ran it on its own landing page. verdict: **GENERIC AF** with a 72% vibe-coded probability and the roast "this site has 'I prompted it in 20 minutes' energy." the irony of vibe-coding a tool that judges vibe-coded design is not lost on me.
 
 ## problem 2: the last 20% is where things break
 
@@ -31,7 +31,7 @@ AI gets you 80% of the way there. the app works, it looks fine, you deploy it. t
 npx unfcked /path/to/your/project
 ```
 
-scores you 0-100 with verdicts ranging from "CERTIFIED CLEAN" to "DUMPSTER FIRE."
+scores you 0-100 with verdicts ranging from "CERTIFIED CLEAN" to "DUMPSTER FIRE." we pointed it at vibechecked's own codebase — 73/100, MOSTLY GOOD. it caught the missing tests, 197 console.log statements, and a dev dependency in the wrong section. fair enough.
 
 ## problem 3: you don't know what your AI agent actually did
 
