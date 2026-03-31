@@ -26,6 +26,7 @@
  <a href="#commands">Commands</a> &middot;
  <a href="#how-it-works">How It Works</a> &middot;
  <a href="#what-pwnkit-scans">What It Scans</a> &middot;
+ <a href="#roadmap">Roadmap</a> &middot;
  <a href="#how-it-compares">Comparison</a> &middot;
  <a href="#github-action">CI/CD</a> &middot;
  <a href="#built-by">About</a>
@@ -181,6 +182,16 @@ Bring your own agent CLI — pwnkit orchestrates it:
 | `codex` | `--runtime codex` | Source analysis — spawns Codex CLI |
 | `gemini` | `--runtime gemini` | Large context source analysis — spawns Gemini CLI |
 | `auto` | `--runtime auto` | Auto-detects installed CLIs, picks best per stage |
+
+## Roadmap
+
+The short version:
+
+- now: resumable scans, finding triage, diff-aware PR review, deterministic replay
+- next: multi-target orchestration, local mission-control dashboard, fuzzy navigation across scans/findings
+- later: policy packs, trends, and distributed workers
+
+The detailed roadmap lives in [ROADMAP.md](./ROADMAP.md).
 
 ## How It Compares
 
