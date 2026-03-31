@@ -22,7 +22,8 @@ jobs:
       - name: Run pwnkit self-scan
         run: |
           set +e
-          node packages/cli/dist/index.js review . \
+          timeout --signal=TERM --kill-after=30s 330s \
+            node packages/cli/dist/index.js review . \
             --format json \
             --runtime api \
             --model free \
@@ -36,6 +37,10 @@ jobs:
           cat scan-stderr.log || true
           if [ "$status" -eq 2 ]; then
             echo "::error::pwnkit self-scan failed to execute."
+            exit 2
+          fi
+          if [ "$status" -eq 124 ] || [ "$status" -eq 137 ]; then
+            echo "::error::pwnkit self-scan exceeded the CI timeout budget."
             exit 2
           fi
         env:
