@@ -43,6 +43,21 @@ jobs:
             echo "::error::pwnkit self-scan exceeded the CI timeout budget."
             exit 2
           fi
+          if [ ! -s scan-results.json ]; then
+            echo "::error::pwnkit self-scan produced no JSON output."
+            exit 2
+          fi
+          node -e "
+            const fs = require('fs');
+            const raw = fs.readFileSync('scan-results.json', 'utf8');
+            try {
+              JSON.parse(raw);
+            } catch (error) {
+              console.error('::error::scan-results.json is invalid JSON.');
+              console.error(String(error));
+              process.exit(2);
+            }
+          "
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
@@ -50,7 +65,7 @@ jobs:
       - name: Show scan summary
         run: |
           echo "=== Scan Results ==="
-          if [ -f scan-results.json ]; then
+          if [ -s scan-results.json ]; then
             node -e "
               const r = JSON.parse(require('fs').readFileSync('scan-results.json','utf8'));
               console.log('Duration: ' + (r.durationMs/1000).toFixed(1) + 's');
@@ -98,7 +113,7 @@ jobs:
       # Fail CI if critical or high findings
       - name: Check for critical findings
         run: |
-          if [ -f scan-results.json ]; then
+          if [ -s scan-results.json ]; then
             node -e "
               const r = JSON.parse(require('fs').readFileSync('scan-results.json','utf8'));
               if (r.summary.critical > 0 || r.summary.high > 0) {
