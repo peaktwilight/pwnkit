@@ -78,7 +78,7 @@ Explicit subcommands (`scan`, `audit`, `review`) still work — auto-detect is j
 
 All commands are available via `npx pwnkit-cli <command>`. Explicit subcommands are optional — thanks to auto-detect, `npx pwnkit-cli <target>` works for most use cases (see [Auto-Detect](#auto-detect) above).
 
-pwnkit ships six commands — from quick API probes to deep source-level audits:
+pwnkit ships a growing command set — from quick API probes to deep source-level audits and local mission control:
 
 | Command | What It Does | Example |
 |---------|-------------|---------|
@@ -88,6 +88,7 @@ pwnkit ships six commands — from quick API probes to deep source-level audits:
 | **`resume`** | Resume a persisted review/audit scan by scan ID | `npx pwnkit-cli resume <scan-id>` |
 | **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit-cli history --limit 20` |
 | **`findings`** | Query, filter, and inspect verified findings across all scans | `npx pwnkit-cli findings list --severity critical` |
+| **`dashboard`** | Open a local dashboard for scans, grouped findings, and triage | `npx pwnkit-cli dashboard --port 48123` |
 
 ## How It Works
 
@@ -169,6 +170,9 @@ npx pwnkit-cli review https://github.com/user/repo --runtime codex --depth deep
 # Diff-aware review against a base branch
 npx pwnkit-cli review ./my-repo --diff-base origin/main --changed-only
 
+# Local mission control for scan history and grouped findings
+npx pwnkit-cli dashboard
+
 # Auto-detect — just give it a target
 npx pwnkit-cli express
 npx pwnkit-cli ./my-repo
@@ -192,7 +196,8 @@ Bring your own agent CLI — pwnkit orchestrates it:
 The short version:
 
 - now: resumable scans, finding triage, diff-aware PR review, deterministic replay
-- next: multi-target orchestration, local mission-control dashboard, fuzzy navigation across scans/findings
+- now shipping too: a local mission-control dashboard with grouped finding triage
+- next: multi-target orchestration, timeline/activity views, and fuzzy navigation across scans/findings
 - later: policy packs, trends, and distributed workers
 
 The detailed roadmap lives in [ROADMAP.md](./ROADMAP.md).

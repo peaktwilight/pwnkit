@@ -6,4 +6,5 @@ export { registerFindingsCommand } from "./findings.js";
 export { registerReviewCommand } from "./review.js";
 export { registerAuditCommand } from "./audit.js";
 export { registerDoctorCommand } from "./doctor.js";
+export { registerDashboardCommand } from "./dashboard.js";
 export { runUnified } from "./run.js";

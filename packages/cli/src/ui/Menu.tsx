@@ -11,6 +11,7 @@ const options: MenuOption[] = [
   { value: "scan",    label: "Scan an endpoint" },
   { value: "audit",   label: "Audit an npm package" },
   { value: "review",  label: "Review a codebase" },
+  { value: "dashboard", label: "Open local mission control" },
   { value: "doctor",  label: "Check runtimes and setup" },
   { value: "replay",  label: "Replay the last scan" },
   { value: "history", label: "View past results" },
@@ -38,7 +39,7 @@ function Menu({ onSelect }: { onSelect: (action: string, target?: string) => voi
       if (key.downArrow) setSelected((s) => Math.min(options.length - 1, s + 1));
       if (key.return) {
         const opt = options[selected].value;
-        if (opt === "history" || opt === "doctor" || opt === "replay") {
+        if (opt === "history" || opt === "doctor" || opt === "replay" || opt === "dashboard") {
           onSelect(opt);
           return;
         }

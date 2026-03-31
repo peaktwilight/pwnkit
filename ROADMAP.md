@@ -15,6 +15,7 @@ pwnkit already has the foundation for a real agentic security platform:
 - multi-stage prepare → analyze → research → verify → report pipeline
 - blind verification to kill false positives
 - local scan history, findings, pipeline events, and agent session persistence
+- local mission-control dashboard for scan history and finding-family triage
 - CLI output, HTML reports, JSON, Markdown, and SARIF
 - GitHub Action support and CI-safe runtime paths
 
@@ -123,6 +124,11 @@ Deliverables:
 Goal: expose the stored scan state as a real operator interface.
 
 This should start as a local web dashboard, not a bloated hosted SaaS surface.
+
+Status:
+
+- baseline shipped: scan history, grouped findings, family-level triage, quick filtering
+- next cut: active run stage progress, pipeline event timeline, replay launch, and target inventory
 
 Core views:
 

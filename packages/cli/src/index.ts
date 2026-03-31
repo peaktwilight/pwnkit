@@ -12,6 +12,7 @@ import {
   registerReviewCommand,
   registerAuditCommand,
   registerDoctorCommand,
+  registerDashboardCommand,
 } from "./commands/index.js";
 import { detectAndRoute } from "./routing.js";
 
@@ -30,6 +31,7 @@ registerFindingsCommand(program);
 registerReviewCommand(program);
 registerAuditCommand(program);
 registerDoctorCommand(program);
+registerDashboardCommand(program);
 
 // ── Interactive menu (Ink) ──
 async function showInteractiveMenu(): Promise<void> {
@@ -54,6 +56,12 @@ async function showInteractiveMenu(): Promise<void> {
     return;
   }
 
+  if (action === "dashboard") {
+    process.argv = [process.argv[0], process.argv[1], "dashboard"];
+    await program.parseAsync();
+    return;
+  }
+
   if (!target) return;
 
   if (action === "scan") {
@@ -69,7 +77,7 @@ async function showInteractiveMenu(): Promise<void> {
 
 // ── Entry point ──
 const userArgs = process.argv.slice(2);
-const knownCommands = ["scan", "resume", "replay", "history", "findings", "review", "audit", "doctor", "help"];
+const knownCommands = ["scan", "resume", "replay", "history", "findings", "review", "audit", "doctor", "dashboard", "help"];
 
 if (userArgs.length === 0) {
   showInteractiveMenu().catch((err) => {
