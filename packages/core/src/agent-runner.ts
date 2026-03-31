@@ -65,6 +65,8 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
   const { role, scopePath, target, scanId, config, db, emit, cliPrompt, agentSystemPrompt, cliSystemPrompt, directApiPrompt } = opts;
 
   const templatePrefix = `cli-${role}`;
+  const requestedRuntime = config.runtime as RuntimeType | "auto" | undefined;
+  const allowApiFallback = requestedRuntime === undefined || requestedRuntime === "auto" || requestedRuntime === "api";
 
   emit({
     type: "stage:start",
@@ -155,7 +157,15 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
         stage: "attack",
         message: `CLI agent error: ${result.error}`,
       });
-      // Fall through to API / legacy branches below
+      if (!allowApiFallback) {
+        emit({
+          type: "error",
+          stage: "attack",
+          message: `Explicit runtime '${runtimeType}' failed; API fallback disabled.`,
+        });
+        return [];
+      }
+      // Fall through to API / legacy branches below only for auto/api modes.
     } else {
       const findings = parseFindingsFromCliOutput(result.output, { templatePrefix });
 
@@ -179,6 +189,15 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
 
   // ── Branch 2: API runtime with native tool_use ──
   if (runtimeType === "api" || !available.has(runtimeType)) {
+    if (!allowApiFallback && runtimeType !== "api") {
+      emit({
+        type: "error",
+        stage: "attack",
+        message: `Runtime '${runtimeType}' is unavailable and API fallback is disabled for explicit runtime selection.`,
+      });
+      return [];
+    }
+
     emit({
       type: "stage:start",
       stage: "attack",

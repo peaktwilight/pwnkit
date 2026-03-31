@@ -17,6 +17,11 @@ let vulnWebTarget = "";
 let safeWebTarget = "";
 let runScan: (typeof import("../../packages/core/src/scanner.js"))["scan"];
 const testTargetsRoot = fileURLToPath(new URL("..", import.meta.url));
+const savedApiEnv = {
+  OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
+  ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+};
 
 async function chat(target: string, prompt: string): Promise<string> {
   const res = await fetch(target, {
@@ -48,6 +53,11 @@ async function mcpFetch(target: string, url: string): Promise<string> {
 }
 
 beforeAll(async () => {
+  // Keep scan integration tests hermetic; local quota state should not affect them.
+  process.env.OPENROUTER_API_KEY = "";
+  process.env.ANTHROPIC_API_KEY = "";
+  process.env.OPENAI_API_KEY = "";
+
   const vulnMod = await import("./vulnerable-server.js");
   const safeMod = await import("./safe-server.js");
   ({ scan: runScan } = await import("../../packages/core/src/scanner.js"));
@@ -78,6 +88,10 @@ afterAll(async () => {
     new Promise<void>((resolve) => vulnWebServer.close(() => resolve())),
     new Promise<void>((resolve) => safeWebServer.close(() => resolve())),
   ]);
+
+  process.env.OPENROUTER_API_KEY = savedApiEnv.OPENROUTER_API_KEY;
+  process.env.ANTHROPIC_API_KEY = savedApiEnv.ANTHROPIC_API_KEY;
+  process.env.OPENAI_API_KEY = savedApiEnv.OPENAI_API_KEY;
 });
 
 function startWebServer(mode: "vulnerable" | "safe"): Promise<{ server: Server; target: string }> {
