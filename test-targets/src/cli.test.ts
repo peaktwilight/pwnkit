@@ -58,13 +58,13 @@ describe("CLI E2E", () => {
 
     const ok = await executor.execute({
       name: "run_command",
-      arguments: { command: "rg name package.json | head -n 1" },
+      arguments: { command: "cat package.json | head -n 1" },
     });
     expect(ok.success).toBe(true);
 
     const blocked = await executor.execute({
       name: "run_command",
-      arguments: { command: "rg name package.json || head -n 1" },
+      arguments: { command: "cat package.json || head -n 1" },
     });
     expect(blocked.success).toBe(false);
     expect(String(blocked.error)).toContain("Empty pipe segments");
