@@ -289,6 +289,13 @@ function renderDashboardHtml(): string {
       padding: 12px 14px;
       font: inherit;
     }
+    .search-hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
     .sev-critical { color: #f87171; }
     .sev-high { color: #fb923c; }
     .sev-medium { color: #facc15; }
@@ -346,6 +353,80 @@ function renderDashboardHtml(): string {
       color: var(--muted);
       padding: 20px 4px;
     }
+    .palette-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 6, 10, 0.72);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8vh 20px 20px;
+      z-index: 20;
+    }
+    .palette-backdrop.open {
+      display: flex;
+    }
+    .palette {
+      width: min(760px, 100%);
+      background: rgba(12, 16, 23, 0.98);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 22px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+      overflow: hidden;
+    }
+    .palette-input {
+      width: 100%;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--text);
+      padding: 18px 20px;
+      font: inherit;
+      font-size: 15px;
+      outline: none;
+    }
+    .palette-list {
+      max-height: 60vh;
+      overflow: auto;
+      padding: 10px;
+    }
+    .palette-group {
+      padding: 6px 0 10px;
+    }
+    .palette-group-title {
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0 10px 8px;
+    }
+    .palette-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      text-align: left;
+      background: transparent;
+      border: 0;
+      color: inherit;
+      padding: 12px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+    }
+    .palette-item.active,
+    .palette-item:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .palette-label {
+      font-weight: 600;
+    }
+    .palette-meta {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
     @media (max-width: 1100px) {
       .shell { grid-template-columns: 1fr; }
       .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
@@ -363,6 +444,7 @@ function renderDashboardHtml(): string {
       <div class="panel" style="margin-top:18px;">
         <h2>Search</h2>
         <input id="search" class="search" type="search" placeholder="Filter scans and findings" />
+        <div class="search-hint">Press / or Cmd/Ctrl+K for command palette</div>
       </div>
       <div class="panel" style="margin-top:18px;">
         <h2>Overview</h2>
@@ -392,8 +474,14 @@ function renderDashboardHtml(): string {
       </section>
     </main>
   </div>
+  <div id="palette-backdrop" class="palette-backdrop">
+    <div class="palette">
+      <input id="palette-input" class="palette-input" type="search" placeholder="Jump to scans, findings, and actions" />
+      <div id="palette-list" class="palette-list"></div>
+    </div>
+  </div>
   <script>
-    const state = { scans: [], groups: [], selectedFingerprint: null, query: "" };
+    const state = { scans: [], groups: [], selectedFingerprint: null, query: "", paletteOpen: false, paletteQuery: "", paletteIndex: 0 };
 
     function esc(value) {
       return String(value ?? "")
@@ -407,6 +495,185 @@ function renderDashboardHtml(): string {
     function triageClass(status) { return "triage-" + (status || "new"); }
     function matchesQuery(value) {
       return String(value || "").toLowerCase().includes(state.query);
+    }
+    function filteredScans() {
+      return state.scans.filter((scan) => {
+        if (!state.query) return true;
+        return [scan.target, scan.depth, scan.runtime, scan.mode, scan.status].some(matchesQuery);
+      });
+    }
+    function filteredGroups() {
+      return state.groups.filter((group) => {
+        if (!state.query) return true;
+        return [
+          group.fingerprint,
+          group.latest.title,
+          group.latest.category,
+          group.latest.severity,
+          group.latest.status,
+          group.latest.triageStatus,
+        ].some(matchesQuery);
+      });
+    }
+    function setSearchQuery(value) {
+      const next = String(value || "");
+      state.query = next.trim().toLowerCase();
+      document.getElementById("search").value = next;
+      renderScans();
+      renderFindings();
+    }
+    function selectFinding(fingerprint) {
+      state.selectedFingerprint = fingerprint;
+      renderFindings();
+      loadDetail(fingerprint);
+    }
+    function closePalette() {
+      state.paletteOpen = false;
+      state.paletteQuery = "";
+      state.paletteIndex = 0;
+      document.getElementById("palette-backdrop").classList.remove("open");
+      document.getElementById("palette-input").value = "";
+    }
+    function openPalette() {
+      state.paletteOpen = true;
+      state.paletteIndex = 0;
+      document.getElementById("palette-backdrop").classList.add("open");
+      renderPalette();
+      document.getElementById("palette-input").focus();
+    }
+    function isTypingTarget(target) {
+      if (!target) return false;
+      const tag = target.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
+    }
+    function buildPaletteItems() {
+      const q = state.paletteQuery.trim().toLowerCase();
+      const newestNew = state.groups.find((group) => group.latest.triageStatus === "new") || null;
+      const hottest = state.groups.find((group) => group.latest.severity === "critical" || group.latest.severity === "high") || null;
+      const running = state.scans.find((scan) => scan.status === "running") || null;
+      const sections = [
+        {
+          title: "Actions",
+          items: [
+            {
+              id: "focus-filter",
+              label: "Focus dashboard filter",
+              meta: "/",
+              run: () => {
+                closePalette();
+                document.getElementById("search").focus();
+              },
+            },
+            {
+              id: "clear-filter",
+              label: "Clear active filter",
+              meta: state.query || "all",
+              run: () => {
+                closePalette();
+                setSearchQuery("");
+              },
+            },
+            newestNew ? {
+              id: "jump-newest-new",
+              label: "Jump to newest untriaged family",
+              meta: newestNew.latest.title,
+              run: () => {
+                closePalette();
+                selectFinding(newestNew.fingerprint);
+              },
+            } : null,
+            hottest ? {
+              id: "jump-hottest",
+              label: "Jump to critical/high family",
+              meta: hottest.latest.severity,
+              run: () => {
+                closePalette();
+                selectFinding(hottest.fingerprint);
+              },
+            } : null,
+            running ? {
+              id: "focus-running",
+              label: "Filter to active scans",
+              meta: running.target,
+              run: () => {
+                closePalette();
+                setSearchQuery("running");
+              },
+            } : null,
+          ].filter(Boolean),
+        },
+        {
+          title: "Finding Families",
+          items: state.groups.slice(0, 12).map((group) => ({
+            id: "finding-" + group.fingerprint,
+            label: group.latest.title,
+            meta: group.latest.severity + " • " + group.latest.triageStatus,
+            haystack: [group.latest.title, group.latest.category, group.latest.severity, group.latest.triageStatus, group.fingerprint].join(" "),
+            run: () => {
+              closePalette();
+              selectFinding(group.fingerprint);
+            },
+          })),
+        },
+        {
+          title: "Scans",
+          items: state.scans.slice(0, 10).map((scan) => ({
+            id: "scan-" + scan.id,
+            label: scan.target,
+            meta: scan.status + " • " + scan.depth + " • " + scan.runtime,
+            haystack: [scan.target, scan.status, scan.depth, scan.runtime, scan.mode].join(" "),
+            run: () => {
+              closePalette();
+              setSearchQuery(scan.target);
+            },
+          })),
+        },
+      ];
+
+      return sections
+        .map((section) => ({
+          title: section.title,
+          items: section.items.filter((item) => {
+            if (!q) return true;
+            return [item.label, item.meta, item.haystack].filter(Boolean).join(" ").toLowerCase().includes(q);
+          }),
+        }))
+        .filter((section) => section.items.length > 0);
+    }
+    function flatPaletteItems() {
+      return buildPaletteItems().flatMap((section) => section.items);
+    }
+    function renderPalette() {
+      const root = document.getElementById("palette-list");
+      const sections = buildPaletteItems();
+      const items = sections.flatMap((section) => section.items);
+      if (state.paletteIndex >= items.length) {
+        state.paletteIndex = Math.max(0, items.length - 1);
+      }
+      if (items.length === 0) {
+        root.innerHTML = '<div class="empty">No matching commands.</div>';
+        return;
+      }
+      let cursor = 0;
+      root.innerHTML = sections.map((section) => {
+        const html = section.items.map((item) => {
+          const isActive = cursor === state.paletteIndex;
+          const index = cursor;
+          cursor += 1;
+          return '<button class="palette-item ' + (isActive ? 'active' : '') + '" data-palette-index="' + index + '">' +
+            '<span class="palette-label">' + esc(item.label) + '</span>' +
+            '<span class="palette-meta">' + esc(item.meta || '') + '</span>' +
+          '</button>';
+        }).join("");
+        return '<div class="palette-group"><div class="palette-group-title">' + esc(section.title) + '</div>' + html + '</div>';
+      }).join("");
+      root.querySelectorAll("button[data-palette-index]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const index = parseInt(button.getAttribute("data-palette-index"), 10);
+          const item = flatPaletteItems()[index];
+          if (item) item.run();
+        });
+      });
     }
 
     async function loadOverview() {
@@ -449,10 +716,7 @@ function renderDashboardHtml(): string {
 
     function renderScans() {
       const root = document.getElementById("scans");
-      const scans = state.scans.filter((scan) => {
-        if (!state.query) return true;
-        return [scan.target, scan.depth, scan.runtime, scan.mode, scan.status].some(matchesQuery);
-      });
+      const scans = filteredScans();
 
       if (scans.length === 0) {
         root.innerHTML = '<div class="empty">No scans match this filter.</div>';
@@ -473,17 +737,7 @@ function renderDashboardHtml(): string {
 
     function renderFindings() {
       const root = document.getElementById("findings");
-      const groups = state.groups.filter((group) => {
-        if (!state.query) return true;
-        return [
-          group.fingerprint,
-          group.latest.title,
-          group.latest.category,
-          group.latest.severity,
-          group.latest.status,
-          group.latest.triageStatus,
-        ].some(matchesQuery);
-      });
+      const groups = filteredGroups();
 
       if (groups.length === 0) {
         root.innerHTML = '<div class="empty">No finding families match this filter.</div>';
@@ -503,9 +757,7 @@ function renderDashboardHtml(): string {
 
       root.querySelectorAll("button[data-fp]").forEach((button) => {
         button.addEventListener("click", () => {
-          state.selectedFingerprint = button.getAttribute("data-fp");
-          renderFindings();
-          loadDetail(state.selectedFingerprint);
+          selectFinding(button.getAttribute("data-fp"));
         });
       });
     }
@@ -570,9 +822,52 @@ function renderDashboardHtml(): string {
     }
 
     document.getElementById("search").addEventListener("input", (event) => {
-      state.query = event.target.value.trim().toLowerCase();
-      renderScans();
-      renderFindings();
+      setSearchQuery(event.target.value);
+    });
+    document.getElementById("palette-input").addEventListener("input", (event) => {
+      state.paletteQuery = event.target.value;
+      state.paletteIndex = 0;
+      renderPalette();
+    });
+    document.getElementById("palette-backdrop").addEventListener("click", (event) => {
+      if (event.target.id === "palette-backdrop") closePalette();
+    });
+    document.addEventListener("keydown", (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        if (state.paletteOpen) closePalette();
+        else openPalette();
+        return;
+      }
+      if (!state.paletteOpen && event.key === "/" && !isTypingTarget(event.target)) {
+        event.preventDefault();
+        openPalette();
+        return;
+      }
+      if (!state.paletteOpen) return;
+      if (event.key === "Escape") {
+        closePalette();
+        return;
+      }
+      const items = flatPaletteItems();
+      if (items.length === 0) return;
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        state.paletteIndex = (state.paletteIndex + 1) % items.length;
+        renderPalette();
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        state.paletteIndex = (state.paletteIndex - 1 + items.length) % items.length;
+        renderPalette();
+        return;
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const item = items[state.paletteIndex];
+        if (item) item.run();
+      }
     });
 
     loadOverview();
