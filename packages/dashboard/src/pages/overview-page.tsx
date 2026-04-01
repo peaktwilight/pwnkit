@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/page-header";
 import { SeverityBadge, StatusBadge } from "@/components/status-badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDuration } from "@/lib/format";
 import type { DashboardResponse } from "@/types";
 
@@ -74,32 +75,41 @@ export function OverviewPage({ data }: { data: DashboardResponse }) {
               <NavLink to="/findings">View all</NavLink>
             </Button>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             {recentGroups.length === 0 ? (
               <CardEmpty className="text-left">No findings recorded yet.</CardEmpty>
             ) : (
-              recentGroups.map((group) => (
-                <NavLink
-                  key={group.fingerprint}
-                  to={`/findings/${group.fingerprint}`}
-                  className="block"
-                >
-                  <CardRow interactive className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-white">{group.latest.title}</div>
-                        <div className="text-sm text-[var(--muted)]">
-                          {group.latest.category} · {group.count} hits across {group.scanCount} scans
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Family</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Coverage</TableHead>
+                    <TableHead className="w-[12rem]">Posture</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentGroups.map((group) => (
+                    <TableRow key={group.fingerprint}>
+                      <TableCell className="font-medium">
+                        <NavLink to={`/findings/${group.fingerprint}`} className="text-white hover:text-[var(--accent)]">
+                          {group.latest.title}
+                        </NavLink>
+                      </TableCell>
+                      <TableCell className="text-[var(--muted)]">{group.latest.category}</TableCell>
+                      <TableCell className="text-[var(--muted)]">
+                        {group.count} hits · {group.scanCount} scans
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <SeverityBadge severity={group.latest.severity} />
+                          <StatusBadge value={group.latest.triageStatus} />
                         </div>
-                      </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <SeverityBadge severity={group.latest.severity} />
-                        <StatusBadge value={group.latest.triageStatus} />
-                      </div>
-                    </div>
-                  </CardRow>
-                </NavLink>
-              ))
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
@@ -115,32 +125,41 @@ export function OverviewPage({ data }: { data: DashboardResponse }) {
               <NavLink to="/scans">View all</NavLink>
             </Button>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent>
             {recentScans.length === 0 ? (
               <CardEmpty className="text-left">No scans recorded yet.</CardEmpty>
             ) : (
-              recentScans.map((scan) => (
-                <NavLink
-                  key={scan.id}
-                  to={`/scans/${scan.id}`}
-                  className="block"
-                >
-                  <CardRow interactive className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-white">{scan.target}</div>
-                        <div className="text-sm text-[var(--muted)]">
-                          {scan.depth} · {scan.runtime} · {scan.mode} · {formatDuration(scan.durationMs)}
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Target</TableHead>
+                    <TableHead>Mode</TableHead>
+                    <TableHead>Duration</TableHead>
+                    <TableHead className="w-[12rem]">Result</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentScans.map((scan) => (
+                    <TableRow key={scan.id}>
+                      <TableCell className="font-medium">
+                        <NavLink to={`/scans/${scan.id}`} className="text-white hover:text-[var(--accent)]">
+                          {scan.target}
+                        </NavLink>
+                      </TableCell>
+                      <TableCell className="text-[var(--muted)]">
+                        {scan.depth} · {scan.runtime} · {scan.mode}
+                      </TableCell>
+                      <TableCell className="text-[var(--muted)]">{formatDuration(scan.durationMs)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <StatusBadge value={scan.status} />
+                          <Badge>{scan.summary.totalFindings} findings</Badge>
                         </div>
-                      </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <StatusBadge value={scan.status} />
-                        <Badge>{scan.summary.totalFindings} findings</Badge>
-                      </div>
-                    </div>
-                  </CardRow>
-                </NavLink>
-              ))
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
