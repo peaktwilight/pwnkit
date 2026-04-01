@@ -6,7 +6,7 @@ export function Sidebar({ className, ...props }: ComponentPropsWithoutRef<"aside
   return (
     <aside
       className={cn(
-        "flex h-full flex-col border-r border-[var(--border)] bg-[rgba(9,11,16,0.78)]",
+        "flex h-full flex-col border-r border-[var(--sidebar-border)] bg-[var(--sidebar)] text-[var(--sidebar-foreground)]",
         className,
       )}
       {...props}

@@ -8,14 +8,14 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-[var(--border)] bg-[var(--panel-soft)] text-[var(--foreground)] hover:bg-white/[0.06]",
-        secondary: "border-transparent bg-white/[0.06] text-[var(--foreground)] hover:bg-white/[0.1]",
+        default: "border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-white/[0.06]",
+        secondary: "border-transparent bg-white/[0.06] text-[var(--secondary-foreground)] hover:bg-white/[0.1]",
         outline: "border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-white/[0.04]",
         ghost: "border-transparent bg-transparent text-[var(--muted)] hover:bg-white/[0.04] hover:text-[var(--foreground)]",
-        accent: "border-[var(--accent)]/35 bg-[var(--accent)] text-white hover:bg-[#ef4444]",
+        accent: "border-[var(--primary)]/35 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[#ef4444]",
         success: "border-[var(--success)]/30 bg-[var(--success-soft)] text-[var(--foreground)] hover:bg-[var(--success)]/20",
         warning: "border-[var(--warning)]/30 bg-[var(--warning-soft)] text-[var(--foreground)] hover:bg-[var(--warning)]/20",
-        danger: "border-[var(--danger)]/30 bg-[var(--danger-soft)] text-[var(--foreground)] hover:bg-[var(--danger)]/20",
+        danger: "border-[var(--destructive)]/30 bg-[var(--danger-soft)] text-[var(--foreground)] hover:bg-[var(--danger)]/20",
       },
       size: {
         default: "h-9 px-4 py-2",

@@ -24,7 +24,7 @@ export function SheetOverlay({
 }
 
 const sheetVariants = cva(
-  "fixed z-50 flex flex-col gap-4 bg-[var(--panel-strong)] shadow-[var(--shadow-overlay)] transition ease-in-out outline-none",
+  "fixed z-50 flex flex-col gap-4 bg-[var(--popover)] text-[var(--popover-foreground)] shadow-[var(--shadow-overlay)] transition ease-in-out outline-none",
   {
     variants: {
       side: {
@@ -54,7 +54,7 @@ export function SheetContent({
       <SheetOverlay />
       <SheetPrimitive.Content className={cn(sheetVariants({ side }), className)} {...props}>
         {children}
-        <SheetPrimitive.Close className="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel-soft)] text-[var(--muted)] transition hover:bg-white/[0.08] hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]">
+        <SheetPrimitive.Close className="absolute right-4 top-4 inline-flex size-8 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--secondary)] text-[var(--muted)] transition hover:bg-white/[0.08] hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]">
           <X className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>

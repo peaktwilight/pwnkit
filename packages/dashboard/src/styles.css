@@ -3,20 +3,59 @@
 @import "@fontsource/space-grotesk/700.css";
 @import "tailwindcss";
 
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+}
+
 :root {
   color-scheme: dark;
   --background: #090b10;
   --foreground: #ebf2f7;
+  --card: rgba(13, 16, 22, 0.92);
+  --card-foreground: #ebf2f7;
+  --popover: rgba(16, 19, 26, 0.98);
+  --popover-foreground: #ebf2f7;
+  --primary: #dc2626;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.03);
+  --secondary-foreground: #ebf2f7;
   --muted: #94a0b2;
   --muted-foreground: #667386;
-  --panel: rgba(13, 16, 22, 0.92);
-  --panel-strong: rgba(16, 19, 26, 0.98);
-  --panel-soft: rgba(255, 255, 255, 0.03);
+  --accent: rgba(255, 255, 255, 0.03);
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.14);
+  --input: rgba(255, 255, 255, 0.08);
   --ring: rgba(220, 38, 38, 0.28);
-  --accent: #dc2626;
-  --accent-foreground: #ffffff;
+  --accent-foreground: #ebf2f7;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --sidebar: rgba(9, 11, 16, 0.78);
+  --sidebar-foreground: #ebf2f7;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
   --danger: #dc2626;
   --danger-soft: rgba(220, 38, 38, 0.12);
   --warning: #f6bf63;
@@ -25,6 +64,9 @@
   --success-soft: rgba(87, 216, 154, 0.14);
   --info: #8b96a8;
   --info-soft: rgba(139, 150, 168, 0.14);
+  --panel: var(--card);
+  --panel-strong: var(--popover);
+  --panel-soft: var(--secondary);
   --radius: 0.5rem;
   --shadow-panel: 0 10px 32px rgba(0, 0, 0, 0.22);
   --shadow-overlay: 0 28px 80px rgba(0, 0, 0, 0.4);

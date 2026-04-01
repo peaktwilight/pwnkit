@@ -6,7 +6,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <section
       className={cn(
-        "rounded-[var(--radius)] border border-[var(--border)] bg-[var(--panel)] shadow-[var(--shadow-panel)]",
+        "rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)] shadow-[var(--shadow-panel)]",
         className,
       )}
       {...props}
@@ -43,7 +43,7 @@ export function CardEyebrow({ className, ...props }: HTMLAttributes<HTMLDivEleme
 }
 
 const cardRowVariants = cva(
-  "rounded-md border border-[var(--border)] bg-[var(--panel-soft)] px-4 py-3 text-sm transition-colors",
+  "rounded-md border border-[var(--border)] bg-[var(--secondary)] px-4 py-3 text-sm transition-colors",
   {
     variants: {
       interactive: {
