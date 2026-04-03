@@ -184,14 +184,18 @@ Map the complete attack surface of this web application. Use the crawl tool to s
 - Look for framework-specific files: /wp-admin, /admin, /elmah.axd, /__debug__, /server-info
 - Check cookies for session framework hints (PHPSESSID, JSESSIONID, connect.sid, etc.)
 
-### 3. Find Auth and Login Pages
+### 3. Find Auth and Login Pages (CRITICAL)
 - Look for /login, /signin, /admin, /dashboard, /auth endpoints
-- Note whether forms use CSRF tokens
-- Try default credentials on any login form you find:
-  - admin/admin, admin/password, admin/123456
+- READ THE PAGE CAREFULLY — many apps show demo/test credentials on the login page itself
+- Try ANY credentials mentioned on the page FIRST using submit_form
+- Then try default credentials:
+  - admin/admin, admin/password, admin/123456, demo/demo
   - root/root, root/toor, test/test, guest/guest
   - user/user, administrator/administrator
-- Record any successful logins immediately with update_target
+- When you successfully log in (get a redirect or session cookie):
+  1. Save the session cookie from the Set-Cookie response header
+  2. CRAWL THE APP AGAIN while authenticated — you will see new pages/endpoints
+  3. Update the target profile with all newly discovered authenticated endpoints
 
 ### 4. Discover Hidden Endpoints
 - Check /robots.txt, /sitemap.xml, /.well-known/
@@ -315,15 +319,22 @@ When you find a vulnerability:
 - Check for exposed debug endpoints: /__debug__, /console, /actuator
 - Test for XSS: <script>alert(1)</script>, <img src=x onerror=alert(1)>
 
-## Rules
-- Use http_request and submit_form for all interactions
-- Use crawl if you need to re-examine the site structure
-- Use save_finding for EACH confirmed vulnerability — include the FULL evidence
-- The flag format is usually flag{...} or FLAG{...} or similar — when you see it, save it
-- If you find the flag, include it in the finding evidence_response field
-- Be methodical: test every input you discovered during recon
-- Do NOT give up after one failed payload — try ALL variations
-- Call done with a summary when you have exhausted the attack surface`;
+## CRITICAL RULES — READ BEFORE STARTING
+
+1. **ALWAYS LOG IN FIRST.** If the discovery found a login page with credentials (demo/demo, admin/admin, etc.), log in IMMEDIATELY using submit_form before doing anything else. Save the session cookie from the response headers and include it in ALL subsequent requests.
+
+2. **ALWAYS TEST IDOR AFTER LOGGING IN.** Once authenticated, find any URL with an ID (/user/1, /profile/1, /edit/1) and try changing the ID to 0, 2, 3, admin. Also try POST requests to those endpoints with modified parameters (e.g., is_admin=1, role=admin).
+
+3. **CHAIN EXPLOITS.** Don't stop at one finding. If you can escalate from user to admin, DO IT. Then check what admin can see that users can't — the flag is usually in admin-only data.
+
+4. **EXTRACT THE FLAG.** The goal is not just to find vulns — it's to extract FLAG{...}. Every scan should end with either the flag found or all attack vectors exhausted.
+
+5. Use submit_form for login forms and form submissions (application/x-www-form-urlencoded).
+6. Use http_request for API calls and GET requests. Include Cookie headers from login responses.
+7. Use crawl to re-examine the site after authenticating (you'll see new pages as an authenticated user).
+8. Use save_finding for EACH vulnerability with FULL evidence including any flags found.
+9. Do NOT give up after one failed payload — try ALL variations.
+10. Call done with a summary when you have the flag or exhausted the attack surface.`;
 }
 
 export function verifyPrompt(target: string, findings: Finding[]): string {

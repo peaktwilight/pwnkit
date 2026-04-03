@@ -690,7 +690,16 @@ export class ToolExecutor {
         const { links, forms, scripts } = this.parseHtml(html.slice(0, 500_000), normalizedUrl);
         const cookies = this.parseCookies(res.headers);
 
-        results.push({ url: normalizedUrl, status: res.status, links, forms, scripts, cookies });
+        // Extract visible text content so the agent can read credentials, hints, etc.
+        const textContent = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 2000);
+
+        results.push({ url: normalizedUrl, status: res.status, links, forms, scripts, cookies, textContent });
 
         // Enqueue discovered links for deeper crawling
         if (item.depth < maxDepth) {
