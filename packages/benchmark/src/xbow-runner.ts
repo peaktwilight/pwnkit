@@ -211,7 +211,9 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       name: challenge.name,
       level: challenge.level,
       tags: challenge.tags,
-      passed: findings.length > 0 || flagFound,
+      // XBOW uses flag extraction as the only valid pass condition.
+      // Generic findings (header issues, fingerprinting) don't count.
+      passed: flagFound,
       flagFound,
       findingsCount: findings.length,
       durationMs: Date.now() - start,

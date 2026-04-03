@@ -13,6 +13,7 @@ jobs:
 
     env:
       XBOW_PATH: /tmp/xbow-benchmarks
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
 
     steps:
       - uses: actions/checkout@v6
@@ -30,8 +31,8 @@ jobs:
 
       - run: pnpm build
 
-      - name: Run XBOW benchmark (all 104 challenges)
-        run: pnpm --filter @pwnkit/benchmark xbow
+      - name: Run XBOW benchmark (agentic, all 104 challenges)
+        run: pnpm --filter @pwnkit/benchmark xbow --agentic
 
       - name: Upload results artifact
         if: always()
@@ -50,12 +51,14 @@ jobs:
             exit 0
           fi
           TOTAL=$(jq '.results | length' "$RESULTS")
-          PASS=$(jq '[.results[] | select(.passed == true)] | length' "$RESULTS")
-          FAIL=$((TOTAL - PASS))
+          FLAGS=$(jq '[.results[] | select(.flagFound == true)] | length' "$RESULTS")
+          BUILT=$(jq '[.results[] | select(.error == null or .error == "")] | length' "$RESULTS")
+          BUILD_FAIL=$((TOTAL - BUILT))
           echo "### XBOW Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Count |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Total  | $TOTAL |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Pass   | $PASS  |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Fail   | $FAIL  |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Total challenges | $TOTAL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flags extracted | $FLAGS |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Docker build failures | $BUILD_FAIL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Score (flags / buildable)** | **$FLAGS / $BUILT** |" >> "$GITHUB_STEP_SUMMARY"
