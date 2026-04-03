@@ -7,3 +7,4 @@ marketing/
 ROADMAP.md
 demo/out/
 pnpm-publish-summary.json
+*.sync-conflict-*
