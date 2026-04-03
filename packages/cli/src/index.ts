@@ -18,6 +18,10 @@ import {
   registerMcpServerCommand,
 } from "./commands/index.js";
 import { detectAndRoute } from "./routing.js";
+import { preloadBanner } from "./ui/banner.js";
+
+// Start loading cfonts in the background so it's ready when the banner prints
+void preloadBanner();
 
 const program = new Command();
 

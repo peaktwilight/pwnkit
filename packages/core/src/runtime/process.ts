@@ -17,20 +17,31 @@ function formatToolDetail(input: unknown): string {
   return "";
 }
 
+/** Map raw MCP tool names to human-friendly labels. */
+function friendlyToolName(name: string): string {
+  const stripped = name.replace(/^mcp__\w+__/, "");
+  return stripped
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 function showToolCall(
   onToolCall: ((name: string, detail: string) => void) | undefined,
   name: string | undefined,
   input: unknown,
 ): void {
-  const toolName = name || "tool";
+  const rawName = name || "tool";
+  // Skip internal/framework tool calls that aren't meaningful to the user
+  if (/^(ToolSearch|Read|Glob|Grep|Write|Edit|Bash|LSP|Agent)$/i.test(rawName)) return;
+  const toolName = friendlyToolName(rawName);
   const detail = formatToolDetail(input);
 
-  // Callback for structured consumers (Ink UI)
   if (onToolCall) {
     onToolCall(toolName, detail);
   }
 
-  // Fallback: write to stderr for raw terminal display
+  // Fallback: write to stderr for raw terminal display (only when no TUI)
   if (process.stderr.isTTY && !onToolCall) {
     process.stderr.write(dim(`    ${toolName}${detail ? ": " + detail : ""}\n`));
   }

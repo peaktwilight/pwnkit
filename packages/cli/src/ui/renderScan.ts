@@ -25,13 +25,13 @@ interface RenderScanResult {
   setReport: (report: Record<string, unknown>) => void;
 }
 
-// 4 stages — research (discover+attack+PoC) then blind verify
+// 4 stages — clean pipeline view for the user
 function getStages(): StageState[] {
   return [
-    { id: "prepare",  label: "Prepare",  status: "pending", actions: [], findings: [] },
-    { id: "analyze",  label: "Analyze",  status: "pending", actions: [], findings: [] },
-    { id: "research", label: "Research", status: "pending", actions: [], findings: [] },
-    { id: "verify",   label: "Verify",   status: "pending", actions: [], findings: [] },
+    { id: "discover", label: "Discover",  status: "pending", actions: [], findings: [] },
+    { id: "attack",   label: "Attack",    status: "pending", actions: [], findings: [] },
+    { id: "verify",   label: "Verify",    status: "pending", actions: [], findings: [] },
+    { id: "report",   label: "Report",    status: "pending", actions: [], findings: [] },
   ];
 }
 
@@ -47,7 +47,7 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   const modeLabel = opts.mode === "audit" ? `auditing npm package \x1b[1m${opts.target}\x1b[0m`
     : opts.mode === "review" ? `reviewing source code \x1b[1m${opts.target}\x1b[0m`
     : `scanning target \x1b[1m${opts.target}\x1b[0m`;
-  void printBanner(modeLabel);
+  printBanner(modeLabel);
 
   function App() {
     const [tick, setTick] = useState(0);
@@ -76,32 +76,31 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     rerender?.();
   }
 
-  // Map event stage names to TUI stage IDs
-  function mapStageId(coreStage: string | undefined, msg: string): string | undefined {
-    // Direct matches
-    if (coreStage === "prepare" || coreStage === "analyze" || coreStage === "research" || coreStage === "verify") {
-      return coreStage;
+  // Map core scanner stage names to TUI stage IDs
+  function mapStageId(coreStage: string | undefined): string | undefined {
+    switch (coreStage) {
+      case "discovery":
+      case "discover":
+      case "source-analysis":
+      case "prepare":
+      case "analyze":
+        return "discover";
+      case "attack":
+      case "research":
+      case "agent":
+        return "attack";
+      case "verify":
+        return "verify";
+      case "report":
+        return "report";
+      default:
+        return undefined;
     }
-    // Old names → research (backwards compat)
-    if (coreStage === "discover" || coreStage === "attack") {
-      return "research";
-    }
-    // Legacy "agent" → research
-    if (coreStage === "agent") {
-      return "research";
-    }
-    // Old event names (backwards compat)
-    if (coreStage === "discovery" || coreStage === "source-analysis") {
-      if (msg.toLowerCase().includes("install") || msg.toLowerCase().includes("clone")) return "prepare";
-      return "analyze";
-    }
-    if (coreStage === "report") return undefined;
-    return coreStage;
   }
 
   function onEvent(event: { type: string; stage?: string; message: string; data?: unknown }): void {
     const msg = event.message ?? "";
-    const stageId = mapStageId(event.stage, msg);
+    const stageId = mapStageId(event.stage);
 
     if (event.type === "stage:start") {
       if (!stageId) return;
@@ -114,16 +113,14 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
           actions: [...s.actions, msg].slice(-6),
         }));
       } else {
-        // New stage start
+        // New stage start — show a clean label
         let detail = msg;
-        if (stageId === "agent") {
-          // Show which runtime was picked
-          const lower = msg.toLowerCase();
-          if (lower.includes("claude")) detail = "Claude Code (auto-detected)";
-          else if (lower.includes("codex")) detail = "Codex (auto-detected)";
-          else if (lower.includes("gemini")) detail = "Gemini (auto-detected)";
-          else if (lower.includes("agentic") || lower.includes("api")) detail = "API agent (OpenRouter)";
-        }
+        const lower = msg.toLowerCase();
+        if (lower.includes("claude")) detail = "using Claude";
+        else if (lower.includes("codex")) detail = "using Codex";
+        else if (lower.includes("gemini")) detail = "using Gemini";
+        else if (lower.includes("api") || lower.includes("agentic")) detail = "using API";
+        else if (detail.length > 50) detail = detail.slice(0, 50) + "...";
         updateStage(stageId, (s) => ({ ...s, status: "running", detail }));
       }
       return;
@@ -131,20 +128,25 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
 
     if (event.type === "stage:end") {
       if (!stageId) return;
-      // Truncate long detail text and clean up
-      let detail = msg.length > 60 ? msg.slice(0, 60) + "..." : msg;
+      // Clean up detail text — remove noisy prefixes, truncate
+      let detail = msg
+        .replace(/^(Discovery|Attack|Verification|Report)\s*(complete|done|finished):?\s*/i, "")
+        .replace(/^Agent reached max turns.*$/, "done")
+        .trim();
+      if (detail.length > 55) detail = detail.slice(0, 55) + "...";
+      if (!detail) detail = "done";
       updateStage(stageId, (s) => ({
         ...s,
         status: "done",
         detail,
-        actions: stageId === "verify" ? s.actions : s.actions.slice(0, 4),
+        actions: stageId === "verify" ? s.actions : s.actions.slice(0, 3),
         duration: (event.data as any)?.durationMs ?? s.duration,
       }));
       return;
     }
 
     if (event.type === "finding") {
-      const running = stages.find((s) => s.status === "running") ?? stages.find((s) => s.id === "research");
+      const running = stages.find((s) => s.status === "running") ?? stages.find((s) => s.id === "attack");
       if (running) {
         const severity = (event.data as any)?.severity ?? "info";
         // Clean up title — remove [severity] prefix if present, truncate
