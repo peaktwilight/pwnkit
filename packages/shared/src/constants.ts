@@ -1,4 +1,4 @@
-export const VERSION = "0.3.5";
+export const VERSION = "0.3.7";
 
 export const DEFAULT_MODEL = "claude-sonnet-4-20250514";
 export const DEFAULT_TIMEOUT_MS = 30_000;

@@ -25,7 +25,7 @@ const stubPlugin = {
 
 await build({
   entryPoints: ["packages/cli/src/index.ts"],
-  outfile: `${outdir}/index.js`,
+  outfile: `${outdir}/pwnkit.js`,
   bundle: true,
   format: "esm",
   platform: "node",
@@ -46,7 +46,7 @@ cpSync("packages/templates/attacks", `${outdir}/attacks`, { recursive: true });
 cpSync("packages/dashboard/dist", `${outdir}/dashboard`, { recursive: true });
 
 // Fix double shebang
-const bundlePath = `${outdir}/index.js`;
+const bundlePath = `${outdir}/pwnkit.js`;
 const bundle = readFileSync(bundlePath, "utf8").replace(
   "#!/usr/bin/env node\n#!/usr/bin/env node\n",
   "#!/usr/bin/env node\n"
@@ -60,8 +60,8 @@ const publishPkg = {
   version: rootPkg.version,
   type: "module",
   description: rootPkg.description,
-  bin: { "pwnkit-cli": "./index.js" },
-  files: ["index.js", "attacks", "dashboard"],
+  bin: { "pwnkit-cli": "./pwnkit.js" },
+  files: ["pwnkit.js", "attacks", "dashboard"],
   keywords: rootPkg.keywords,
   author: rootPkg.author,
   homepage: rootPkg.homepage,

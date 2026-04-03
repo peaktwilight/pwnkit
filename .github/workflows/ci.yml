@@ -17,7 +17,7 @@ jobs:
       - run: corepack enable && corepack prepare pnpm@9 --activate
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: node dist/index.js --help
+      - run: node dist/pwnkit.js --help
       - run: npm pack --dry-run
         working-directory: dist
 
