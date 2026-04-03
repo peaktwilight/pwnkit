@@ -34,6 +34,11 @@ export interface RuntimeContext {
   findings?: string;
   templateId?: string;
   systemPrompt?: string;
+  scanId?: string;
+  mcp?: {
+    enableTargetTools?: boolean;
+    dbPath?: string;
+  };
 }
 
 // ── Native Runtime (structured messages + tool_use) ──

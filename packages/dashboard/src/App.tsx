@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getDashboard, getScans } from "@/api";
 import { AppShell } from "@/components/app-shell";
 import { CommandPalette } from "@/components/command-palette";
+import { DashboardPanelProvider } from "@/components/dashboard-panel";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-panel";
 import { FindingsPage } from "@/pages/findings-page";
 import { OverviewPage } from "@/pages/overview-page";
@@ -27,6 +28,10 @@ function AppRoutes({
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<OverviewPage data={dashboard} />} />
+      <Route path="/threads" element={<FindingsPage dashboard={dashboard} />} />
+      <Route path="/threads/:fingerprint" element={<FindingsPage dashboard={dashboard} />} />
+      <Route path="/runs" element={<ScansPage scans={scans} />} />
+      <Route path="/runs/:scanId" element={<ScansPage scans={scans} />} />
       <Route path="/findings" element={<FindingsPage dashboard={dashboard} />} />
       <Route path="/findings/:fingerprint" element={<FindingsPage dashboard={dashboard} />} />
       <Route path="/scans" element={<ScansPage scans={scans} />} />
@@ -50,11 +55,13 @@ export function App() {
   const dashboardQuery = useQuery({
     queryKey: ["dashboard"],
     queryFn: getDashboard,
+    refetchInterval: 5000,
   });
 
   const scansQuery = useQuery({
     queryKey: ["scans"],
     queryFn: getScans,
+    refetchInterval: 5000,
   });
 
   const handleHotkey = useEffectEvent((event: KeyboardEvent) => {
@@ -77,31 +84,33 @@ export function App() {
   }, [handleHotkey]);
 
   return (
-    <AppShell
-      dashboard={dashboardQuery.data}
-      scans={scansQuery.data}
-      onOpenPalette={() => setPaletteOpen(true)}
-    >
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
+    <DashboardPanelProvider>
+      <AppShell
         dashboard={dashboardQuery.data}
         scans={scansQuery.data}
-      />
-      {dashboardQuery.isLoading || scansQuery.isLoading ? (
-        <LoadingState label="Mission control" />
-      ) : dashboardQuery.error ? (
-        <ErrorState error={dashboardQuery.error} />
-      ) : scansQuery.error ? (
-        <ErrorState error={scansQuery.error} />
-      ) : dashboardQuery.data && scansQuery.data ? (
-        <AppRoutes dashboard={dashboardQuery.data} scans={scansQuery.data} />
-      ) : (
-        <EmptyState
-          title="No scan data available"
-          body="Run a scan first, then reopen the dashboard."
+        onOpenPalette={() => setPaletteOpen(true)}
+      >
+        <CommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          dashboard={dashboardQuery.data}
+          scans={scansQuery.data}
         />
-      )}
-    </AppShell>
+        {dashboardQuery.isLoading || scansQuery.isLoading ? (
+          <LoadingState label="Mission control" />
+        ) : dashboardQuery.error ? (
+          <ErrorState error={dashboardQuery.error} />
+        ) : scansQuery.error ? (
+          <ErrorState error={scansQuery.error} />
+        ) : dashboardQuery.data && scansQuery.data ? (
+          <AppRoutes dashboard={dashboardQuery.data} scans={scansQuery.data} />
+        ) : (
+          <EmptyState
+            title="No scan data available"
+            body="Run a scan first, then reopen the dashboard."
+          />
+        )}
+      </AppShell>
+    </DashboardPanelProvider>
   );
 }

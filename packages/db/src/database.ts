@@ -4,28 +4,58 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { homedir } from "node:os";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import type {
+  ArtifactRecord,
   Finding,
   AttackResult,
+  CaseRecord,
   TargetInfo,
   ScanConfig,
   AgentVerdict,
   PipelineEvent,
   FindingTriageStatus,
+  WorkItemRecord,
+  WorkerRecord,
 } from "@pwnkit/shared";
 import * as schema from "./schema.js";
-import { findingStatuses, type FindingStatusDB } from "./schema.js";
+import {
+  findingStatuses,
+  findingWorkflowStatuses,
+  type FindingStatusDB,
+  type FindingWorkflowStatusDB,
+} from "./schema.js";
 
 const DEFAULT_DB_DIR = join(homedir(), ".pwnkit");
 const DEFAULT_DB_PATH = join(DEFAULT_DB_DIR, "pwnkit.db");
+
+export function resolvePwnkitDbPath(dbPath?: string): string {
+  return dbPath ?? DEFAULT_DB_PATH;
+}
+
+export function resetPwnkitDatabase(dbPath?: string): string {
+  const path = resolvePwnkitDbPath(dbPath);
+
+  if (!dbPath) {
+    mkdirSync(DEFAULT_DB_DIR, { recursive: true });
+  }
+
+  for (const suffix of ["", "-wal", "-shm"]) {
+    const candidate = `${path}${suffix}`;
+    if (existsSync(candidate)) {
+      rmSync(candidate, { force: true });
+    }
+  }
+
+  return path;
+}
 
 export class pwnkitDB {
   private sqlite: Database.Database;
   private db: ReturnType<typeof drizzle>;
 
   constructor(dbPath?: string) {
-    const path = dbPath ?? DEFAULT_DB_PATH;
+    const path = resolvePwnkitDbPath(dbPath);
     if (!dbPath) {
       mkdirSync(DEFAULT_DB_DIR, { recursive: true });
     }
@@ -72,10 +102,492 @@ export class pwnkitDB {
     if (!colNames.has("triagedAt")) {
       this.sqlite.exec("ALTER TABLE findings ADD COLUMN triagedAt TEXT");
     }
+    if (!colNames.has("workflowStatus")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN workflowStatus TEXT NOT NULL DEFAULT 'backlog'");
+    }
+    if (!colNames.has("workflowAssignee")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN workflowAssignee TEXT");
+    }
+    if (!colNames.has("workflowUpdatedAt")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN workflowUpdatedAt TEXT");
+    }
     this.sqlite.exec("UPDATE findings SET fingerprint = id WHERE fingerprint IS NULL OR fingerprint = ''");
     this.sqlite.exec("UPDATE findings SET triageStatus = 'new' WHERE triageStatus IS NULL OR triageStatus = ''");
+    this.sqlite.exec(`
+      UPDATE findings
+      SET workflowStatus = CASE
+        WHEN workflowStatus IS NOT NULL AND workflowStatus != '' THEN workflowStatus
+        WHEN triageStatus = 'accepted' OR status = 'reported' THEN 'done'
+        WHEN triageStatus = 'suppressed' OR status = 'false-positive' THEN 'cancelled'
+        WHEN status IN ('verified', 'confirmed', 'scored') THEN 'human_review'
+        ELSE 'backlog'
+      END
+    `);
     this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint)");
     this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_workflowStatus ON findings(workflowStatus)");
+    this.sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS cases (
+        id TEXT PRIMARY KEY,
+        target TEXT NOT NULL UNIQUE,
+        targetType TEXT NOT NULL DEFAULT 'unknown',
+        latestScanId TEXT,
+        status TEXT NOT NULL DEFAULT 'open',
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    `);
+    this.sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS work_items (
+        id TEXT PRIMARY KEY,
+        caseId TEXT NOT NULL REFERENCES cases(id),
+        findingFingerprint TEXT,
+        kind TEXT NOT NULL,
+        title TEXT NOT NULL,
+        owner TEXT,
+        status TEXT NOT NULL DEFAULT 'backlog',
+        summary TEXT,
+        dependsOn TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    `);
+    this.sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS artifacts (
+        id TEXT PRIMARY KEY,
+        caseId TEXT NOT NULL REFERENCES cases(id),
+        findingFingerprint TEXT,
+        workItemId TEXT,
+        kind TEXT NOT NULL,
+        label TEXT NOT NULL,
+        content TEXT,
+        metadata TEXT,
+        createdAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    `);
+    this.sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS workers (
+        id TEXT PRIMARY KEY,
+        role TEXT NOT NULL DEFAULT 'orchestrator',
+        status TEXT NOT NULL DEFAULT 'idle',
+        label TEXT NOT NULL,
+        currentCaseId TEXT,
+        currentWorkItemId TEXT,
+        currentScanId TEXT,
+        pid INTEGER,
+        host TEXT,
+        lastError TEXT,
+        heartbeatAt TEXT NOT NULL,
+        startedAt TEXT NOT NULL,
+        updatedAt TEXT NOT NULL
+      )
+    `);
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_cases_target ON cases(target)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_work_items_caseId ON work_items(caseId)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_work_items_fingerprint ON work_items(findingFingerprint)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_work_items_status ON work_items(status)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_artifacts_caseId ON artifacts(caseId)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_artifacts_fingerprint ON artifacts(findingFingerprint)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_artifacts_workItemId ON artifacts(workItemId)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_workers_status ON workers(status)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_workers_heartbeat ON workers(heartbeatAt)");
+  }
+
+  private buildCaseId(target: string): string {
+    return `case:${encodeURIComponent(target.trim().toLowerCase())}`;
+  }
+
+  private inferCaseTargetType(scan: { target: string; mode?: string | null }): "endpoint" | "package" | "repository" | "web-app" | "unknown" {
+    if (scan.mode === "web") return "web-app";
+    if (scan.mode === "probe" || scan.mode === "mcp") return "endpoint";
+    if (scan.target.startsWith("http://") || scan.target.startsWith("https://")) return "endpoint";
+    if (scan.target.startsWith("/") || scan.target.startsWith(".") || scan.target.includes("/")) return "repository";
+    if (!scan.target.includes(" ")) return "package";
+    return "unknown";
+  }
+
+  private syncCaseForScan(scanId: string): string | null {
+    const scan = this.getScan(scanId);
+    if (!scan) return null;
+    const caseId = this.buildCaseId(scan.target);
+    const status =
+      scan.status === "running"
+        ? "in_progress"
+        : scan.status === "failed"
+          ? "open"
+          : "open";
+
+    this.upsertCase({
+      id: caseId,
+      target: scan.target,
+      targetType: this.inferCaseTargetType(scan),
+      latestScanId: scan.id,
+      status,
+    });
+
+    return caseId;
+  }
+
+  private syncFindingGraph(scanId: string, fingerprint: string): void {
+    const scan = this.getScan(scanId);
+    if (!scan) return;
+    const caseId = this.syncCaseForScan(scanId);
+    if (!caseId) return;
+
+    const rows = this.getRelatedFindings(fingerprint);
+    if (rows.length === 0) return;
+    const latest = rows[0]!;
+    const scanIds = [...new Set(rows.map((row) => row.scanId))];
+    const verdicts = this.listVerdicts(rows.map((row) => row.id));
+    const sessions = this.listSessions({ scanIds });
+    const runningRoles = new Set(sessions.filter((session) => session.status === "running").map((session) => session.agentRole));
+    const completedRoles = new Set(sessions.filter((session) => session.status === "completed").map((session) => session.agentRole));
+    const failedRoles = new Set(sessions.filter((session) => session.status === "failed").map((session) => session.agentRole));
+    const hasAnalysis = Boolean(latest.evidenceAnalysis?.trim());
+    const hasExploitArtifacts = Boolean(latest.evidenceRequest?.trim() || latest.evidenceResponse?.trim());
+    const hasVerifierVotes = verdicts.length > 0;
+    const workflowStatus = normalizeWorkflowStatus(latest.workflowStatus, latest);
+    const phase =
+      workflowStatus === "done" || workflowStatus === "cancelled" || workflowStatus === "blocked"
+        ? workflowStatus
+        : workflowStatus === "in_progress"
+          ? "in_progress"
+          : workflowStatus === "todo"
+            ? "todo"
+            : "backlog";
+    const reviewGate =
+      workflowStatus === "agent_review" || workflowStatus === "human_review"
+        ? workflowStatus
+        : latest.status === "verified" || latest.status === "confirmed" || latest.status === "scored" || latest.status === "reported" || latest.status === "false-positive"
+          ? "human_review"
+          : "none";
+
+    const surfaceMapStatus: WorkItemRecord["status"] =
+      failedRoles.has("discovery")
+        ? "blocked"
+        : runningRoles.has("discovery")
+          ? "in_progress"
+          : completedRoles.has("discovery") || scan.status !== "running" || rows.length > 0
+            ? "done"
+            : "todo";
+
+    const hypothesisStatus: WorkItemRecord["status"] =
+      failedRoles.has("review") || failedRoles.has("audit")
+        ? "blocked"
+        : runningRoles.has("review") || runningRoles.has("audit")
+          ? "in_progress"
+          : hasAnalysis || completedRoles.has("review") || completedRoles.has("audit")
+            ? "done"
+            : surfaceMapStatus === "done"
+              ? "todo"
+              : "backlog";
+
+    const pocBuildStatus: WorkItemRecord["status"] =
+      failedRoles.has("attack")
+        ? "blocked"
+        : runningRoles.has("attack")
+          ? "in_progress"
+          : hasExploitArtifacts || completedRoles.has("attack")
+            ? "done"
+            : hypothesisStatus === "done"
+              ? "todo"
+              : "backlog";
+
+    const blindVerifyStatus: WorkItemRecord["status"] =
+      failedRoles.has("verify")
+        ? "blocked"
+        : runningRoles.has("verify")
+          ? "in_progress"
+          : hasVerifierVotes || ["verified", "confirmed", "scored", "reported", "false-positive"].includes(latest.status)
+            ? "done"
+            : pocBuildStatus === "done"
+              ? "todo"
+              : "backlog";
+
+    const consensusStatus: WorkItemRecord["status"] =
+      workflowStatus === "done" || workflowStatus === "cancelled" || ["verified", "confirmed", "scored", "reported", "false-positive"].includes(latest.status)
+        ? "done"
+        : reviewGate === "agent_review"
+          ? hasVerifierVotes
+            ? "todo"
+            : blindVerifyStatus === "in_progress"
+              ? "backlog"
+              : "todo"
+          : blindVerifyStatus === "done"
+            ? "todo"
+            : "backlog";
+
+    const humanReviewStatus: WorkItemRecord["status"] =
+      phase === "done" || phase === "cancelled"
+        ? "done"
+        : reviewGate === "human_review"
+          ? "todo"
+          : reviewGate === "agent_review"
+            ? "blocked"
+            : consensusStatus === "done"
+              ? "todo"
+              : "backlog";
+
+    const items: Array<{
+      kind: WorkItemRecord["kind"];
+      title: string;
+      owner: string | null;
+      status: WorkItemRecord["status"];
+      summary: string;
+      dependsOn?: string | null;
+    }> = [
+      {
+        kind: "surface_map",
+        title: "Attack surface mapping",
+        owner: "attack-surface-agent",
+        status: surfaceMapStatus,
+        summary: "Initial target surface and candidate family context captured.",
+        dependsOn: null,
+      },
+      {
+        kind: "hypothesis",
+        title: "Exploit hypothesis",
+        owner: "research-agent",
+        status: hypothesisStatus,
+        summary: "Research context and exploit framing for this family.",
+        dependsOn: `${fingerprint}:surface_map`,
+      },
+      {
+        kind: "poc_build",
+        title: "PoC build",
+        owner: latest.workflowAssignee ?? null,
+        status: pocBuildStatus,
+        summary: "Exploit request/response artifacts and reproduction chain.",
+        dependsOn: `${fingerprint}:hypothesis`,
+      },
+      {
+        kind: "blind_verify",
+        title: "Blind verify",
+        owner: null,
+        status: blindVerifyStatus,
+        summary: "Independent verification pass without research reasoning.",
+        dependsOn: `${fingerprint}:poc_build`,
+      },
+      {
+        kind: "consensus",
+        title: "Consensus",
+        owner: "consensus-agent",
+        status: consensusStatus,
+        summary: "Resolve verifier evidence into a concrete next step.",
+        dependsOn: `${fingerprint}:blind_verify`,
+      },
+      {
+        kind: "human_review",
+        title: "Human review",
+        owner: "operator",
+        status: humanReviewStatus,
+        summary: "Final operator sign-off before closure, suppression, or reporting.",
+        dependsOn: `${fingerprint}:consensus`,
+      },
+    ];
+
+    for (const item of items) {
+      this.upsertWorkItem({
+        id: `${fingerprint}:${item.kind}`,
+        caseId,
+        findingFingerprint: fingerprint,
+        kind: item.kind,
+        title: item.title,
+        owner: item.owner,
+        status: item.status,
+        summary: item.summary,
+        dependsOn: item.dependsOn ?? null,
+      });
+    }
+
+    this.upsertArtifact({
+      id: `${fingerprint}:request`,
+      caseId,
+      findingFingerprint: fingerprint,
+      kind: "request",
+      label: "Exploit request",
+      content: latest.evidenceRequest,
+      metadata: { findingId: latest.id, scanId: latest.scanId },
+    });
+    this.upsertArtifact({
+      id: `${fingerprint}:response`,
+      caseId,
+      findingFingerprint: fingerprint,
+      kind: "response",
+      label: "Exploit response",
+      content: latest.evidenceResponse,
+      metadata: { findingId: latest.id, scanId: latest.scanId },
+    });
+    this.upsertArtifact({
+      id: `${fingerprint}:analysis`,
+      caseId,
+      findingFingerprint: fingerprint,
+      kind: "analysis",
+      label: "Research analysis",
+      content: latest.evidenceAnalysis ?? null,
+      metadata: { findingId: latest.id, scanId: latest.scanId },
+    });
+  }
+
+  private roleToWorkItemKind(role: string): WorkItemRecord["kind"] | null {
+    if (role === "discovery") return "surface_map";
+    if (role === "attack") return "poc_build";
+    if (role === "verify") return "blind_verify";
+    if (role === "review" || role === "audit") return "hypothesis";
+    if (role === "report") return "human_review";
+    return null;
+  }
+
+  private workItemTemplate(kind: WorkItemRecord["kind"]): {
+    title: string;
+    owner: string | null;
+    summary: string;
+    dependsOn: string | null;
+  } {
+    switch (kind) {
+      case "surface_map":
+        return {
+          title: "Attack surface mapping",
+          owner: "attack-surface-agent",
+          summary: "Map the target and establish the initial attack surface context.",
+          dependsOn: null,
+        };
+      case "hypothesis":
+        return {
+          title: "Exploit hypothesis",
+          owner: "research-agent",
+          summary: "Turn the surface signal into a concrete exploit theory.",
+          dependsOn: "surface_map",
+        };
+      case "poc_build":
+        return {
+          title: "PoC build",
+          owner: "research-agent",
+          summary: "Create the exploit artifact chain and reproduction path.",
+          dependsOn: "hypothesis",
+        };
+      case "blind_verify":
+        return {
+          title: "Blind verify",
+          owner: "verify-agent",
+          summary: "Reproduce the issue independently without research reasoning.",
+          dependsOn: "poc_build",
+        };
+      case "consensus":
+        return {
+          title: "Consensus",
+          owner: "consensus-agent",
+          summary: "Resolve verifier evidence into the next decision.",
+          dependsOn: "blind_verify",
+        };
+      case "human_review":
+        return {
+          title: "Human review",
+          owner: "operator",
+          summary: "Final sign-off before report, suppression, or closure.",
+          dependsOn: "consensus",
+        };
+    }
+  }
+
+  ensureCaseWorkPlan(scanId: string): string | null {
+    const caseId = this.syncCaseForScan(scanId);
+    if (!caseId) return null;
+
+    for (const kind of ["surface_map", "hypothesis", "poc_build", "blind_verify", "consensus", "human_review"] as const) {
+      const template = this.workItemTemplate(kind);
+      this.upsertWorkItem({
+        id: `${caseId}:${kind}`,
+        caseId,
+        kind,
+        title: template.title,
+        owner: template.owner,
+        status: "backlog",
+        summary: template.summary,
+        dependsOn: template.dependsOn ? `${caseId}:${template.dependsOn}` : null,
+      });
+    }
+
+    return caseId;
+  }
+
+  transitionCaseWorkItem(
+    scanId: string,
+    kind: WorkItemRecord["kind"],
+    status: WorkItemRecord["status"],
+    opts?: { summary?: string | null; owner?: string | null },
+  ): void {
+    const caseId = this.ensureCaseWorkPlan(scanId);
+    if (!caseId) return;
+    const template = this.workItemTemplate(kind);
+    const finding = this.getLatestFindingForScan(scanId);
+    this.upsertWorkItem({
+      id: `${caseId}:${kind}`,
+      caseId,
+      kind,
+      title: template.title,
+      owner: opts?.owner ?? template.owner,
+      status,
+      summary: opts?.summary ?? template.summary,
+      dependsOn: template.dependsOn ? `${caseId}:${template.dependsOn}` : null,
+    });
+    this.logEvent({
+      scanId,
+      stage: kind,
+      eventType: "work_item_transition",
+      findingId: finding?.id ?? undefined,
+      agentRole: opts?.owner ?? template.owner ?? undefined,
+      payload: {
+        kind,
+        status,
+        owner: opts?.owner ?? template.owner ?? null,
+        summary: opts?.summary ?? template.summary,
+        caseId,
+      },
+      timestamp: Date.now(),
+    });
+  }
+
+  private syncSessionGraph(session: {
+    id: string;
+    scanId: string;
+    agentRole: string;
+    status: string;
+    toolContext: Record<string, unknown>;
+  }): void {
+    const caseId = this.syncCaseForScan(session.scanId);
+    if (!caseId) return;
+
+    this.upsertArtifact({
+      id: `session:${session.id}`,
+      caseId,
+      kind: "sessions",
+      label: `${session.agentRole} session`,
+      content: JSON.stringify(session.toolContext),
+      metadata: { scanId: session.scanId, agentRole: session.agentRole, status: session.status },
+    });
+  }
+
+  private syncEventGraph(event: Omit<PipelineEvent, "id">, eventId: string): void {
+    const caseId = this.syncCaseForScan(event.scanId);
+    if (!caseId) return;
+    const finding = event.findingId ? this.getFinding(event.findingId) : null;
+    this.upsertArtifact({
+      id: `event:${eventId}`,
+      caseId,
+      findingFingerprint: finding?.fingerprint ?? null,
+      kind: "events",
+      label: `${event.stage}:${event.eventType}`,
+      content: JSON.stringify(event.payload),
+      metadata: {
+        scanId: event.scanId,
+        agentRole: event.agentRole ?? null,
+        findingId: event.findingId ?? null,
+        timestamp: event.timestamp,
+      },
+    });
   }
 
   // ── Scans ──
@@ -91,6 +603,7 @@ export class pwnkitDB {
       status: "running",
       startedAt: new Date().toISOString(),
     }).run();
+    this.syncCaseForScan(id);
     return id;
   }
 
@@ -113,6 +626,7 @@ export class pwnkitDB {
       })
       .where(eq(schema.scans.id, scanId))
       .run();
+    this.syncCaseForScan(scanId);
   }
 
   reopenScan(scanId: string): void {
@@ -125,6 +639,7 @@ export class pwnkitDB {
       })
       .where(eq(schema.scans.id, scanId))
       .run();
+    this.syncCaseForScan(scanId);
   }
 
   failScan(scanId: string, error: string): void {
@@ -137,6 +652,7 @@ export class pwnkitDB {
       })
       .where(eq(schema.scans.id, scanId))
       .run();
+    this.syncCaseForScan(scanId);
   }
 
   getScan(scanId: string) {
@@ -212,9 +728,21 @@ export class pwnkitDB {
   // ── Findings ──
 
   saveFinding(scanId: string, finding: Finding): void {
+    const workflowFinding = finding as Finding & {
+      workflowStatus?: string | null;
+      workflowAssignee?: string | null;
+    };
     const scan = this.getScan(scanId);
     const fingerprint = finding.fingerprint ?? buildFindingFingerprint(scan?.target ?? scanId, finding);
     const inheritedTriage = this.getLatestFindingByFingerprint(fingerprint);
+    const inheritedWorkflowStatus = normalizeWorkflowStatus(
+      workflowFinding.workflowStatus ?? inheritedTriage?.workflowStatus,
+      {
+        status: finding.status,
+        triageStatus: finding.triageStatus ?? inheritedTriage?.triageStatus ?? "new",
+      },
+    );
+    const inheritedWorkflowAssignee = workflowFinding.workflowAssignee ?? inheritedTriage?.workflowAssignee ?? null;
     this.db
       .insert(schema.findings)
       .values({
@@ -230,6 +758,9 @@ export class pwnkitDB {
         triageStatus: finding.triageStatus ?? inheritedTriage?.triageStatus ?? "new",
         triageNote: finding.triageNote ?? inheritedTriage?.triageNote ?? null,
         triagedAt: finding.triageStatus || inheritedTriage?.triageStatus ? new Date().toISOString() : null,
+        workflowStatus: inheritedWorkflowStatus,
+        workflowAssignee: inheritedWorkflowAssignee,
+        workflowUpdatedAt: new Date().toISOString(),
         confidence: finding.confidence ?? null,
         cvssVector: finding.cvssVector ?? null,
         cvssScore: finding.cvssScore ?? null,
@@ -243,6 +774,9 @@ export class pwnkitDB {
         set: {
           status: finding.status,
           fingerprint,
+          workflowStatus: inheritedWorkflowStatus,
+          workflowAssignee: inheritedWorkflowAssignee,
+          workflowUpdatedAt: new Date().toISOString(),
           confidence: finding.confidence ?? null,
           cvssVector: finding.cvssVector ?? null,
           cvssScore: finding.cvssScore ?? null,
@@ -252,6 +786,7 @@ export class pwnkitDB {
         },
       })
       .run();
+    this.syncFindingGraph(scanId, fingerprint);
   }
 
   getFinding(findingId: string) {
@@ -269,6 +804,15 @@ export class pwnkitDB {
       .where(eq(schema.findings.scanId, scanId))
       .orderBy(schema.findings.severity, schema.findings.timestamp)
       .all();
+  }
+
+  getLatestFindingForScan(scanId: string) {
+    return this.db
+      .select()
+      .from(schema.findings)
+      .where(eq(schema.findings.scanId, scanId))
+      .orderBy(desc(schema.findings.timestamp))
+      .get();
   }
 
   listFindings(opts?: {
@@ -311,11 +855,13 @@ export class pwnkitDB {
   }
 
   updateFindingStatus(findingId: string, status: string): void {
+    const finding = this.getFinding(findingId);
     this.db
       .update(schema.findings)
       .set({ status })
       .where(eq(schema.findings.id, findingId))
       .run();
+    if (finding?.fingerprint) this.syncFindingGraph(finding.scanId, finding.fingerprint);
   }
 
   updateFindingTriageByFingerprint(
@@ -323,15 +869,92 @@ export class pwnkitDB {
     triageStatus: FindingTriageStatus,
     triageNote?: string,
   ): void {
+    const latestFinding = this.getLatestFindingByFingerprint(fingerprint);
+    const workflowStatus = triageStatus === "accepted"
+      ? "done"
+      : triageStatus === "suppressed"
+        ? "cancelled"
+        : null;
     this.db
       .update(schema.findings)
       .set({
         triageStatus,
         triageNote: triageNote ?? null,
         triagedAt: new Date().toISOString(),
+        ...(workflowStatus
+          ? {
+              workflowStatus,
+              workflowUpdatedAt: new Date().toISOString(),
+            }
+          : {}),
       })
       .where(eq(schema.findings.fingerprint, fingerprint))
       .run();
+    const refreshedFinding = this.getLatestFindingByFingerprint(fingerprint) ?? latestFinding;
+    if (refreshedFinding) {
+      this.logEvent({
+        scanId: refreshedFinding.scanId,
+        stage: "triage",
+        eventType: "triage_updated",
+        findingId: refreshedFinding.id,
+        payload: {
+          fingerprint,
+          triageStatus,
+          workflowStatus: workflowStatus ?? "backlog",
+          triageNote: triageNote ?? null,
+        },
+        timestamp: Date.now(),
+      });
+      this.syncFindingGraph(refreshedFinding.scanId, fingerprint);
+      return;
+    }
+    this.syncFindingGraph("", fingerprint);
+  }
+
+  updateFindingWorkflowByFingerprint(
+    fingerprint: string,
+    workflowStatus: WorkflowStatus,
+    workflowAssignee?: string | null,
+  ): void {
+    const latestFinding = this.getLatestFindingByFingerprint(fingerprint);
+    const normalizedWorkflowStatus = normalizeWorkflowStatus(workflowStatus);
+    const triageStatus =
+      normalizedWorkflowStatus === "done"
+        ? "accepted"
+        : normalizedWorkflowStatus === "cancelled"
+          ? "suppressed"
+          : "new";
+
+    this.db
+      .update(schema.findings)
+      .set({
+        workflowStatus: normalizedWorkflowStatus,
+        workflowAssignee: workflowAssignee ?? null,
+        workflowUpdatedAt: new Date().toISOString(),
+        triageStatus,
+        triagedAt: triageStatus === "new" ? null : new Date().toISOString(),
+      })
+      .where(eq(schema.findings.fingerprint, fingerprint))
+      .run();
+    const refreshedFinding = this.getLatestFindingByFingerprint(fingerprint) ?? latestFinding;
+    if (refreshedFinding) {
+      this.logEvent({
+        scanId: refreshedFinding.scanId,
+        stage: "workflow",
+        eventType: "workflow_status_changed",
+        findingId: refreshedFinding.id,
+        payload: {
+          fingerprint,
+          workflowStatus: normalizedWorkflowStatus,
+          workflowAssignee: workflowAssignee ?? null,
+          triageStatus,
+        },
+        timestamp: Date.now(),
+      });
+      this.syncFindingGraph(refreshedFinding.scanId, fingerprint);
+      return;
+    }
+    this.syncFindingGraph("", fingerprint);
   }
 
   updateFindingTriage(findingId: string, triageStatus: FindingTriageStatus, triageNote?: string): void {
@@ -381,15 +1004,18 @@ export class pwnkitDB {
       .set({ status: newStatus })
       .where(eq(schema.findings.id, findingId))
       .run();
+    if (finding.fingerprint) this.syncFindingGraph(finding.scanId, finding.fingerprint);
   }
 
   scoreFinding(findingId: string, score: number): void {
+    const finding = this.getFinding(findingId);
     if (score < 0 || score > 100) throw new Error("Score must be 0-100");
     this.db
       .update(schema.findings)
       .set({ score, status: "scored" })
       .where(eq(schema.findings.id, findingId))
       .run();
+    if (finding?.fingerprint) this.syncFindingGraph(finding.scanId, finding.fingerprint);
   }
 
   // ── Attack Results ──
@@ -432,6 +1058,8 @@ export class pwnkitDB {
       reasoning: verdict.reasoning,
       timestamp: verdict.timestamp,
     }).run();
+    const finding = this.getFinding(verdict.findingId);
+    if (finding?.fingerprint) this.syncFindingGraph(finding.scanId, finding.fingerprint);
   }
 
   getVerdicts(findingId: string) {
@@ -441,6 +1069,25 @@ export class pwnkitDB {
       .where(eq(schema.verdicts.findingId, findingId))
       .orderBy(desc(schema.verdicts.timestamp))
       .all();
+  }
+
+  listVerdicts(findingIds?: string[]) {
+    if (!findingIds || findingIds.length === 0) return [];
+    const placeholders = findingIds.map(() => "?").join(",");
+    return this.sqlite
+      .prepare(
+        `SELECT * FROM verdicts WHERE findingId IN (${placeholders}) ORDER BY timestamp DESC`
+      )
+      .all(...findingIds) as Array<{
+        id: string;
+        findingId: string;
+        agentRole: string;
+        model: string;
+        verdict: string;
+        confidence: number;
+        reasoning: string;
+        timestamp: number;
+      }>;
   }
 
   /** Compute consensus: all agree TRUE_POSITIVE → verified, all FALSE_POSITIVE → false-positive */
@@ -467,6 +1114,7 @@ export class pwnkitDB {
       payload: JSON.stringify(event.payload),
       timestamp: event.timestamp,
     }).run();
+    this.syncEventGraph(event, id);
     return id;
   }
 
@@ -480,6 +1128,28 @@ export class pwnkitDB {
       .from(schema.pipelineEvents)
       .where(and(...conditions))
       .orderBy(schema.pipelineEvents.timestamp)
+      .all();
+  }
+
+  listRecentEvents(limit = 50) {
+    return this.db
+      .select({
+        id: schema.pipelineEvents.id,
+        scanId: schema.pipelineEvents.scanId,
+        scanTarget: schema.scans.target,
+        stage: schema.pipelineEvents.stage,
+        eventType: schema.pipelineEvents.eventType,
+        findingId: schema.pipelineEvents.findingId,
+        findingFingerprint: schema.findings.fingerprint,
+        agentRole: schema.pipelineEvents.agentRole,
+        payload: schema.pipelineEvents.payload,
+        timestamp: schema.pipelineEvents.timestamp,
+      })
+      .from(schema.pipelineEvents)
+      .innerJoin(schema.scans, eq(schema.pipelineEvents.scanId, schema.scans.id))
+      .leftJoin(schema.findings, eq(schema.pipelineEvents.findingId, schema.findings.id))
+      .orderBy(desc(schema.pipelineEvents.timestamp))
+      .limit(limit)
       .all();
   }
 
@@ -519,6 +1189,7 @@ export class pwnkitDB {
         },
       })
       .run();
+    this.syncSessionGraph(session);
   }
 
   getSession(scanId: string, agentRole: string) {
@@ -540,6 +1211,278 @@ export class pwnkitDB {
       .from(schema.agentSessions)
       .where(eq(schema.agentSessions.id, sessionId))
       .get();
+  }
+
+  listSessions(opts?: { scanIds?: string[]; status?: string }) {
+    const conditions: string[] = [];
+    const params: Array<string> = [];
+
+    if (opts?.scanIds?.length) {
+      conditions.push(`scanId IN (${opts.scanIds.map(() => "?").join(",")})`);
+      params.push(...opts.scanIds);
+    }
+
+    if (opts?.status) {
+      conditions.push("status = ?");
+      params.push(opts.status);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+    return this.sqlite
+      .prepare(`SELECT * FROM agent_sessions ${where} ORDER BY updatedAt DESC`)
+      .all(...params) as Array<{
+        id: string;
+        scanId: string;
+        agentRole: string;
+        turnCount: number;
+        messages: string;
+        toolContext: string;
+        status: string;
+        createdAt: string;
+        updatedAt: string;
+      }>;
+  }
+
+  // ── Cases / Work Items / Artifacts ──
+
+  upsertCase(record: Omit<CaseRecord, "createdAt" | "updatedAt"> & { createdAt?: string; updatedAt?: string }): void {
+    const now = new Date().toISOString();
+    this.db
+      .insert(schema.cases)
+      .values({
+        id: record.id,
+        target: record.target,
+        targetType: record.targetType,
+        latestScanId: record.latestScanId ?? null,
+        status: record.status,
+        createdAt: record.createdAt ?? now,
+        updatedAt: record.updatedAt ?? now,
+      })
+      .onConflictDoUpdate({
+        target: schema.cases.id,
+        set: {
+          target: record.target,
+          targetType: record.targetType,
+          latestScanId: record.latestScanId ?? null,
+          status: record.status,
+          updatedAt: record.updatedAt ?? now,
+        },
+      })
+      .run();
+  }
+
+  getCase(caseId: string) {
+    return this.db.select().from(schema.cases).where(eq(schema.cases.id, caseId)).get();
+  }
+
+  listCases(limit = 100) {
+    return this.db.select().from(schema.cases).orderBy(desc(schema.cases.updatedAt)).limit(limit).all();
+  }
+
+  upsertWorkItem(record: Omit<WorkItemRecord, "createdAt" | "updatedAt"> & { createdAt?: string; updatedAt?: string }): void {
+    const now = new Date().toISOString();
+    this.db
+      .insert(schema.workItems)
+      .values({
+        id: record.id,
+        caseId: record.caseId,
+        findingFingerprint: record.findingFingerprint ?? null,
+        kind: record.kind,
+        title: record.title,
+        owner: record.owner ?? null,
+        status: record.status,
+        summary: record.summary ?? null,
+        dependsOn: record.dependsOn ?? null,
+        createdAt: record.createdAt ?? now,
+        updatedAt: record.updatedAt ?? now,
+      })
+      .onConflictDoUpdate({
+        target: schema.workItems.id,
+        set: {
+          caseId: record.caseId,
+          findingFingerprint: record.findingFingerprint ?? null,
+          kind: record.kind,
+          title: record.title,
+          owner: record.owner ?? null,
+          status: record.status,
+          summary: record.summary ?? null,
+          dependsOn: record.dependsOn ?? null,
+          updatedAt: record.updatedAt ?? now,
+        },
+      })
+      .run();
+  }
+
+  listWorkItems(opts?: { caseId?: string; findingFingerprint?: string; status?: string; limit?: number }) {
+    const conditions = [];
+    if (opts?.caseId) conditions.push(eq(schema.workItems.caseId, opts.caseId));
+    if (opts?.findingFingerprint) conditions.push(eq(schema.workItems.findingFingerprint, opts.findingFingerprint));
+    if (opts?.status) conditions.push(eq(schema.workItems.status, opts.status));
+
+    const query = this.db.select().from(schema.workItems).orderBy(desc(schema.workItems.updatedAt)).limit(opts?.limit ?? 200);
+    if (conditions.length > 0) return query.where(and(...conditions)).all();
+    return query.all();
+  }
+
+  claimWorkItem(
+    workItemId: string,
+    workerId: string,
+    opts?: {
+      expectedStatus?: WorkItemRecord["status"];
+      owner?: string | null;
+      summary?: string | null;
+    },
+  ): boolean {
+    const now = new Date().toISOString();
+    const result = this.sqlite
+      .prepare(`
+        UPDATE work_items
+        SET status = 'in_progress',
+            owner = @owner,
+            summary = COALESCE(@summary, summary),
+            updatedAt = @updatedAt
+        WHERE id = @id
+          AND status = @expectedStatus
+      `)
+      .run({
+        id: workItemId,
+        owner: opts?.owner ?? workerId,
+        summary: opts?.summary ?? null,
+        updatedAt: now,
+        expectedStatus: opts?.expectedStatus ?? "todo",
+      });
+
+    return result.changes > 0;
+  }
+
+  upsertArtifact(record: Omit<ArtifactRecord, "createdAt" | "updatedAt"> & { createdAt?: string; updatedAt?: string }): void {
+    const now = new Date().toISOString();
+    this.db
+      .insert(schema.artifacts)
+      .values({
+        id: record.id,
+        caseId: record.caseId,
+        findingFingerprint: record.findingFingerprint ?? null,
+        workItemId: record.workItemId ?? null,
+        kind: record.kind,
+        label: record.label,
+        content: record.content ?? null,
+        metadata: record.metadata ? JSON.stringify(record.metadata) : null,
+        createdAt: record.createdAt ?? now,
+        updatedAt: record.updatedAt ?? now,
+      })
+      .onConflictDoUpdate({
+        target: schema.artifacts.id,
+        set: {
+          caseId: record.caseId,
+          findingFingerprint: record.findingFingerprint ?? null,
+          workItemId: record.workItemId ?? null,
+          kind: record.kind,
+          label: record.label,
+          content: record.content ?? null,
+          metadata: record.metadata ? JSON.stringify(record.metadata) : null,
+          updatedAt: record.updatedAt ?? now,
+        },
+      })
+      .run();
+  }
+
+  listArtifacts(opts?: { caseId?: string; findingFingerprint?: string; workItemId?: string; limit?: number }) {
+    const conditions = [];
+    if (opts?.caseId) conditions.push(eq(schema.artifacts.caseId, opts.caseId));
+    if (opts?.findingFingerprint) conditions.push(eq(schema.artifacts.findingFingerprint, opts.findingFingerprint));
+    if (opts?.workItemId) conditions.push(eq(schema.artifacts.workItemId, opts.workItemId));
+
+    const query = this.db.select().from(schema.artifacts).orderBy(desc(schema.artifacts.updatedAt)).limit(opts?.limit ?? 200);
+    if (conditions.length > 0) return query.where(and(...conditions)).all();
+    return query.all();
+  }
+
+  upsertWorker(record: Omit<WorkerRecord, "startedAt" | "updatedAt" | "heartbeatAt"> & {
+    startedAt?: string;
+    updatedAt?: string;
+    heartbeatAt?: string;
+  }): void {
+    const now = new Date().toISOString();
+    this.db
+      .insert(schema.workers)
+      .values({
+        id: record.id,
+        role: record.role,
+        status: record.status,
+        label: record.label,
+        currentCaseId: record.currentCaseId ?? null,
+        currentWorkItemId: record.currentWorkItemId ?? null,
+        currentScanId: record.currentScanId ?? null,
+        pid: record.pid ?? null,
+        host: record.host ?? null,
+        lastError: record.lastError ?? null,
+        heartbeatAt: record.heartbeatAt ?? now,
+        startedAt: record.startedAt ?? now,
+        updatedAt: record.updatedAt ?? now,
+      })
+      .onConflictDoUpdate({
+        target: schema.workers.id,
+        set: {
+          role: record.role,
+          status: record.status,
+          label: record.label,
+          currentCaseId: record.currentCaseId ?? null,
+          currentWorkItemId: record.currentWorkItemId ?? null,
+          currentScanId: record.currentScanId ?? null,
+          pid: record.pid ?? null,
+          host: record.host ?? null,
+          lastError: record.lastError ?? null,
+          heartbeatAt: record.heartbeatAt ?? now,
+          updatedAt: record.updatedAt ?? now,
+        },
+      })
+      .run();
+  }
+
+  listWorkers(limit = 50) {
+    return this.db.select().from(schema.workers).orderBy(desc(schema.workers.heartbeatAt)).limit(limit).all();
+  }
+
+  stopWorkersByLabel(label: string, exceptId?: string): number {
+    const now = new Date().toISOString();
+    const result = this.sqlite
+      .prepare(`
+        UPDATE workers
+        SET status = 'stopped',
+            currentCaseId = NULL,
+            currentWorkItemId = NULL,
+            currentScanId = NULL,
+            updatedAt = @updatedAt,
+            heartbeatAt = @heartbeatAt,
+            lastError = CASE
+              WHEN lastError IS NULL OR lastError = '' THEN 'Superseded by a newer worker with the same label.'
+              ELSE lastError
+            END
+        WHERE label = @label
+          AND (@exceptId IS NULL OR id != @exceptId)
+          AND status != 'stopped'
+      `)
+      .run({
+        label,
+        exceptId: exceptId ?? null,
+        updatedAt: now,
+        heartbeatAt: now,
+      });
+
+    return result.changes;
+  }
+
+  deleteWorkersByStatus(statuses: string | string[]): number {
+    const values = Array.isArray(statuses) ? statuses : [statuses];
+    if (values.length === 0) return 0;
+
+    const placeholders = values.map(() => "?").join(",");
+    const result = this.sqlite
+      .prepare(`DELETE FROM workers WHERE status IN (${placeholders})`)
+      .run(...values);
+
+    return result.changes;
   }
 
   // ── Utilities ──
@@ -633,6 +1576,9 @@ CREATE TABLE IF NOT EXISTS findings (
   triageStatus TEXT NOT NULL DEFAULT 'new',
   triageNote TEXT,
   triagedAt TEXT,
+  workflowStatus TEXT NOT NULL DEFAULT 'backlog',
+  workflowAssignee TEXT,
+  workflowUpdatedAt TEXT,
   score INTEGER,
   evidenceRequest TEXT NOT NULL,
   evidenceResponse TEXT NOT NULL,
@@ -686,6 +1632,22 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS workers (
+  id TEXT PRIMARY KEY,
+  role TEXT NOT NULL DEFAULT 'orchestrator',
+  status TEXT NOT NULL DEFAULT 'idle',
+  label TEXT NOT NULL,
+  currentCaseId TEXT,
+  currentWorkItemId TEXT,
+  currentScanId TEXT,
+  pid INTEGER,
+  host TEXT,
+  lastError TEXT,
+  heartbeatAt TEXT NOT NULL,
+  startedAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
 `;
 
 const SCHEMA_INDEXES_SQL = `
@@ -695,6 +1657,7 @@ CREATE INDEX IF NOT EXISTS idx_findings_category ON findings(category);
 CREATE INDEX IF NOT EXISTS idx_findings_status ON findings(status);
 CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint);
 CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus);
+CREATE INDEX IF NOT EXISTS idx_findings_workflowStatus ON findings(workflowStatus);
 CREATE INDEX IF NOT EXISTS idx_attack_results_scanId ON attack_results(scanId);
 CREATE INDEX IF NOT EXISTS idx_targets_url ON targets(url);
 CREATE INDEX IF NOT EXISTS idx_verdicts_findingId ON verdicts(findingId);
@@ -703,4 +1666,40 @@ CREATE INDEX IF NOT EXISTS idx_events_stage ON pipeline_events(stage);
 CREATE INDEX IF NOT EXISTS idx_events_findingId ON pipeline_events(findingId);
 CREATE INDEX IF NOT EXISTS idx_sessions_scanId ON agent_sessions(scanId);
 CREATE INDEX IF NOT EXISTS idx_sessions_role ON agent_sessions(agentRole);
+CREATE INDEX IF NOT EXISTS idx_workers_status ON workers(status);
+CREATE INDEX IF NOT EXISTS idx_workers_heartbeat ON workers(heartbeatAt);
 `;
+
+function normalizeWorkflowStatus(
+  value?: string | null,
+  fallback?: {
+    status?: string | null;
+    triageStatus?: string | null;
+  },
+): FindingWorkflowStatusDB {
+  if (value && findingWorkflowStatuses.includes(value as FindingWorkflowStatusDB)) {
+    return value as FindingWorkflowStatusDB;
+  }
+
+  if (fallback?.triageStatus === "accepted" || fallback?.status === "reported") {
+    return "done";
+  }
+  if (fallback?.triageStatus === "suppressed" || fallback?.status === "false-positive") {
+    return "cancelled";
+  }
+  if (fallback?.status && ["verified", "confirmed", "scored"].includes(fallback.status)) {
+    return "human_review";
+  }
+
+  return "backlog";
+}
+
+type WorkflowStatus =
+  | "backlog"
+  | "todo"
+  | "agent_review"
+  | "in_progress"
+  | "human_review"
+  | "blocked"
+  | "done"
+  | "cancelled";

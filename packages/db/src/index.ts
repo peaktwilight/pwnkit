@@ -1,4 +1,4 @@
-export { pwnkitDB } from "./database.js";
+export { pwnkitDB, resetPwnkitDatabase, resolvePwnkitDbPath } from "./database.js";
 export {
   scans,
   targets,
@@ -7,8 +7,22 @@ export {
   verdicts,
   pipelineEvents,
   agentSessions,
+  cases,
+  workItems,
+  artifacts,
+  workers,
   findingStatuses,
   findingTriageStatuses,
+  caseStatuses,
+  workItemKinds,
+  workItemStatuses,
+  artifactKinds,
+  workerStatuses,
   type FindingStatusDB,
   type FindingTriageStatusDB,
+  type CaseStatusDB,
+  type WorkItemKindDB,
+  type WorkItemStatusDB,
+  type ArtifactKindDB,
+  type WorkerStatusDB,
 } from "./schema.js";

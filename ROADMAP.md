@@ -15,7 +15,7 @@ pwnkit already has the foundation for a real agentic security platform:
 - multi-stage prepare → analyze → research → verify → report pipeline
 - blind verification to kill false positives
 - local scan history, findings, pipeline events, and agent session persistence
-- local mission-control dashboard for scan history and finding-family triage
+- local operations shell for attack-thread workflow, evidence review, runtime health, and scan provenance
 - CLI output, HTML reports, JSON, Markdown, and SARIF
 - GitHub Action support and CI-safe runtime paths
 
@@ -119,22 +119,22 @@ Deliverables:
 - queueing and retry policy
 - shared target inventory and cross-target clustering
 
-### 6. Local dashboard / mission control
+### 6. Local dashboard / operations shell
 
-Goal: expose the stored scan state as a real operator interface.
+Goal: expose the stored scan state as a real operator interface for running the autonomous control plane, working the review inbox, and inspecting runtime failures.
 
 This should start as a local web dashboard, not a bloated hosted SaaS surface.
 
 Status:
 
-- baseline shipped: scan history, grouped findings, family-level triage, quick filtering
-- next cut: active run stage progress, pipeline event timeline, replay launch, and target inventory
+- baseline shipped: grouped findings, thread-level workflow, quick filtering, scan dossiers
+- next cut: operations-first home, active run stage progress, replay launch, and better provenance links between threads and runs
 
 Core views:
 
-- active runs with stage progress
-- timeline of pipeline events
-- finding inbox with filters and diffing
+- operations control as the primary home
+- review inbox for operator decisions and blocked automation
+- scan dossiers and pipeline timelines as supporting provenance views
 - replay/evidence viewer
 - target inventory
 - scan history and trend charts
@@ -197,7 +197,7 @@ The best version of pwnkit is:
 - a sharp local CLI for one-off deep work
 - a reliable CI primitive for PRs and repos
 - a persistent evidence store for findings and agent runs
-- a lightweight mission-control dashboard on top
-- eventually a distributed agentic security control plane
+- a local operations shell on top of that state
+- eventually a separate distributed agentic security control plane for campaigns and remote workers
 
 That is more compelling than being "yet another scanner with more templates."

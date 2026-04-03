@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   AgentConfig,
   AgentState,
@@ -42,10 +43,26 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
 
   const executor = new ToolExecutor(toolCtx, db);
   const tools = config.tools.length > 0 ? config.tools : getToolsForRole(config.role, { hasScope: !!config.scopePath });
+  const sessionId = config.sessionId ?? randomUUID();
+  let consecutiveNoToolTurns = 0;
+  let restoredMessages: AgentMessage[] | null = null;
+  let restoredTurnCount = 0;
+
+  if (config.sessionId && db) {
+    const existing = db.getSessionById(config.sessionId);
+    if (existing && existing.status === "paused") {
+      restoredMessages = JSON.parse(existing.messages) as AgentMessage[];
+      restoredTurnCount = existing.turnCount;
+      const ctx = JSON.parse(existing.toolContext) as ToolContext;
+      toolCtx.findings = ctx.findings ?? [];
+      toolCtx.attackResults = ctx.attackResults ?? [];
+      toolCtx.targetInfo = ctx.targetInfo ?? {};
+    }
+  }
 
   const state: AgentState = {
-    messages: [{ role: "system", content: config.systemPrompt }],
-    turnCount: 0,
+    messages: restoredMessages ?? [{ role: "system", content: config.systemPrompt }],
+    turnCount: restoredTurnCount,
     findings: toolCtx.findings,
     attackResults: toolCtx.attackResults,
     targetInfo: toolCtx.targetInfo,
@@ -67,6 +84,8 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
     `You are a ${config.role} agent for pwnkit, an AI red-teaming toolkit.`,
     `Target: ${config.target}`,
     `Scan ID: ${config.scanId}`,
+    "Authorization: The operator has confirmed this target is owned by them or explicitly authorized for this assessment.",
+    "Scope: Non-destructive security testing only. Do not perform denial of service, persistence, credential abuse, or destructive actions.",
     "",
     "## Available Tools",
     "Call tools using this exact format (one per line):",
@@ -82,7 +101,20 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
     toolDocs,
   ].join("\n");
 
-  state.messages.push({ role: "user", content: initialPrompt });
+  if (!restoredMessages) {
+    state.messages.push({ role: "user", content: initialPrompt });
+  }
+
+  if (db) {
+    db.logEvent({
+      scanId: config.scanId,
+      stage: config.role,
+      eventType: "agent_start",
+      agentRole: config.role,
+      payload: { sessionId, maxTurns: config.maxTurns, toolCount: tools.length },
+      timestamp: Date.now(),
+    });
+  }
 
   // ── Main loop ──
 
@@ -97,6 +129,13 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
       target: config.target,
       findings: JSON.stringify(toolCtx.findings.slice(-10)),
       systemPrompt: config.systemPrompt,
+      scanId: config.scanId,
+      mcp: config.attachTargetToolsMcp
+        ? {
+            enableTargetTools: true,
+            dbPath: config.dbPath,
+          }
+        : undefined,
     });
 
     if (result.error && !result.output) {
@@ -104,6 +143,18 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
         role: "assistant",
         content: `Error from runtime: ${result.error}`,
       });
+      state.summary = `Error: ${result.error}`;
+      if (db) {
+        db.logEvent({
+          scanId: config.scanId,
+          stage: config.role,
+          eventType: "agent_error",
+          agentRole: config.role,
+          payload: { sessionId, turn: state.turnCount, error: result.error },
+          timestamp: Date.now(),
+        });
+        persistSession(db, state, config, sessionId, "paused");
+      }
       break;
     }
 
@@ -120,15 +171,56 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
 
     // If no tool calls, the agent is just talking — prompt for action
     if (toolCalls.length === 0) {
+      consecutiveNoToolTurns += 1;
+      if (db) {
+        db.logEvent({
+          scanId: config.scanId,
+          stage: config.role,
+          eventType: "agent_no_tool_calls",
+          agentRole: config.role,
+          payload: {
+            sessionId,
+            turn: state.turnCount,
+            excerpt: assistantContent.slice(0, 500),
+          },
+          timestamp: Date.now(),
+        });
+      }
+
+      if (runtime.type === "codex" && consecutiveNoToolTurns >= 2) {
+        state.summary = "Runtime did not emit required TOOL_CALL actions. Codex CLI appears to be reasoning locally instead of using the target interaction tools.";
+        if (db) {
+          db.logEvent({
+            scanId: config.scanId,
+            stage: config.role,
+            eventType: "runtime_incompatible",
+            agentRole: config.role,
+            payload: {
+              sessionId,
+              turn: state.turnCount,
+              runtime: runtime.type,
+              summary: state.summary,
+            },
+            timestamp: Date.now(),
+          });
+          persistSession(db, state, config, sessionId, "paused");
+        }
+        break;
+      }
+
       state.messages.push({
         role: "user",
         content:
           "Please use your tools to take action. Call a tool using the TOOL_CALL format, or call done if you are finished.",
       });
+      if (db && state.turnCount % 2 === 0) {
+        persistSession(db, state, config, sessionId, "running");
+      }
       continue;
     }
 
     // Execute each tool call
+    consecutiveNoToolTurns = 0;
     const toolResults: Array<{ name: string; result: { success: boolean; output: unknown; error?: string } }> = [];
     for (const call of toolCalls) {
       const toolResult = await executor.execute(call);
@@ -151,6 +243,28 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
       .join("\n\n");
 
     state.messages.push({ role: "user", content: toolResultText });
+
+    assistantMsg.toolResults = toolResults;
+
+    if (db) {
+      db.logEvent({
+        scanId: config.scanId,
+        stage: config.role,
+        eventType: "tool_calls",
+        agentRole: config.role,
+        payload: {
+          sessionId,
+          turn: state.turnCount,
+          tools: toolCalls.map((call) => call.name),
+          results: toolResults.map((entry) => ({ success: entry.result.success, error: entry.result.error })),
+        },
+        timestamp: Date.now(),
+      });
+    }
+
+    if (db && state.turnCount % 2 === 0) {
+      persistSession(db, state, config, sessionId, "running");
+    }
   }
 
   // Sync state
@@ -160,6 +274,24 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
 
   if (!state.done) {
     state.summary = `Agent reached max turns (${config.maxTurns}) without completing.`;
+  }
+
+  if (db) {
+    persistSession(db, state, config, sessionId, state.done ? "completed" : "paused");
+    db.logEvent({
+      scanId: config.scanId,
+      stage: config.role,
+      eventType: "agent_complete",
+      agentRole: config.role,
+      payload: {
+        sessionId,
+        turnCount: state.turnCount,
+        findingCount: state.findings.length,
+        done: state.done,
+        summary: state.summary.slice(0, 500),
+      },
+      timestamp: Date.now(),
+    });
   }
 
   return state;
@@ -204,4 +336,32 @@ function serializeConversation(messages: AgentMessage[]): string {
       }
     })
     .join("\n\n---\n\n");
+}
+
+function persistSession(
+  db: pwnkitDB,
+  state: AgentState,
+  config: AgentConfig,
+  sessionId: string,
+  status: string,
+): void {
+  const maxStoredMessages = 40;
+  const messagesToStore =
+    state.messages.length > maxStoredMessages
+      ? state.messages.slice(-maxStoredMessages)
+      : state.messages;
+
+  db.saveSession({
+    id: sessionId,
+    scanId: config.scanId,
+    agentRole: config.role,
+    turnCount: state.turnCount,
+    messages: messagesToStore,
+    toolContext: {
+      findings: state.findings,
+      attackResults: state.attackResults,
+      targetInfo: state.targetInfo,
+    },
+    status,
+  });
 }

@@ -13,7 +13,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm -r build && pnpm run build:bundle",
+    "build": "pnpm -r exec rm -f tsconfig.tsbuildinfo && pnpm --filter @pwnkit/shared build && pnpm --filter @pwnkit/db --filter @pwnkit/templates build && pnpm -r build && pnpm run build:bundle",
     "build:bundle": "node ./scripts/bundle-cli.mjs",
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r exec tsc --noEmit",

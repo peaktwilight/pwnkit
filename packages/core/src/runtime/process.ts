@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { writeFileSync } from "node:fs";
 import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType } from "./types.js";
 
@@ -42,6 +42,39 @@ const RUNTIME_COMMANDS: Record<string, string> = {
   gemini: "gemini",
 };
 
+function resolveCliEntrypoint(): string {
+  return resolve(process.argv[1] ?? join(process.cwd(), "dist", "index.js"));
+}
+
+function buildPwnkitMcpCommandArgs(context: RuntimeContext): string[] {
+  const cliEntrypoint = resolveCliEntrypoint();
+  const args = [
+    cliEntrypoint,
+    "mcp-server",
+    "--target",
+    context.target ?? "",
+    "--scan-id",
+    context.scanId ?? "no-scan-id",
+  ];
+
+  if (context.mcp?.dbPath) {
+    args.push("--db-path", context.mcp.dbPath);
+  }
+
+  return args;
+}
+
+function buildClaudeMcpConfig(context: RuntimeContext): string {
+  return JSON.stringify({
+    mcpServers: {
+      pwnkit: {
+        command: process.execPath,
+        args: buildPwnkitMcpCommandArgs(context),
+      },
+    },
+  });
+}
+
 export class ProcessRuntime implements Runtime {
   readonly type: RuntimeType;
   private config: RuntimeConfig;
@@ -70,7 +103,7 @@ export class ProcessRuntime implements Runtime {
       const proc = spawn(this.command, args, {
         cwd: this.config.cwd ?? process.cwd(),
         env: { ...process.env, ...env },
-        stdio: ["pipe", "pipe", "pipe"],
+        stdio: ["ignore", "pipe", "pipe"],
       });
 
       proc.stdout.on("data", (chunk: Buffer) => {
@@ -171,6 +204,9 @@ export class ProcessRuntime implements Runtime {
     switch (this.type) {
       case "claude": {
         const args = ["-p", prompt, "--verbose", "--output-format", "stream-json"];
+        if (context?.mcp?.enableTargetTools && context.target && context.scanId) {
+          args.push("--mcp-config", buildClaudeMcpConfig(context), "--strict-mcp-config");
+        }
         if (context?.systemPrompt) {
           args.push("--system-prompt", context.systemPrompt);
         }
@@ -187,6 +223,13 @@ export class ProcessRuntime implements Runtime {
           "--skip-git-repo-check",
           "--json",
         ];
+        if (context?.mcp?.enableTargetTools && context.target && context.scanId) {
+          args.push(
+            "-c", "mcp_servers.pwnkit.enabled=true",
+            "-c", `mcp_servers.pwnkit.command=${JSON.stringify(process.execPath)}`,
+            "-c", `mcp_servers.pwnkit.args=${JSON.stringify(buildPwnkitMcpCommandArgs(context))}`,
+          );
+        }
         if (this.config.outputSchema) {
           // Codex needs schema as a file — write to temp
           const schemaPath = join(tmpdir(), `pwnkit-schema-${Date.now()}.json`);

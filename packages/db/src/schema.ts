@@ -14,6 +14,34 @@ export type FindingStatusDB = (typeof findingStatuses)[number];
 
 export const findingTriageStatuses = ["new", "accepted", "suppressed"] as const;
 export type FindingTriageStatusDB = (typeof findingTriageStatuses)[number];
+export const findingWorkflowStatuses = [
+  "backlog",
+  "todo",
+  "agent_review",
+  "in_progress",
+  "human_review",
+  "blocked",
+  "done",
+  "cancelled",
+] as const;
+export type FindingWorkflowStatusDB = (typeof findingWorkflowStatuses)[number];
+export const caseStatuses = ["open", "in_progress", "human_review", "done", "cancelled"] as const;
+export type CaseStatusDB = (typeof caseStatuses)[number];
+export const workItemKinds = [
+  "surface_map",
+  "hypothesis",
+  "poc_build",
+  "blind_verify",
+  "consensus",
+  "human_review",
+] as const;
+export type WorkItemKindDB = (typeof workItemKinds)[number];
+export const workItemStatuses = ["backlog", "todo", "in_progress", "blocked", "done", "cancelled"] as const;
+export type WorkItemStatusDB = (typeof workItemStatuses)[number];
+export const artifactKinds = ["request", "response", "analysis", "verdicts", "sessions", "events"] as const;
+export type ArtifactKindDB = (typeof artifactKinds)[number];
+export const workerStatuses = ["idle", "claiming", "running", "sleeping", "stopped", "error"] as const;
+export type WorkerStatusDB = (typeof workerStatuses)[number];
 
 // ── Tables ──
 
@@ -63,6 +91,9 @@ export const findings = sqliteTable(
     triageStatus: text("triageStatus").notNull().default("new"),
     triageNote: text("triageNote"),
     triagedAt: text("triagedAt"),
+    workflowStatus: text("workflowStatus").notNull().default("backlog"),
+    workflowAssignee: text("workflowAssignee"),
+    workflowUpdatedAt: text("workflowUpdatedAt"),
     score: integer("score"), // CVSS-like 0-100 score, set during "scored" stage
     confidence: real("confidence"), // 0.0-1.0 agent-assessed confidence
     cvssVector: text("cvssVector"), // CVSS vector string
@@ -79,6 +110,7 @@ export const findings = sqliteTable(
     index("idx_findings_status").on(table.status),
     index("idx_findings_fingerprint").on(table.fingerprint),
     index("idx_findings_triageStatus").on(table.triageStatus),
+    index("idx_findings_workflowStatus").on(table.workflowStatus),
   ]
 );
 
@@ -163,5 +195,88 @@ export const agentSessions = sqliteTable(
   (table) => [
     index("idx_sessions_scanId").on(table.scanId),
     index("idx_sessions_role").on(table.agentRole),
+  ]
+);
+
+export const cases = sqliteTable(
+  "cases",
+  {
+    id: text("id").primaryKey(),
+    target: text("target").notNull().unique(),
+    targetType: text("targetType").notNull().default("unknown"),
+    latestScanId: text("latestScanId"),
+    status: text("status").notNull().default("open"),
+    createdAt: text("createdAt").notNull(),
+    updatedAt: text("updatedAt").notNull(),
+  },
+  (table) => [
+    index("idx_cases_target").on(table.target),
+    index("idx_cases_status").on(table.status),
+  ]
+);
+
+export const workItems = sqliteTable(
+  "work_items",
+  {
+    id: text("id").primaryKey(),
+    caseId: text("caseId").notNull().references(() => cases.id),
+    findingFingerprint: text("findingFingerprint"),
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    owner: text("owner"),
+    status: text("status").notNull().default("backlog"),
+    summary: text("summary"),
+    dependsOn: text("dependsOn"),
+    createdAt: text("createdAt").notNull(),
+    updatedAt: text("updatedAt").notNull(),
+  },
+  (table) => [
+    index("idx_work_items_caseId").on(table.caseId),
+    index("idx_work_items_fingerprint").on(table.findingFingerprint),
+    index("idx_work_items_status").on(table.status),
+  ]
+);
+
+export const artifacts = sqliteTable(
+  "artifacts",
+  {
+    id: text("id").primaryKey(),
+    caseId: text("caseId").notNull().references(() => cases.id),
+    findingFingerprint: text("findingFingerprint"),
+    workItemId: text("workItemId"),
+    kind: text("kind").notNull(),
+    label: text("label").notNull(),
+    content: text("content"),
+    metadata: text("metadata"),
+    createdAt: text("createdAt").notNull(),
+    updatedAt: text("updatedAt").notNull(),
+  },
+  (table) => [
+    index("idx_artifacts_caseId").on(table.caseId),
+    index("idx_artifacts_fingerprint").on(table.findingFingerprint),
+    index("idx_artifacts_workItemId").on(table.workItemId),
+  ]
+);
+
+export const workers = sqliteTable(
+  "workers",
+  {
+    id: text("id").primaryKey(),
+    role: text("role").notNull().default("orchestrator"),
+    status: text("status").notNull().default("idle"),
+    label: text("label").notNull(),
+    currentCaseId: text("currentCaseId"),
+    currentWorkItemId: text("currentWorkItemId"),
+    currentScanId: text("currentScanId"),
+    pid: integer("pid"),
+    host: text("host"),
+    lastError: text("lastError"),
+    heartbeatAt: text("heartbeatAt").notNull(),
+    startedAt: text("startedAt").notNull(),
+    updatedAt: text("updatedAt").notNull(),
+  },
+  (table) => [
+    index("idx_workers_status").on(table.status),
+    index("idx_workers_heartbeat").on(table.heartbeatAt),
   ]
 );

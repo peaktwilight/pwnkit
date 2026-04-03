@@ -6,13 +6,47 @@ import { runUnified } from "./run.js";
 
 function parseScanTarget(target: string): {
   target: string;
-  targetType: "npm-package" | "source-code";
+  targetType: "npm-package" | "source-code" | "url" | "web-app";
   packageVersion?: string;
+  mode?: ScanMode;
+  sourceDescription: string;
 } {
+  if (target.startsWith("http://") || target.startsWith("https://")) {
+    return {
+      target,
+      targetType: "url",
+      sourceDescription: "url",
+    };
+  }
+
+  if (target.startsWith("web:")) {
+    return {
+      target: target.slice("web:".length),
+      targetType: "web-app",
+      mode: "web",
+      sourceDescription: "web-app",
+    };
+  }
+  if (target.startsWith("mcp://")) {
+    return {
+      target,
+      targetType: "url",
+      mode: "mcp",
+      sourceDescription: "mcp target",
+    };
+  }
+  if (target.startsWith("scan:")) {
+    return {
+      target: target.slice("scan:".length),
+      targetType: "url",
+      sourceDescription: "url",
+    };
+  }
   if (target.startsWith("repo:")) {
     return {
       target: target.slice("repo:".length),
       targetType: "source-code",
+      sourceDescription: "repository",
     };
   }
 
@@ -24,24 +58,26 @@ function parseScanTarget(target: string): {
         target: spec.slice(0, atIndex),
         targetType: "npm-package",
         packageVersion: spec.slice(atIndex + 1),
+        sourceDescription: "npm package",
       };
     }
 
     return {
       target: spec,
       targetType: "npm-package",
+      sourceDescription: "npm package",
     };
   }
 
   throw new Error(
-    `Resume is currently supported for review/audit scans only. Unsupported target: ${target}`,
+    `Resume does not know how to route this persisted target yet: ${target}`,
   );
 }
 
 export function registerResumeCommand(program: Command): void {
   program
     .command("resume")
-    .description("Resume a previous review/audit scan from persisted state")
+    .description("Resume a previous scan from persisted state")
     .argument("<scanId>", "Scan ID to resume")
     .option("--db-path <path>", "Path to SQLite database")
     .option("--format <format>", "Output format override: terminal, json, md, html, sarif")
@@ -75,16 +111,23 @@ export function registerResumeCommand(program: Command): void {
       }
 
       const parsed = parseScanTarget(scan.target);
+      const inferredTargetType =
+        scan.mode === "web"
+          ? "web-app"
+          : parsed.targetType;
+      const inferredMode =
+        parsed.mode
+        ?? ((scan.mode as ScanMode | undefined) ?? (inferredTargetType === "web-app" ? "web" : "deep"));
 
       await runUnified({
         target: parsed.target,
-        targetType: parsed.targetType,
+        targetType: inferredTargetType,
         resumeScanId: scanId,
         packageVersion: parsed.packageVersion,
         depth: scan.depth as ScanDepth,
         format: ((opts.format as string | undefined) === "md" ? "markdown" : (opts.format as OutputFormat | undefined)) ?? "terminal",
         runtime: (opts.runtime as RuntimeMode | undefined) ?? (scan.runtime as RuntimeMode) ?? "auto",
-        mode: (scan.mode as ScanMode | undefined) ?? "deep",
+        mode: inferredMode,
         timeout: parseInt((opts.timeout as string | undefined) ?? "600000", 10),
         verbose: false,
         dbPath: opts.dbPath as string | undefined,

@@ -128,14 +128,25 @@ function prepareTarget(
 }
 
 function prepareNpmPackage(
-  packageName: string,
+  rawPackageName: string,
   requestedVersion: string | undefined,
   emit: ScanListener,
 ): PrepareResult {
+  // Split "node-forge@0.10.0" into name + version
+  let packageName = rawPackageName;
+  let version = requestedVersion;
+  const atIdx = rawPackageName.startsWith("@")
+    ? rawPackageName.indexOf("@", 1)
+    : rawPackageName.indexOf("@");
+  if (atIdx > 0) {
+    packageName = rawPackageName.slice(0, atIdx);
+    version = version ?? rawPackageName.slice(atIdx + 1);
+  }
+
   const tempDir = join(tmpdir(), `pwnkit-pipeline-${randomUUID().slice(0, 8)}`);
   mkdirSync(tempDir, { recursive: true });
 
-  const spec = requestedVersion ? `${packageName}@${requestedVersion}` : `${packageName}@latest`;
+  const spec = version ? `${packageName}@${version}` : `${packageName}@latest`;
 
   emit({ type: "stage:start", stage: "prepare", message: `Installing ${spec}...` });
 

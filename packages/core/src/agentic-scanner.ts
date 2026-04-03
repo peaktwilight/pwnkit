@@ -2,6 +2,7 @@ import type { ScanConfig, ScanReport, Finding } from "@pwnkit/shared";
 import { loadTemplates } from "@pwnkit/templates";
 import { createRuntime } from "./runtime/index.js";
 import { LlmApiRuntime } from "./runtime/llm-api.js";
+import { detectAvailableRuntimes } from "./runtime/registry.js";
 // DB lazy-loaded to avoid native module issues
 import { runAgentLoop } from "./agent/loop.js";
 import { runNativeAgentLoop } from "./agent/native-loop.js";
@@ -62,25 +63,54 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
   }
 
   // Determine runtime mode
-  const runtimeMode = config.runtime ?? "api";
-  const legacyRuntime = createRuntime({
-    type: runtimeMode === "auto" ? "api" : runtimeMode,
-    timeout: config.timeout ?? 60_000,
-  });
+  const requestedRuntime = config.runtime ?? "api";
 
-  // Try to use native Claude API runtime for structured tool_use
-  const claudeRuntime = new LlmApiRuntime({
+  // Native API runtime is only valid for explicit API mode, or for auto mode
+  // when we intentionally choose the native API strategy.
+  const nativeApiRuntime = new LlmApiRuntime({
     type: "api",
     timeout: config.timeout ?? 120_000,
     model: config.model,
     apiKey: config.apiKey,
   });
-  const useNative = await claudeRuntime.isAvailable();
+  const nativeApiAvailable = await nativeApiRuntime.isAvailable();
+
+  let selectedRuntimeType: "api" | "claude" | "codex" | "gemini" = "api";
+  let useNative = false;
+
+  if (requestedRuntime === "api") {
+    selectedRuntimeType = "api";
+    useNative = nativeApiAvailable;
+  } else if (requestedRuntime === "auto") {
+    if (nativeApiAvailable) {
+      selectedRuntimeType = "api";
+      useNative = true;
+    } else {
+      const availableCli = await detectAvailableRuntimes();
+      if (availableCli.has("claude")) selectedRuntimeType = "claude";
+      else if (availableCli.has("codex")) selectedRuntimeType = "codex";
+      else if (availableCli.has("gemini")) selectedRuntimeType = "gemini";
+      else selectedRuntimeType = "api";
+      useNative = false;
+    }
+  } else {
+    selectedRuntimeType = requestedRuntime;
+    useNative = false;
+  }
+
+  const legacyRuntime = createRuntime({
+    type: selectedRuntimeType,
+    timeout: config.timeout ?? 60_000,
+    model: config.model,
+    apiKey: config.apiKey,
+  });
 
   const templates = loadTemplates(config.depth);
   const categories = [...new Set(templates.map((t) => t.category))];
 
   let allFindings: Finding[] = [];
+
+  db.ensureCaseWorkPlan?.(scanId);
 
   // Log scan start
   db.logEvent({
@@ -91,6 +121,8 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       target: config.target,
       depth: config.depth,
       mode: config.mode ?? "probe",
+      requestedRuntime,
+      selectedRuntime: selectedRuntimeType,
       useNative,
       templateCount: templates.length,
       categoryCount: categories.length,
@@ -99,8 +131,19 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
   });
 
   try {
+    if (!useNative && selectedRuntimeType === "codex") {
+      throw new Error(
+        "Codex CLI is not compatible with pwnkit's target-interaction tool loop. " +
+        "Use runtime=api for live target scanning, or reserve codex for source-analysis/code-review workflows.",
+      );
+    }
+
     // ── Stage 1: Discovery Agent ──
     emit({ type: "stage:start", stage: "discovery", message: "Discovery agent starting..." });
+    db.transitionCaseWorkItem?.(scanId, "surface_map", "in_progress", {
+      owner: "attack-surface-agent",
+      summary: "Discovery agent is mapping the target surface and initial context.",
+    });
     db.logEvent({
       scanId,
       stage: "discovery",
@@ -111,8 +154,8 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     });
 
     const discoveryState = useNative
-      ? await runNativeDiscovery(claudeRuntime, db, config, scanId, emit)
-      : await runLegacyDiscovery(legacyRuntime, db, config, scanId, emit);
+      ? await runNativeDiscovery(nativeApiRuntime, db, config, scanId, emit)
+      : await runLegacyDiscovery(legacyRuntime, db, config, scanId, emit, dbPath);
 
     // Persist target profile
     if (discoveryState.targetInfo.type) {
@@ -134,6 +177,14 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       payload: { summary: discoveryState.summary.slice(0, 500) },
       timestamp: Date.now(),
     });
+    db.transitionCaseWorkItem?.(scanId, "surface_map", "done", {
+      owner: "attack-surface-agent",
+      summary: discoveryState.summary.slice(0, 500) || "Discovery completed.",
+    });
+    db.transitionCaseWorkItem?.(scanId, "hypothesis", "todo", {
+      owner: "research-agent",
+      summary: "Surface mapping completed. Exploit hypothesis is ready to start.",
+    });
     emit({
       type: "stage:end",
       stage: "discovery",
@@ -148,6 +199,14 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       stage: "attack",
       message: `Attack agent starting (${categories.length} categories)...`,
     });
+    db.transitionCaseWorkItem?.(scanId, "hypothesis", "in_progress", {
+      owner: "research-agent",
+      summary: "Attack agent is developing the exploit hypothesis and artifact path.",
+    });
+    db.transitionCaseWorkItem?.(scanId, "poc_build", "in_progress", {
+      owner: "research-agent",
+      summary: "Attack agent is building exploit requests, responses, and reproduction artifacts.",
+    });
     db.logEvent({
       scanId,
       stage: "attack",
@@ -158,8 +217,8 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     });
 
     const attackState = useNative
-      ? await runNativeAttack(claudeRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit)
-      : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit);
+      ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit)
+      : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, dbPath);
 
     allFindings = [...attackState.findings];
 
@@ -171,6 +230,22 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       payload: { findingCount: allFindings.length, summary: attackState.summary.slice(0, 500) },
       timestamp: Date.now(),
     });
+    db.transitionCaseWorkItem?.(scanId, "hypothesis", "done", {
+      owner: "research-agent",
+      summary: attackState.summary.slice(0, 500) || "Exploit hypothesis completed.",
+    });
+    db.transitionCaseWorkItem?.(scanId, "poc_build", allFindings.length > 0 ? "done" : "blocked", {
+      owner: "research-agent",
+      summary: allFindings.length > 0
+        ? `PoC build completed with ${allFindings.length} finding${allFindings.length > 1 ? "s" : ""}.`
+        : "Attack stage finished without actionable exploit artifacts.",
+    });
+    if (allFindings.length > 0) {
+      db.transitionCaseWorkItem?.(scanId, "blind_verify", "todo", {
+        owner: "verify-agent",
+        summary: "Exploit artifacts are ready for an independent verification pass.",
+      });
+    }
     emit({
       type: "stage:end",
       stage: "attack",
@@ -184,6 +259,10 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
         stage: "verify",
         message: `Verifying ${allFindings.length} findings...`,
       });
+      db.transitionCaseWorkItem?.(scanId, "blind_verify", "in_progress", {
+        owner: "verify-agent",
+        summary: `Verification agent is reproducing ${allFindings.length} finding${allFindings.length > 1 ? "s" : ""}.`,
+      });
       db.logEvent({
         scanId,
         stage: "verify",
@@ -194,9 +273,9 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       });
 
       if (useNative) {
-        await runNativeVerify(claudeRuntime, db, config, scanId, allFindings, emit);
+        await runNativeVerify(nativeApiRuntime, db, config, scanId, allFindings, emit);
       } else {
-        await runLegacyVerify(legacyRuntime, db, config, scanId, allFindings, emit);
+        await runLegacyVerify(legacyRuntime, db, config, scanId, allFindings, emit, dbPath);
       }
 
       // Merge verification results — DB is source of truth
@@ -213,6 +292,20 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
           falsePositive: allFindings.filter((f) => f.status === "false-positive").length,
         },
         timestamp: Date.now(),
+      });
+      const verifiedCount = allFindings.filter((f) => f.status === "verified").length;
+      const falsePositiveCount = allFindings.filter((f) => f.status === "false-positive").length;
+      db.transitionCaseWorkItem?.(scanId, "blind_verify", "done", {
+        owner: "verify-agent",
+        summary: `Verification finished with ${verifiedCount} verified and ${falsePositiveCount} false-positive findings.`,
+      });
+      db.transitionCaseWorkItem?.(scanId, "consensus", "done", {
+        owner: "consensus-agent",
+        summary: "Verification evidence has been consolidated into the next decision state.",
+      });
+      db.transitionCaseWorkItem?.(scanId, "human_review", "todo", {
+        owner: "operator",
+        summary: "Autonomous verification completed. Operator review is now required.",
       });
       emit({
         type: "stage:end",
@@ -275,6 +368,12 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     return report;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    const blockedSummary = msg.slice(0, 500);
+    db.transitionCaseWorkItem?.(scanId, "surface_map", "blocked", { summary: blockedSummary });
+    db.transitionCaseWorkItem?.(scanId, "hypothesis", "blocked", { summary: blockedSummary });
+    db.transitionCaseWorkItem?.(scanId, "poc_build", "blocked", { summary: blockedSummary });
+    db.transitionCaseWorkItem?.(scanId, "blind_verify", "blocked", { summary: blockedSummary });
+    db.transitionCaseWorkItem?.(scanId, "consensus", "blocked", { summary: blockedSummary });
     db.failScan(scanId, msg);
     db.logEvent({
       scanId,
@@ -404,6 +503,7 @@ async function runLegacyDiscovery(
   config: ScanConfig,
   scanId: string,
   emit: ScanListener,
+  dbPath?: string,
 ): Promise<AgentOutput> {
   const state = await runAgentLoop({
     config: {
@@ -413,6 +513,9 @@ async function runLegacyDiscovery(
       maxTurns: 8,
       target: config.target,
       scanId,
+      sessionId: db?.getSession(scanId, "discovery")?.id,
+      attachTargetToolsMcp: true,
+      dbPath,
     },
     runtime,
     db,
@@ -441,6 +544,7 @@ async function runLegacyAttack(
   categories: string[],
   maxTurns: number,
   emit: ScanListener,
+  dbPath?: string,
 ): Promise<AgentOutput> {
   const state = await runAgentLoop({
     config: {
@@ -450,6 +554,9 @@ async function runLegacyAttack(
       maxTurns,
       target: config.target,
       scanId,
+      sessionId: db?.getSession(scanId, "attack")?.id,
+      attachTargetToolsMcp: true,
+      dbPath,
     },
     runtime,
     db,
@@ -481,6 +588,7 @@ async function runLegacyVerify(
   scanId: string,
   findings: Finding[],
   _emit: ScanListener,
+  dbPath?: string,
 ): Promise<void> {
   await runAgentLoop({
     config: {
@@ -490,6 +598,9 @@ async function runLegacyVerify(
       maxTurns: Math.min(findings.length * 3, 15),
       target: config.target,
       scanId,
+      sessionId: db?.getSession(scanId, "verify")?.id,
+      attachTargetToolsMcp: true,
+      dbPath,
     },
     runtime,
     db,

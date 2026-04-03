@@ -16,6 +16,20 @@ export function formatDuration(durationMs: number | null | undefined): string {
 export function summarizePayload(payload: Record<string, unknown> | null): string {
   if (!payload || Object.keys(payload).length === 0) return "No payload";
 
+  if (typeof payload.summary === "string" && payload.summary.trim()) {
+    return payload.summary.trim();
+  }
+
+  if (Array.isArray(payload.tools) && payload.tools.length > 0) {
+    const turn = typeof payload.turn === "number" ? `turn ${payload.turn} · ` : "";
+    return `${turn}tools: ${payload.tools.join(", ")}`;
+  }
+
+  if (typeof payload.excerpt === "string" && payload.excerpt.trim()) {
+    const turn = typeof payload.turn === "number" ? `turn ${payload.turn} · ` : "";
+    return `${turn}no tool calls · ${payload.excerpt.trim().slice(0, 120)}`;
+  }
+
   return Object.entries(payload)
     .slice(0, 3)
     .map(([key, value]) => `${key}: ${formatScalar(value)}`)

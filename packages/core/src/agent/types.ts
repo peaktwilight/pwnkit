@@ -51,6 +51,9 @@ export interface AgentConfig {
   target: string;
   scanId: string;
   scopePath?: string;
+  sessionId?: string;
+  attachTargetToolsMcp?: boolean;
+  dbPath?: string;
 }
 
 // ── Agent State ──

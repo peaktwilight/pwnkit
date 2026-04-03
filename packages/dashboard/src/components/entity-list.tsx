@@ -20,7 +20,7 @@ export function EntityList({
   children: ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden">
+    <Card className="flex min-h-[36rem] flex-col overflow-hidden">
       <CardHeader className="space-y-3">
         <div>
           <CardEyebrow>Queue</CardEyebrow>
@@ -28,7 +28,7 @@ export function EntityList({
           <CardDescription>{description}</CardDescription>
         </div>
         <label className="flex items-center gap-3">
-          <Search className="size-4 text-[var(--muted)]" />
+          <Search className="size-4 text-muted-foreground" />
           <Input
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
@@ -37,8 +37,8 @@ export function EntityList({
           />
         </label>
       </CardHeader>
-      <CardContent className="pt-3">
-        <ScrollArea className="h-[calc(100vh-21rem)] pr-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col pt-3">
+        <ScrollArea className="min-h-0 flex-1">
           <CardList>{children}</CardList>
         </ScrollArea>
       </CardContent>
@@ -63,9 +63,9 @@ export function EntityListItem({
     <CardListItem interactive selected={selected}>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-0.5">
-          <div className="text-sm font-semibold leading-5 text-white">{title}</div>
-          <div className="text-xs leading-5 text-[var(--muted)]">{description}</div>
-          {meta ? <div className="text-xs text-[var(--muted-foreground)]">{meta}</div> : null}
+          <div className="text-sm font-semibold leading-5 text-foreground">{title}</div>
+          <div className="text-xs leading-5 text-muted-foreground">{description}</div>
+          {meta ? <div className="text-xs text-muted-foreground">{meta}</div> : null}
         </div>
         {badges ? <div className="flex max-w-[12rem] flex-wrap justify-end gap-2">{badges}</div> : null}
       </div>

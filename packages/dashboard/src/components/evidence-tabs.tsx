@@ -26,21 +26,21 @@ export function EvidenceTabs({
       <TabsContent value="request">
         <Card>
           <CardContent className="p-4">
-            <pre className="text-sm leading-6 text-[var(--muted)]">{request}</pre>
+            <pre className="text-sm leading-6 text-muted-foreground">{request}</pre>
           </CardContent>
         </Card>
       </TabsContent>
       <TabsContent value="response">
         <Card>
           <CardContent className="p-4">
-            <pre className="text-sm leading-6 text-[var(--muted)]">{response}</pre>
+            <pre className="text-sm leading-6 text-muted-foreground">{response}</pre>
           </CardContent>
         </Card>
       </TabsContent>
       <TabsContent value="analysis">
         <Card>
           <CardContent className="p-4">
-            <pre className="text-sm leading-6 text-[var(--muted)]">{analysis ?? "No evidence analysis recorded."}</pre>
+            <pre className="text-sm leading-6 text-muted-foreground">{analysis ?? "No evidence analysis recorded."}</pre>
           </CardContent>
         </Card>
       </TabsContent>

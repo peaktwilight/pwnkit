@@ -1,37 +1,50 @@
-import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
+import { Slot } from "@radix-ui/react-slot"
+
+import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-sm border border-transparent text-sm font-medium whitespace-nowrap transition-[background-color,border-color,color,box-shadow] outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "border border-[var(--border)] bg-[var(--secondary)] text-[var(--secondary-foreground)] hover:bg-white/[0.06]",
-        outline: "border border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-[var(--accent-soft)] hover:text-[var(--foreground)]",
-        secondary: "bg-white/[0.06] text-[var(--secondary-foreground)] hover:bg-white/[0.1]",
-        ghost: "text-[var(--foreground)]/80 hover:bg-[var(--accent-soft)] hover:text-[var(--foreground)]",
-        accent: "bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[#ef4444]",
-        success: "bg-[var(--success-soft)] text-[var(--foreground)] hover:bg-[var(--success)]/20",
-        warning: "bg-[var(--warning-soft)] text-[var(--foreground)] hover:bg-[var(--warning)]/18",
-        danger: "bg-[var(--danger-soft)] text-[var(--foreground)] hover:bg-[var(--danger)]/20",
-        destructive: "bg-[var(--danger-soft)] text-[var(--foreground)] hover:bg-[var(--danger)]/20",
+        default: "bg-primary text-primary-foreground hover:bg-primary/92",
+        outline:
+          "border-border bg-background hover:border-primary/20 hover:bg-primary/6 hover:text-foreground aria-expanded:border-primary/20 aria-expanded:bg-primary/8 aria-expanded:text-foreground dark:bg-transparent",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/85 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+        ghost:
+          "hover:bg-primary/6 hover:text-foreground aria-expanded:bg-primary/8 aria-expanded:text-foreground",
+        accent: "bg-primary text-primary-foreground hover:bg-primary/92",
+        success:
+          "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/16 dark:bg-emerald-500/18 dark:text-emerald-200 dark:hover:bg-emerald-500/24",
+        warning:
+          "border-amber-500/20 bg-amber-500/10 text-amber-700 hover:bg-amber-500/16 dark:bg-amber-500/18 dark:text-amber-200 dark:hover:bg-amber-500/24",
+        danger:
+          "border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/16 dark:bg-destructive/20 dark:text-destructive",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/92 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 px-3 text-xs",
-        lg: "h-10 px-5",
-        icon: "size-9 px-0",
+        default:
+          "h-9 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5",
+        xs: "h-6 gap-1 px-2.5 text-xs has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-8 gap-1 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        lg: "h-10 gap-1.5 px-4 has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        icon: "size-9",
+        "icon-xs": "size-6 [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-8",
+        "icon-lg": "size-10",
       },
     },
     defaultVariants: {
       variant: "default",
       size: "default",
     },
-  },
-);
+  }
+)
 
 function Button({
   className,
@@ -41,9 +54,9 @@ function Button({
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
+    asChild?: boolean
   }) {
-  const Comp = asChild ? Slot : "button";
+  const Comp = asChild ? Slot : "button"
 
   return (
     <Comp
@@ -53,7 +66,7 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
-  );
+  )
 }
 
-export { Button, buttonVariants };
+export { Button, buttonVariants }

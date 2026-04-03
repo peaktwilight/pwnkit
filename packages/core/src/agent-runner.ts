@@ -105,11 +105,13 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
     // Schema for structured findings output
     const findingsSchema = {
       type: "object",
+      additionalProperties: false,
       properties: {
         findings: {
           type: "array",
           items: {
             type: "object",
+            additionalProperties: false,
             properties: {
               title: { type: "string", description: "Clear vulnerability title" },
               severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
@@ -118,7 +120,7 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
               description: { type: "string", description: "Detailed vulnerability description" },
               poc: { type: "string", description: "Proof-of-concept code or command" },
             },
-            required: ["title", "severity", "description"],
+            required: ["title", "severity", "category", "file", "description", "poc"],
           },
         },
         summary: { type: "string", description: "Brief summary of the audit" },

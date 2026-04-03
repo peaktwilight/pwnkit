@@ -99,6 +99,27 @@ export interface TargetInfo {
 
 export type FindingStatus = "discovered" | "verified" | "confirmed" | "scored" | "reported" | "false-positive";
 export type FindingTriageStatus = "new" | "accepted" | "suppressed";
+export type FindingWorkflowStatus =
+  | "backlog"
+  | "todo"
+  | "agent_review"
+  | "in_progress"
+  | "human_review"
+  | "blocked"
+  | "done"
+  | "cancelled";
+
+export type CaseTargetType = "endpoint" | "package" | "repository" | "web-app" | "unknown";
+export type WorkItemKind =
+  | "surface_map"
+  | "hypothesis"
+  | "poc_build"
+  | "blind_verify"
+  | "consensus"
+  | "human_review";
+export type WorkItemStatus = "backlog" | "todo" | "in_progress" | "blocked" | "done" | "cancelled";
+export type ArtifactKind = "request" | "response" | "analysis" | "verdicts" | "sessions" | "events";
+export type WorkerStatus = "idle" | "claiming" | "running" | "sleeping" | "stopped" | "error";
 
 export interface Finding {
   id: string;
@@ -112,6 +133,8 @@ export interface Finding {
   fingerprint?: string;
   triageStatus?: FindingTriageStatus;
   triageNote?: string;
+  workflowStatus?: FindingWorkflowStatus;
+  workflowAssignee?: string | null;
   confidence?: number; // 0.0–1.0 agent-assessed confidence
   cvssVector?: string; // CVSS vector string
   cvssScore?: number; // CVSS numeric score (0–10)
@@ -131,6 +154,61 @@ export interface AgentVerdict {
   confidence: number; // 0.0–1.0
   reasoning: string;
   timestamp: number;
+}
+
+// ── Case / Work Graph ──
+
+export interface CaseRecord {
+  id: string;
+  target: string;
+  targetType: CaseTargetType;
+  latestScanId?: string | null;
+  status: "open" | "in_progress" | "human_review" | "done" | "cancelled";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkItemRecord {
+  id: string;
+  caseId: string;
+  findingFingerprint?: string | null;
+  kind: WorkItemKind;
+  title: string;
+  owner?: string | null;
+  status: WorkItemStatus;
+  summary?: string | null;
+  dependsOn?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtifactRecord {
+  id: string;
+  caseId: string;
+  findingFingerprint?: string | null;
+  workItemId?: string | null;
+  kind: ArtifactKind;
+  label: string;
+  content?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkerRecord {
+  id: string;
+  role: "orchestrator";
+  status: WorkerStatus;
+  label: string;
+  currentCaseId?: string | null;
+  currentWorkItemId?: string | null;
+  currentScanId?: string | null;
+  pid?: number | null;
+  host?: string | null;
+  lastError?: string | null;
+  heartbeatAt: string;
+  startedAt: string;
+  updatedAt: string;
 }
 
 // ── Pipeline Events (audit trail) ──

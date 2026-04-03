@@ -1,90 +1,126 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import type { HTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <section
-      className={cn(
-        "rounded-[var(--radius)] border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)] shadow-[var(--shadow-panel)]",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+import { cn } from "@/lib/utils"
 
-export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex items-start justify-between gap-4 p-4 pb-0", className)} {...props} />;
-}
-
-export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-4", className)} {...props} />;
-}
-
-export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-base font-semibold tracking-tight", className)} {...props} />;
-}
-
-export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("mt-1 text-sm text-[var(--muted)]", className)} {...props} />;
-}
-
-export function CardEyebrow({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+function Card({
+  className,
+  size = "default",
+  ...props
+}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
   return (
     <div
+      data-slot="card"
+      data-size={size}
       className={cn(
-        "text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]",
-        className,
+        "group/card flex flex-col gap-6 overflow-hidden rounded-lg border border-border bg-card py-6 text-sm text-card-foreground has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-lg *:[img:last-child]:rounded-b-lg",
+        className
       )}
       {...props}
     />
-  );
+  )
 }
 
-const cardRowVariants = cva(
-  "rounded-md bg-[var(--secondary)] px-4 py-3 text-sm transition-colors",
-  {
-    variants: {
-      interactive: {
-        true: "hover:bg-[var(--accent-soft)]",
-        false: "",
-      },
-      selected: {
-        true: "bg-[var(--accent-soft)] shadow-[inset_2px_0_0_var(--accent)]",
-        false: "",
-      },
-    },
-    defaultVariants: {
-      interactive: false,
-      selected: false,
-    },
-  },
-);
-
-type CardRowProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof cardRowVariants>;
-
-export function CardRow({
-  className,
-  interactive,
-  selected,
-  ...props
-}: CardRowProps) {
-  return <div className={cn(cardRowVariants({ className, interactive, selected }))} {...props} />;
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "group/card-header @container/card-header grid auto-rows-min items-start gap-1.5 rounded-t-lg px-6 group-data-[size=sm]/card:px-4 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-6 group-data-[size=sm]/card:[.border-b]:pb-4",
+        className
+      )}
+      {...props}
+    />
+  )
 }
 
-export function CardList({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("divide-y divide-[var(--border)]", className)} {...props} />;
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-title"
+      className={cn("font-heading text-base font-medium", className)}
+      {...props}
+    />
+  )
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-description"
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6 group-data-[size=sm]/card:px-4", className)}
+      {...props}
+    />
+  )
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn(
+        "flex items-center rounded-b-lg px-6 group-data-[size=sm]/card:px-4 [.border-t]:pt-6 group-data-[size=sm]/card:[.border-t]:pt-4",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardEyebrow({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-eyebrow"
+      className={cn(
+        "text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+function CardList({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-list"
+      className={cn("divide-y divide-border", className)}
+      {...props}
+    />
+  )
 }
 
 const cardListItemVariants = cva("px-4 py-3 text-sm transition-colors", {
   variants: {
     interactive: {
-      true: "hover:bg-[var(--accent-soft)] hover:text-[var(--foreground)]",
+      true: "hover:bg-primary/5 hover:text-foreground",
       false: "",
     },
     selected: {
-      true: "bg-[var(--accent-soft)] shadow-[inset_2px_0_0_var(--accent)]",
+      true: "bg-primary/8 text-foreground",
       false: "",
     },
   },
@@ -92,27 +128,46 @@ const cardListItemVariants = cva("px-4 py-3 text-sm transition-colors", {
     interactive: false,
     selected: false,
   },
-});
+})
 
-type CardListItemProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof cardListItemVariants>;
-
-export function CardListItem({
+function CardListItem({
   className,
   interactive,
   selected,
   ...props
-}: CardListItemProps) {
-  return <div className={cn(cardListItemVariants({ className, interactive, selected }))} {...props} />;
-}
-
-export function CardEmpty({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+}: React.ComponentProps<"div"> & VariantProps<typeof cardListItemVariants>) {
   return (
     <div
+      data-slot="card-list-item"
+      className={cn(cardListItemVariants({ interactive, selected }), className)}
+      {...props}
+    />
+  )
+}
+
+function CardEmpty({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-empty"
       className={cn(
-        "rounded-md border border-dashed border-[var(--border)] bg-[var(--secondary)]/40 px-4 py-10 text-center text-sm text-[var(--muted)]",
-        className,
+        "rounded-md border border-dashed border-border bg-muted/30 px-4 py-10 text-center text-sm text-muted-foreground",
+        className
       )}
       {...props}
     />
-  );
+  )
+}
+
+export {
+  Card,
+  CardEmpty,
+  CardEyebrow,
+  CardList,
+  CardListItem,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
 }

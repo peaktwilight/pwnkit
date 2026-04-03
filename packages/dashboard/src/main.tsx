@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./App";
 import "./styles.css";
 
+document.documentElement.classList.add("dark");
+document.documentElement.style.colorScheme = "dark";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -23,4 +26,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </QueryClientProvider>
   </React.StrictMode>,
 );
-

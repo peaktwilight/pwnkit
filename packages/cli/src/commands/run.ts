@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import chalk from "chalk";
 import { VERSION } from "@pwnkit/shared";
 import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@pwnkit/shared";
-import { runPipeline, createRuntime, scan as runScanPipeline } from "@pwnkit/core";
+import { agenticScan, runPipeline, createRuntime } from "@pwnkit/core";
 import { formatAuditReport, formatReviewReport, formatReport } from "../formatters/index.js";
 import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 
@@ -64,8 +64,8 @@ export async function runUnified(opts: RunOptions): Promise<void> {
 
   try {
     const report = opts.targetType === "url" || opts.targetType === "web-app"
-      ? await runScanPipeline(
-          {
+      ? await agenticScan({
+          config: {
             target,
             depth,
             format,
@@ -76,9 +76,10 @@ export async function runUnified(opts: RunOptions): Promise<void> {
             apiKey: opts.apiKey,
             model: opts.model,
           },
-          eventHandler,
-          opts.dbPath,
-        )
+          dbPath: opts.dbPath,
+          onEvent: eventHandler,
+          resumeScanId: opts.resumeScanId,
+        })
       : await runPipeline({
           target,
           targetType: opts.targetType,

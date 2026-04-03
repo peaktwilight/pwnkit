@@ -3,9 +3,9 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 
 export function LoadingState({ label }: { label: string }) {
   return (
-    <Card className="border-white/12">
+    <Card className="border border-border">
       <CardContent className="flex min-h-[16rem] flex-col items-center justify-center gap-4 text-center">
-        <LoaderCircle className="size-8 animate-spin text-[var(--accent)]" />
+        <LoaderCircle className="size-8 animate-spin text-primary" />
         <div>
           <CardTitle>{label}</CardTitle>
           <CardDescription>Fetching the latest scan and triage state.</CardDescription>
@@ -17,7 +17,7 @@ export function LoadingState({ label }: { label: string }) {
 
 export function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <Card className="border-dashed border-white/12 bg-white/[0.025]">
+    <Card className="border border-dashed border-border bg-muted/20">
       <CardContent className="flex min-h-[16rem] flex-col items-center justify-center gap-4 text-center">
         <div>
           <CardTitle>{title}</CardTitle>
@@ -30,9 +30,9 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 
 export function ErrorState({ error }: { error: Error }) {
   return (
-    <Card className="border-[var(--danger)]/25">
+    <Card className="border border-destructive/25">
       <CardContent className="flex min-h-[16rem] flex-col items-center justify-center gap-4 text-center">
-        <AlertTriangle className="size-8 text-[var(--danger)]" />
+        <AlertTriangle className="size-8 text-destructive" />
         <div>
           <CardTitle>Dashboard error</CardTitle>
           <CardDescription>{error.message}</CardDescription>

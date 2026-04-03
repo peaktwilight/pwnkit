@@ -36,6 +36,11 @@
 
 pwnkit is an open-source agentic security toolkit. A research agent discovers, attacks, and writes proof-of-concept code for vulnerabilities across LLM endpoints, npm packages, and Git repositories. Then a blind verify agent — given ONLY the PoC and file path, not the reasoning — independently reproduces each finding to **kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
 
+The product shape is intentionally split:
+
+- the CLI is the execution surface for local runs, CI, replay, and exports
+- the dashboard is the local verification workbench for triage, evidence review, and human sign-off
+
 One command. Zero config. Every finding re-exploited or dropped.
 
 ## Quick Start
@@ -88,7 +93,13 @@ pwnkit ships a growing command set — from quick API probes to deep source-leve
 | **`resume`** | Resume a persisted review/audit scan by scan ID | `npx pwnkit-cli resume <scan-id>` |
 | **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit-cli history --limit 20` |
 | **`findings`** | Query, filter, and inspect verified findings across all scans | `npx pwnkit-cli findings list --severity critical` |
-| **`dashboard`** | Open a local dashboard for scans, grouped findings, and triage | `npx pwnkit-cli dashboard --port 48123` |
+| **`dashboard`** | Open the local verification workbench for board-based triage, evidence review, and scan provenance | `npx pwnkit-cli dashboard --port 48123` |
+
+## Product Model
+
+- `pwnkit-cli` is the runner. Use it to execute `scan`, `audit`, `review`, `resume`, `replay`, and CI workflows.
+- The dashboard is the operator surface. Use it to work the verification board, inspect evidence, monitor active runs, and drive final disposition.
+- A future hosted control plane, if it exists, should be a separate orchestration layer for campaigns and remote workers rather than an overgrown local dashboard.
 
 ## How It Works
 
@@ -170,7 +181,7 @@ npx pwnkit-cli review https://github.com/user/repo --runtime codex --depth deep
 # Diff-aware review against a base branch
 npx pwnkit-cli review ./my-repo --diff-base origin/main --changed-only
 
-# Local mission control for scan history and grouped findings
+# Local verification workbench for board-based triage and scan provenance
 npx pwnkit-cli dashboard
 
 # Auto-detect — just give it a target
@@ -196,11 +207,11 @@ Bring your own agent CLI — pwnkit orchestrates it:
 The short version:
 
 - now: resumable scans, finding triage, diff-aware PR review, deterministic replay
-- now shipping too: a local mission-control dashboard with grouped finding triage
-- next: multi-target orchestration, timeline/activity views, and fuzzy navigation across scans/findings
+- now shipping too: a local verification workbench centered on finding-family workflow
+- next: richer control views, queue modes, replay/provenance tooling, and fuzzy navigation across scans/findings
 - later: policy packs, trends, and distributed workers
 
-The detailed roadmap lives in [ROADMAP.md](./ROADMAP.md).
+See the checklist below for details.
 
 ## How It Compares
 
