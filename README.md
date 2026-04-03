@@ -5,7 +5,7 @@
 <h1 align="center">pwnkit</h1>
 
 <p align="center">
- <strong>General-purpose autonomous pentesting framework</strong><br/>
+ <strong>Fully autonomous agentic pentesting framework</strong><br/>
  <em>Scan LLM endpoints. Audit npm packages. Review source code. Re-exploit to kill false positives.</em>
 </p>
 

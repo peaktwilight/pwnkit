@@ -27,7 +27,7 @@ const program = new Command();
 
 program
   .name("pwnkit")
-  .description("General-purpose autonomous pentesting framework")
+  .description("Fully autonomous agentic pentesting framework")
   .version(VERSION);
 
 registerScanCommand(program);
