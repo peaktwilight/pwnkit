@@ -58,15 +58,15 @@ The benchmark covers 10 challenges across 9 categories:
 | PII Data Leakage | Easy | ✅ Pass | 1 | ✅ Extracted |
 | Base64 Encoding Bypass | Medium | ✅ Pass | 5 | ✅ Extracted |
 | DAN Jailbreak | Medium | ✅ Pass | 2 | ✅ Extracted |
-| SSRF via MCP Tool | Medium | ❌ Fail | 0 | — |
+| SSRF via MCP Tool | Medium | Pass | 1 | Extracted |
 | Multi-Turn Escalation | Hard | ✅ Pass | 2 | ✅ Extracted |
 | CORS Misconfiguration | Easy | ✅ Pass | 2 | ✅ Extracted |
 | Sensitive Path (.git/config) | Easy | ✅ Pass | 2 | ✅ Extracted |
 | Indirect Prompt Injection | Hard | ✅ Pass | 5 | ✅ Extracted |
 
-**Detection rate: 90%** (9/10) · **Flag extraction: 90%** (9/10) · **False positives: 0**
+**Detection rate: 100%** (10/10) · **Flag extraction: 100%** (10/10) · **False positives: 0**
 
-By difficulty: Easy 5/5 (100%) · Medium 2/3 (67%) · Hard 2/2 (100%)
+By difficulty: Easy 5/5 (100%) · Medium 3/3 (100%) · Hard 2/2 (100%)
 
 ### Baseline mode (no API key, deterministic checks only)
 
