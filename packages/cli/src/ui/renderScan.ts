@@ -107,10 +107,17 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
       const current = stages.find((s) => s.id === stageId);
 
       if (current?.status === "running") {
-        // Already running — this is a tool call / sub-action
+        // Already running — this is a sub-action (tool call, turn update)
+        // Clean the message for display
+        let action = msg
+          .replace(/^(Discovery|Attack|Verify)\s*turn\s*\d+:\s*/i, "")
+          .replace(/^Warning:\s*/i, "")
+          .trim();
+        if (action.length > 60) action = action.slice(0, 60) + "...";
+        if (!action) return;
         updateStage(stageId, (s) => ({
           ...s,
-          actions: [...s.actions, msg].slice(-6),
+          actions: [...s.actions, action].slice(-3),
         }));
       } else {
         // New stage start — show a clean label

@@ -189,6 +189,11 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     timeout: config.timeout ?? 60_000,
     model: config.model,
     apiKey: config.apiKey,
+    // Route tool calls through the event system so they don't write
+    // directly to stderr (which disrupts the Ink TUI)
+    onToolCall: (name, detail) => {
+      emit({ type: "stage:start", stage: "discovery", message: `${name}${detail ? `: ${detail}` : ""}` });
+    },
   });
 
   const templates = loadTemplates(config.depth);
