@@ -136,6 +136,7 @@ describe("LlmApiRuntime Responses API message format", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -294,6 +295,7 @@ describe("LlmApiRuntime chat completions format", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -336,6 +338,7 @@ describe("LlmApiRuntime chat completions format", () => {
 
 describe("LlmApiRuntime response parsing", () => {
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -430,4 +433,83 @@ describe("LlmApiRuntime response parsing", () => {
     expect(result.stopReason).toBe("error");
     expect(result.error).toContain("400");
   });
+});
+
+// ── Live Azure Integration (only runs when AZURE_OPENAI_API_KEY is set) ──
+
+const hasAzureKey = !!process.env.AZURE_OPENAI_API_KEY;
+
+// Capture the real Azure key before any test mutates process.env
+const realAzureKey = process.env.AZURE_OPENAI_API_KEY;
+
+describe.skipIf(!hasAzureKey)("Azure Responses API live integration", () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    // Restore Azure key (provider detection tests delete it)
+    process.env.AZURE_OPENAI_API_KEY = realAzureKey!;
+    // Ensure Azure wins priority (clear higher-priority keys)
+    delete process.env.OPENROUTER_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+  });
+
+  it("completes a tool call and continuation round-trip", async () => {
+    const rt = new LlmApiRuntime({ type: "api", timeout: 30_000 });
+
+    // Turn 1: expect a tool call
+    const turn1 = await rt.executeNative(
+      "Use the ping tool when asked to check something.",
+      [{ role: "user", content: [{ type: "text", text: "Please ping example.com" }] }],
+      [{
+        name: "ping",
+        description: "Ping a host",
+        input_schema: {
+          type: "object",
+          properties: { host: { type: "string", description: "Hostname" } },
+          required: ["host"],
+        },
+      }],
+    );
+
+    // Skip if Azure deployment is temporarily unavailable (infra issue, not our code)
+    if (turn1.error?.includes("DeploymentNotFound") || turn1.error?.includes("429")) {
+      console.warn("Skipping: Azure deployment unavailable —", turn1.error.slice(0, 100));
+      return;
+    }
+
+    expect(turn1.error).toBeUndefined();
+    expect(turn1.stopReason).toBe("tool_use");
+    const toolUse = turn1.content.find((b): b is Extract<NativeContentBlock, { type: "tool_use" }> => b.type === "tool_use");
+    expect(toolUse).toBeDefined();
+    expect(toolUse!.name).toBe("ping");
+
+    // Turn 2: send tool result back — this is the critical continuation
+    const turn2 = await rt.executeNative(
+      "Use the ping tool when asked to check something.",
+      [
+        { role: "user", content: [{ type: "text", text: "Please ping example.com" }] },
+        { role: "assistant", content: turn1.content },
+        { role: "user", content: [{
+          type: "tool_result",
+          tool_use_id: toolUse!.id,
+          content: '{"alive":true,"latency_ms":12}',
+        }] },
+      ],
+      [{
+        name: "ping",
+        description: "Ping a host",
+        input_schema: {
+          type: "object",
+          properties: { host: { type: "string", description: "Hostname" } },
+          required: ["host"],
+        },
+      }],
+    );
+
+    expect(turn2.error).toBeUndefined();
+    expect(turn2.stopReason).toBe("end_turn");
+    const text = turn2.content.find((b): b is Extract<NativeContentBlock, { type: "text" }> => b.type === "text");
+    expect(text).toBeDefined();
+    expect(text!.text.length).toBeGreaterThan(0);
+  }, 60_000);
 });
