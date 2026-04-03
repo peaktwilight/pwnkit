@@ -127,6 +127,10 @@ export default function DockNav() {
         })}
 
         <div className="flex items-center gap-1 sm:ml-0.5">
+          <a href="https://docs.pwnkit.com" target="_blank" rel="noopener noreferrer"
+            className="flex items-center h-9 rounded-lg px-3 transition-colors border border-white/15 text-white/70 hover:text-white hover:border-white/30">
+            <span className="text-[11px] font-medium">Docs</span>
+          </a>
           <a href="/blog"
             className={`flex items-center h-9 rounded-lg px-3 transition-colors ${
               showLogo
