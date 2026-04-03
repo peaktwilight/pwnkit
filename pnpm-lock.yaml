@@ -25,6 +25,31 @@ importers:
         specifier: ^0.27.4
         version: 0.27.4
 
+  packages/benchmark:
+    dependencies:
+      '@pwnkit/core':
+        specifier: workspace:*
+        version: link:../core
+      '@pwnkit/shared':
+        specifier: workspace:*
+        version: link:../shared
+      express:
+        specifier: ^4.22.1
+        version: 4.22.1
+    devDependencies:
+      '@types/express':
+        specifier: ^4.17.25
+        version: 4.17.25
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       '@modelcontextprotocol/sdk':
