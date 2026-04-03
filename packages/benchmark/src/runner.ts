@@ -5,9 +5,11 @@ import type { Server } from "http";
 import type { AddressInfo } from "net";
 import { getAllChallenges, type Challenge } from "./challenges/index.js";
 import { scan } from "../../core/src/scanner.js";
+import { agenticScan } from "../../core/src/agentic-scanner.js";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { tmpdir } from "node:os";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -18,6 +20,8 @@ const depth = args.includes("--depth") ? args[args.indexOf("--depth") + 1] : "qu
 const filterCategory = args.includes("--category") ? args[args.indexOf("--category") + 1] : undefined;
 const filterDifficulty = args.includes("--difficulty") ? parseInt(args[args.indexOf("--difficulty") + 1]) : undefined;
 const jsonOutput = args.includes("--json");
+const useAgentic = args.includes("--agentic");
+const runtimeArg = args.includes("--runtime") ? args[args.indexOf("--runtime") + 1] : "auto";
 
 // ── Types ──
 
@@ -126,7 +130,7 @@ async function runBenchmark(): Promise<BenchmarkReport> {
   const report: BenchmarkReport = {
     timestamp: new Date().toISOString(),
     depth,
-    runtime: "api",
+    runtime: useAgentic ? runtimeArg : "baseline",
     totalChallenges: challenges.length,
     passed,
     failed: challenges.length - passed,
@@ -156,13 +160,32 @@ async function runChallenge(challenge: Challenge, port: number): Promise<Challen
   const mode = isMcp ? "mcp" : isWeb ? "web" : "deep";
 
   try {
-    const report = await scan({
-      target,
-      depth: depth as any,
-      format: "json",
-      mode: mode as any,
-      timeout: 10_000,
-    });
+    let report: any;
+
+    if (useAgentic) {
+      // Full agentic pipeline with AI analysis
+      const dbPath = join(tmpdir(), `pwnkit-bench-${challenge.id}-${Date.now()}.db`);
+      report = await agenticScan({
+        config: {
+          target,
+          depth: depth as any,
+          format: "json",
+          mode: mode as any,
+          timeout: 30_000,
+          runtime: runtimeArg as any,
+        },
+        dbPath,
+      });
+    } else {
+      // Baseline scanner (no AI)
+      report = await scan({
+        target,
+        depth: depth as any,
+        format: "json",
+        mode: mode as any,
+        timeout: 10_000,
+      });
+    }
 
     const findings = report.findings ?? [];
     const allText = JSON.stringify(report).toLowerCase();
@@ -210,20 +233,17 @@ async function runChallenge(challenge: Challenge, port: number): Promise<Challen
 async function main() {
   if (!jsonOutput) {
     console.log("\x1b[31m\x1b[1m  pwnkit benchmark\x1b[0m");
-    console.log(`  depth: ${depth}  challenges: ${getAllChallenges().length}`);
+    console.log(`  mode: ${useAgentic ? "agentic" : "baseline"}  runtime: ${useAgentic ? runtimeArg : "none"}  depth: ${depth}  challenges: ${getAllChallenges().length}`);
   }
 
-  // Clear API keys so benchmark runs deterministic (no AI-backed analysis)
-  const savedKeys = {
-    OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-  };
-  process.env.OPENROUTER_API_KEY = "";
-  process.env.ANTHROPIC_API_KEY = "";
-  process.env.AZURE_OPENAI_API_KEY = "";
-  process.env.OPENAI_API_KEY = "";
+  // In baseline mode, clear API keys for deterministic results
+  const savedKeys: Record<string, string | undefined> = {};
+  if (!useAgentic) {
+    for (const key of ["OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"]) {
+      savedKeys[key] = process.env[key];
+      process.env[key] = "";
+    }
+  }
 
   try {
     const report = await runBenchmark();
@@ -252,10 +272,12 @@ async function main() {
     mkdirSync(resultsDir, { recursive: true });
     writeFileSync(join(resultsDir, "latest.json"), JSON.stringify(report, null, 2));
   } finally {
-    // Restore keys
-    for (const [key, val] of Object.entries(savedKeys)) {
-      if (val === undefined) delete process.env[key];
-      else process.env[key] = val;
+    // Restore keys if we cleared them
+    if (!useAgentic) {
+      for (const [key, val] of Object.entries(savedKeys)) {
+        if (val === undefined) delete process.env[key];
+        else process.env[key] = val;
+      }
     }
   }
 }

@@ -7,6 +7,8 @@
     "build": "tsc",
     "bench": "tsx src/runner.ts",
     "bench:quick": "tsx src/runner.ts --depth quick",
+    "bench:agentic": "tsx src/runner.ts --agentic --runtime auto",
+    "bench:agentic:api": "tsx src/runner.ts --agentic --runtime api",
     "report": "tsx src/report.ts"
   },
   "dependencies": {
