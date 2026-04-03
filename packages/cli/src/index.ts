@@ -27,7 +27,7 @@ const program = new Command();
 
 program
   .name("pwnkit")
-  .description("AI-powered agentic security scanner")
+  .description("General-purpose autonomous pentesting framework")
   .version(VERSION);
 
 registerScanCommand(program);

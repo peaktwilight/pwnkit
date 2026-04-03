@@ -7,7 +7,7 @@ import { runUnified } from "./run.js";
 export function registerScanCommand(program: Command): void {
   program
     .command("scan")
-    .description("Run security scan against a URL or MCP server")
+    .description("Run autonomous pentest against a URL, web app, or MCP server")
     .requiredOption("--target <target>", "Target URL or mcp:// endpoint")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md, html, sarif", "terminal")

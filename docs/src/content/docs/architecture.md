@@ -3,7 +3,7 @@ title: Architecture
 description: How the 4-stage pipeline, runtime adapters, and MCP integration work.
 ---
 
-pwnkit runs autonomous AI agents in a research-then-verify pipeline. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions, adapting its strategy based on what it learns.
+pwnkit is a general-purpose autonomous pentesting framework that covers LLM endpoints, web applications, npm packages, and source code. It runs autonomous AI agents in a discover-attack-verify-report pipeline. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions, adapting its strategy based on what it learns. Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
 
 ## The pipeline
 
@@ -19,11 +19,11 @@ These stages are grouped into two agent sessions:
 
 A single agent session that:
 
-1. **Discovers** the attack surface — maps endpoints, detects models, identifies features
-2. **Attacks** the target — crafts multi-turn attacks including prompt injection, jailbreaks, tool poisoning, and data exfiltration
-3. **Writes PoC code** — produces a proof-of-concept that demonstrates each vulnerability
+1. **Discovers** the attack surface -- maps endpoints, detects models, identifies features, fingerprints web technologies, and enumerates exposed paths
+2. **Attacks** the target -- crafts multi-turn attacks spanning prompt injection, jailbreaks, tool poisoning, data exfiltration (LLM), CORS misconfiguration, SSRF, XSS, path traversal, header injection (web), supply chain and malicious code analysis (npm), and vulnerability patterns (source code)
+3. **Writes PoC code** -- produces a proof-of-concept that demonstrates each vulnerability
 
-The research agent has access to tools like `send_prompt` (for LLM endpoints), `read_file` (for source review), and `run_command` (for package audits). It adapts its strategy based on what it discovers — if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection.
+The research agent has access to tools like `send_prompt` (for LLM endpoints), `read_file` (for source review), `run_command` (for package audits and web probing), and `http_request` (for web app pentesting). It adapts its strategy based on what it discovers -- if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection. For web apps, it escalates from fingerprinting to active exploitation. For source code, it traces data flows from user input to dangerous sinks.
 
 ### 2. Verify agent (Blind validation)
 
@@ -46,6 +46,21 @@ Only confirmed findings (those that survived blind verification) are included in
 - **JSON** — machine-readable for pipelines
 
 Each finding includes a severity score, category, PoC code, and remediation guidance.
+
+## Scan modes
+
+The pipeline adapts its tooling and attack strategy based on the target type:
+
+| Mode | Target | What it does |
+|------|--------|-------------|
+| `deep` | LLM endpoint URL | Prompt injection, jailbreaks, tool poisoning, data exfiltration, multi-turn escalation |
+| `probe` | LLM endpoint URL | Lightweight surface scan of an LLM endpoint |
+| `web` | Web application URL | CORS, headers, exposed files, SSRF, XSS, path traversal, fingerprinting |
+| `mcp` | MCP server | Tool poisoning, schema abuse, permission escalation |
+| `audit` | npm package name | Supply chain analysis, malicious code detection, dependency risk |
+| `review` | Local path or GitHub URL | AI-powered source code vulnerability analysis |
+
+The mode is auto-detected from the target when possible, or set explicitly with `--mode`.
 
 ## Runtime adapters
 
@@ -99,3 +114,4 @@ Each agent has access to a set of tools depending on the scan type:
 | `save_finding` | Research | Record a discovered vulnerability with PoC |
 | `list_files` | Research | Enumerate files in a directory |
 | `search_code` | Research | Search for patterns across a codebase |
+| `http_request` | Research, Verify | Send HTTP requests for web app pentesting |
