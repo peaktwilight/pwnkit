@@ -8,7 +8,14 @@ We love contributions! Here's how to get started.
 git clone https://github.com/peaktwilight/pwnkit.git
 cd pwnkit
 pnpm install
-pnpm -r build
+pnpm build        # builds all packages in dependency order + bundles CLI
+```
+
+The CLI binary lands in `dist/index.js`. Test it with:
+
+```bash
+node dist/index.js --version
+node dist/index.js doctor
 ```
 
 ## Running Tests
@@ -24,7 +31,7 @@ pnpm --filter @pwnkit/test-targets test
 
 ## Adding Attack Templates
 
-Templates live in `templates/`. Create a new YAML file:
+Templates live in `packages/templates/attacks/`. Create a new YAML file:
 
 ```yaml
 id: your-template-id
@@ -32,12 +39,12 @@ name: Your Template Name
 category: prompt-injection
 severity: high
 description: What this tests for
+owaspLlmTop10: "LLM01"
+depth: [quick, default, deep]
 payloads:
   - id: payload-01
     prompt: "Your attack prompt here"
-detection:
-  - pattern: "regex pattern for vulnerable response"
-    confidence: 0.9
+    description: Short description of this payload
 ```
 
 ## Submitting Changes
