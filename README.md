@@ -5,8 +5,8 @@
 <h1 align="center">pwnkit</h1>
 
 <p align="center">
- <strong>Fully autonomous agentic pentesting framework</strong><br/>
- <em>Scan LLM endpoints. Audit npm packages. Review source code. Re-exploit to kill false positives.</em>
+ <strong>Let autonomous agents hack you before someone else does.</strong><br/>
+ <em>Fully autonomous agentic pentesting framework. Blind PoC verification to minimize false positives.</em>
 </p>
 
 <p align="center">
