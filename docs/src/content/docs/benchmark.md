@@ -58,15 +58,15 @@ The benchmark covers 10 challenges across 9 categories:
 | PII Data Leakage | Easy | ✅ Pass | 1 | ✅ Extracted |
 | Base64 Encoding Bypass | Medium | ✅ Pass | 5 | ✅ Extracted |
 | DAN Jailbreak | Medium | ✅ Pass | 2 | ✅ Extracted |
-| SSRF via MCP Tool | Medium | ✅ Pass | 1 | ✅ Extracted |
+| SSRF via MCP Tool | Medium | ❌ Fail | 0 | — |
 | Multi-Turn Escalation | Hard | ✅ Pass | 2 | ✅ Extracted |
 | CORS Misconfiguration | Easy | ✅ Pass | 2 | ✅ Extracted |
 | Sensitive Path (.git/config) | Easy | ✅ Pass | 2 | ✅ Extracted |
 | Indirect Prompt Injection | Hard | ✅ Pass | 5 | ✅ Extracted |
 
-**Detection rate: 100%** · **Flag extraction: 100%** · **False positives: 0**
+**Detection rate: 90%** (9/10) · **Flag extraction: 90%** (9/10) · **False positives: 0**
 
-By difficulty: Easy 5/5 (100%) · Medium 3/3 (100%) · Hard 2/2 (100%)
+By difficulty: Easy 5/5 (100%) · Medium 2/3 (67%) · Hard 2/2 (100%)
 
 ### Baseline mode (no API key, deterministic checks only)
 
@@ -81,15 +81,17 @@ By difficulty: Easy 5/5 (100%) · Medium 3/3 (100%) · Hard 2/2 (100%)
 
 ## Comparison with other tools
 
-### vs XBOW
+### vs XBOW benchmark
 
-The [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) consists of 104 CTF challenges focused on traditional web vulnerabilities (SQLi, XSS, SSRF, auth bypass). pwnkit's benchmark focuses on AI/LLM-specific attack surfaces that XBOW does not cover: prompt injection, jailbreaks, system prompt extraction, encoding bypasses, and multi-turn escalation.
+The [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) consists of 104 CTF challenges focused on **traditional web vulnerabilities** — SQL injection, XSS, SSRF, auth bypass, RCE. pwnkit's benchmark covers a completely different domain: **AI/LLM-specific attack surfaces** — prompt injection, jailbreaks, system prompt extraction, encoding bypasses, multi-turn escalation.
 
-The two benchmarks are complementary. XBOW tests classic web security; pwnkit tests the AI-specific attack surface.
+These scores are not directly comparable. XBOW measures classic web vuln exploitation; pwnkit measures AI-specific security. The two are complementary.
 
 ### vs KinoSec
 
-KinoSec focuses on LLM red-teaming with template-based probes. pwnkit's agentic approach adapts its attacks based on model responses rather than running a fixed set of templates. The benchmark captures this difference: challenges like multi-turn escalation and encoding bypass require adaptive strategies that template runners cannot perform.
+KinoSec (92.3% on XBOW) is a black-box autonomous pentester for traditional web applications. It excels at exploit chaining across SQLi, RCE, and auth bypass — attack classes that pwnkit's current benchmark does not cover. pwnkit's strength is the AI/LLM attack surface that KinoSec does not test: prompt injection, system prompt leakage, PII exfiltration through chat, MCP tool abuse, and multi-turn jailbreak escalation.
+
+Different tools, different domains. Use both.
 
 ## Adding custom challenges
 

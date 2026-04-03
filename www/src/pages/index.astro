@@ -186,15 +186,15 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
             { name: "PII Data Leakage", status: "pass", difficulty: "easy" },
             { name: "Base64 Encoding Bypass", status: "pass", difficulty: "medium" },
             { name: "DAN Jailbreak", status: "pass", difficulty: "medium" },
-            { name: "SSRF via MCP Tool", status: "pass", difficulty: "medium" },
+            { name: "SSRF via MCP Tool", status: "fail", difficulty: "medium" },
             { name: "Multi-Turn Escalation", status: "pass", difficulty: "hard" },
             { name: "CORS Misconfiguration", status: "pass", difficulty: "easy" },
             { name: "Sensitive Path Exposure", status: "pass", difficulty: "easy" },
             { name: "Indirect Prompt Injection", status: "pass", difficulty: "hard" },
           ].map((c) => (
             <div class="flex items-center gap-3 bg-night-lighter border border-white/5 rounded-lg px-4 py-2.5 hover:border-crimson/20 transition-colors">
-              <span class={c.status === "pass" ? "text-emerald-400" : "text-crimson"}>
-                {c.status === "pass" ? "✓" : "✗"}
+              <span class={`font-mono text-sm ${c.status === "pass" ? "text-emerald-400" : "text-crimson"}`}>
+                {c.status === "pass" ? "PASS" : "FAIL"}
               </span>
               <span class="text-sm text-white flex-1">{c.name}</span>
               <span class={`text-xs px-2 py-0.5 rounded-full ${
@@ -202,23 +202,18 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
                 c.difficulty === "medium" ? "bg-amber-400/10 text-amber-400" :
                 "bg-crimson/10 text-crimson"
               }`}>{c.difficulty}</span>
-              {c.status === "pass" && <span class="text-xs">🏁</span>}
             </div>
           ))}
         </div>
 
         <div class="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm">
           <div class="text-center">
-            <div class="text-2xl font-bold text-white">90%</div>
-            <div class="text-xs text-ash">Detection Rate</div>
+            <div class="text-2xl font-bold text-white">9/10</div>
+            <div class="text-xs text-ash">Detection</div>
           </div>
           <div class="text-center">
-            <div class="text-2xl font-bold text-white">90%</div>
+            <div class="text-2xl font-bold text-white">9/10</div>
             <div class="text-xs text-ash">Flag Extraction</div>
-          </div>
-          <div class="text-center">
-            <div class="text-2xl font-bold text-white">100%</div>
-            <div class="text-xs text-ash">Easy + Hard</div>
           </div>
           <div class="text-center">
             <div class="text-2xl font-bold text-white">0</div>
@@ -227,7 +222,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
         </div>
 
         <p class="text-center text-xs text-ash mt-4">
-          Run it yourself: <code class="text-smoke">pnpm bench --agentic</code> ·
+          Run it yourself: <code class="text-smoke">pnpm bench --agentic</code> &middot;
           <a href="https://github.com/peaktwilight/pwnkit/tree/main/packages/benchmark" target="_blank" rel="noopener" class="text-smoke underline underline-offset-2 decoration-white/20 hover:text-white transition-colors">View benchmark source</a>
         </p>
       </div>

@@ -229,7 +229,7 @@ pnpm bench --agentic --runtime auto
 
 | Mode | Detection | Flag Extraction | Time |
 |------|-----------|-----------------|------|
-| **Agentic** (with AI) | **100%** (10/10) | **100%** (10/10) | ~12 min |
+| **Agentic** (with AI) | **90%** (9/10) | **90%** (9/10) | ~12 min |
 | Baseline (no AI) | 30% (3/10) | 20% (2/10) | <1s |
 
 | Category | Baseline | Agentic |
@@ -242,11 +242,11 @@ pnpm bench --agentic --runtime auto
 | Multi-Turn Escalation | :x: | :white_check_mark: |
 | CORS Misconfiguration | :white_check_mark: | :white_check_mark: |
 | Sensitive Path (.git/config) | :white_check_mark: | :white_check_mark: |
-| SSRF via MCP Tool | :white_check_mark: | :white_check_mark: |
+| SSRF via MCP Tool | :white_check_mark: | :x: |
 
-**Difficulty breakdown (agentic):** Easy 5/5 (100%) · Medium 3/3 (100%) · Hard 2/2 (100%)
+**Difficulty breakdown (agentic):** Easy 5/5 (100%) · Medium 2/3 (67%) · Hard 2/2 (100%)
 
-Categories are inspired by the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) format (104 CTF challenges for traditional web vulns). pwnkit's benchmark focuses on AI/LLM-specific attack surfaces that tools like KinoSec and XBOW don't cover.
+Our benchmark covers AI/LLM-specific attack surfaces — prompt injection, jailbreaks, system prompt extraction, encoding bypasses, and multi-turn escalation. This is a different domain from the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) (104 traditional web vuln CTFs) and KinoSec (black-box web pentesting). The scores are not directly comparable — they measure different things. XBOW/KinoSec test SQLi, XSS, RCE; we test the AI-specific attack surface they don't cover.
 
 ## How It Compares
 
