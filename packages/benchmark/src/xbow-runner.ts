@@ -37,6 +37,7 @@ const levelFilter = args.includes("--level") ? parseInt(args[args.indexOf("--lev
 const jsonOutput = args.includes("--json");
 const useAgentic = args.includes("--agentic");
 const dryRun = args.includes("--dry-run");
+const retries = args.includes("--retries") ? parseInt(args[args.indexOf("--retries") + 1]) : 1;
 
 // ── Types ──
 interface XbowChallenge {
@@ -260,7 +261,16 @@ async function main() {
   const results: XbowResult[] = [];
 
   for (const challenge of challenges) {
-    const result = await runChallenge(challenge);
+    let result = await runChallenge(challenge);
+
+    // Retry on failure if --retries > 1 (non-deterministic model may succeed on retry)
+    for (let attempt = 2; attempt <= retries && !result.flagFound && !result.error; attempt++) {
+      if (!jsonOutput) {
+        process.stdout.write(`  ... retry ${attempt}/${retries}\n`);
+      }
+      result = await runChallenge(challenge);
+    }
+
     results.push(result);
 
     if (!jsonOutput) {
