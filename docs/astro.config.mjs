@@ -48,6 +48,15 @@ export default defineConfig({
           slug: "architecture",
         },
         {
+          label: "Core Concepts",
+          items: [
+            { label: "Agent Loop", slug: "agent-loop" },
+            { label: "Blind Verification", slug: "blind-verification" },
+            { label: "White-Box Mode", slug: "white-box-mode" },
+            { label: "Budget Management", slug: "budget-management" },
+          ],
+        },
+        {
           label: "Benchmark",
           slug: "benchmark",
         },
