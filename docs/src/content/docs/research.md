@@ -19,6 +19,10 @@ Head-to-head testing of gpt-5.4, Kimi K2.5, Qwen3 Coder, DeepSeek, GLM, and free
 
 Shannon gap analysis (why 96% vs our 73%), competitor verification, what moves the score, white-box vs black-box results, critical bugs found, and future benchmark targets (AutoPenBench, HarmBench, JailbreakBench).
 
+### [Competitive Landscape](/research/competitive-landscape/)
+
+Full competitor breakdown (Shannon 96%, KinoSec 92%, Cyber-AutoAgent 84%, deadend-cli 78%, MAPTA 77%), 10 ranked improvement techniques with expected impact, key research papers, and what we've shipped vs what's next.
+
 ## The big picture
 
 pwnkit is not a template runner or static analyzer. It's an autonomous agent that thinks like a pentester. Pentesters use terminals, not GUIs with dropdowns.
