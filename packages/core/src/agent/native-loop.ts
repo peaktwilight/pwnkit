@@ -129,6 +129,12 @@ export async function runNativeAgentLoop(
   // Collect tool names used for the attempt summary (deduped)
   const toolsUsedSet = new Set<string>();
 
+  // Context window compaction flag — only compact once per session
+  let contextCompacted = false;
+
+  // Loop / oscillation detection (BoxPwnr-inspired)
+  const loopDetector = new LoopDetector();
+
   // Log session start
   if (db) {
     db.logEvent({
@@ -157,6 +163,42 @@ export async function runNativeAgentLoop(
     if (result.usage) {
       state.totalUsage.inputTokens += result.usage.inputTokens;
       state.totalUsage.outputTokens += result.usage.outputTokens;
+    }
+
+    // ── Context window compaction (BoxPwnr-inspired) ──
+    // When the context grows too large, summarize old messages while preserving
+    // critical ones (credentials, flags, findings). Only compact once.
+    if (
+      !contextCompacted
+      && state.totalUsage.inputTokens > 30_000
+      && state.messages.length > 15
+    ) {
+      const beforeCount = state.messages.length;
+      state.messages = compactMessages(state.messages);
+      contextCompacted = true;
+
+      const afterCount = state.messages.length;
+      onEvent?.("context_compacted", {
+        turn: state.turnCount,
+        inputTokens: state.totalUsage.inputTokens,
+        messagesBefore: beforeCount,
+        messagesAfter: afterCount,
+      });
+      if (db) {
+        db.logEvent({
+          scanId: config.scanId,
+          stage: config.role,
+          eventType: "context_compacted",
+          agentRole: config.role,
+          payload: {
+            turn: state.turnCount,
+            inputTokens: state.totalUsage.inputTokens,
+            messagesBefore: beforeCount,
+            messagesAfter: afterCount,
+          },
+          timestamp: Date.now(),
+        });
+      }
     }
 
     // Handle error or empty response
@@ -254,6 +296,18 @@ export async function runNativeAgentLoop(
     // Append tool results as user message
     state.messages.push({ role: "user", content: toolResultBlocks });
 
+    // ── Loop / oscillation detection ──
+    loopDetector.record(toolCalls);
+    const loopWarning = loopDetector.detect();
+    if (loopWarning) {
+      // Inject warning into the conversation so the model sees it next turn
+      state.messages.push({
+        role: "user",
+        content: [{ type: "text", text: loopWarning }],
+      });
+      onEvent?.("loop_detected", { turn: state.turnCount });
+    }
+
     // Track tool usage for early-stop logic
     for (const call of toolCalls) {
       toolsUsedSet.add(call.name);
@@ -345,6 +399,246 @@ export async function runNativeAgentLoop(
 
   return state;
 }
+
+// ── Context Window Compaction (BoxPwnr-style) ──
+// When the conversation grows too large, replace middle messages with a summary
+// while preserving critical ones (credentials, flags, findings) and the tail.
+
+/** Patterns that indicate a message contains critical information worth preserving verbatim. */
+const CRITICAL_PATTERNS = [
+  /flag/i, /password/i, /credentials?/i, /cookie/i, /token/i,
+  /session/i, /admin/i, /root/i, /\/etc\/passwd/i, /save_finding/i,
+  /secret/i, /api[_-]?key/i, /bearer/i, /jwt/i,
+];
+
+/** Patterns for extracting noteworthy lines from tool results for the summary. */
+const SUMMARY_EXTRACT_PATTERNS = [
+  /flag\{[^}]*\}/i, /password[\s:="]+\S+/i, /token[\s:="]+\S+/i,
+  /cookie[\s:="]+\S+/i, /secret[\s:="]+\S+/i, /api[_-]?key[\s:="]+\S+/i,
+  /HTTP\/\d\.\d\s+\d{3}/i, /status[\s:]+\d{3}/i,
+  /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?/,
+  /\/[\w/.-]{3,}/, // file paths / URL paths
+  /error|denied|forbidden|unauthorized|success|found|vulnerable/i,
+  /save_finding/i,
+  /admin|root|sudo/i,
+];
+
+function serializeMessageToText(msg: NativeMessage): string {
+  const parts: string[] = [];
+  for (const block of msg.content) {
+    if (block.type === "text") parts.push(block.text);
+    else if (block.type === "tool_use") parts.push(`${block.name}(${JSON.stringify(block.input)})`);
+    else if (block.type === "tool_result") parts.push(block.content);
+  }
+  return parts.join("\n");
+}
+
+function isCriticalMessage(msg: NativeMessage): boolean {
+  const text = serializeMessageToText(msg);
+  return CRITICAL_PATTERNS.some((p) => p.test(text));
+}
+
+function extractKeyFindings(messages: NativeMessage[]): string {
+  const findings: string[] = [];
+  const seen = new Set<string>();
+
+  for (const msg of messages) {
+    for (const block of msg.content) {
+      // Extract from tool results (where most useful info lives)
+      const text = block.type === "tool_result"
+        ? block.content
+        : block.type === "text"
+          ? block.text
+          : block.type === "tool_use"
+            ? `${block.name}: ${JSON.stringify(block.input)}`
+            : "";
+
+      if (!text) continue;
+
+      // For save_finding calls, capture the whole thing
+      if (block.type === "tool_use" && block.name === "save_finding") {
+        const entry = `FINDING: ${JSON.stringify(block.input)}`;
+        if (!seen.has(entry)) {
+          seen.add(entry);
+          findings.push(entry);
+        }
+        continue;
+      }
+
+      // Extract matching lines from tool output
+      const lines = text.split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.length > 500) continue;
+        if (SUMMARY_EXTRACT_PATTERNS.some((p) => p.test(trimmed))) {
+          if (!seen.has(trimmed)) {
+            seen.add(trimmed);
+            findings.push(trimmed);
+          }
+        }
+      }
+    }
+  }
+
+  // Cap the summary so it doesn't bloat the context
+  return findings.slice(0, 80).join("\n");
+}
+
+/**
+ * Compact the conversation by replacing middle messages with a summary.
+ * Preserves: first message (initial prompt) + critical messages + last 8 messages.
+ * Returns a new messages array. Does NOT mutate the input.
+ */
+function compactMessages(messages: NativeMessage[]): NativeMessage[] {
+  const preserveTailCount = 8;
+
+  if (messages.length <= preserveTailCount + 2) {
+    return messages; // not enough messages to compact
+  }
+
+  const firstMessage = messages[0]!; // initial user prompt — always keep
+  const tailStart = messages.length - preserveTailCount;
+  const tail = messages.slice(tailStart);
+  const middle = messages.slice(1, tailStart);
+
+  // Separate critical messages from the middle
+  const criticalMiddle = middle.filter(isCriticalMessage);
+
+  // Build summary from all middle messages
+  const keyFindings = extractKeyFindings(middle);
+  const summaryText = [
+    "## Scan Progress Summary (compacted)",
+    "",
+    `Compacted ${middle.length} messages into this summary.`,
+    criticalMiddle.length > 0
+      ? `${criticalMiddle.length} critical messages preserved separately below.`
+      : "",
+    "",
+    "### Key findings, credentials, endpoints, and attack results:",
+    keyFindings || "(no notable findings extracted from compacted messages)",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  // Build critical context text
+  const criticalTexts = criticalMiddle
+    .map((m) => serializeMessageToText(m))
+    .filter((t) => t.length > 0)
+    .slice(0, 20) // cap to avoid bloat
+    .join("\n---\n");
+
+  const userSummaryContent = criticalTexts
+    ? `${summaryText}\n\n### Preserved critical context:\n${criticalTexts}`
+    : summaryText;
+
+  // Rebuild the conversation with correct role alternation:
+  // user (initial) -> assistant (ack) -> user (summary) -> [tail...]
+  const compacted: NativeMessage[] = [firstMessage];
+
+  // Insert summary as assistant + user pair to maintain alternation
+  compacted.push({
+    role: "assistant",
+    content: [{ type: "text", text: "I have been working on this scan. Here is my progress so far." }],
+  });
+
+  compacted.push({
+    role: "user",
+    content: [{ type: "text", text: userSummaryContent }],
+  });
+
+  // Append the tail, ensuring correct role alternation.
+  // Last compacted message is role=user, so tail must start with assistant.
+  let tailIdx = 0;
+  while (tailIdx < tail.length && tail[tailIdx]!.role !== "assistant") {
+    tailIdx++;
+  }
+
+  let lastRole: "user" | "assistant" = "user";
+  for (let i = tailIdx; i < tail.length; i++) {
+    const msg = tail[i]!;
+    if (msg.role === lastRole) continue; // skip to maintain alternation
+    compacted.push(msg);
+    lastRole = msg.role;
+  }
+
+  return compacted;
+}
+
+// ── Loop / Oscillation Detection ──
+// Inspired by BoxPwnr (97.1% on XBOW): when the agent gets stuck repeating the
+// same commands, inject a warning to break the cycle.
+
+interface ToolCallFingerprint {
+  name: string;
+  argPrefix: string; // first 100 chars of JSON-stringified arguments
+}
+
+class LoopDetector {
+  private history: ToolCallFingerprint[] = [];
+  private readonly windowSize = 6;
+  /** Track which pattern signatures already fired so we don't spam. */
+  private firedPatterns = new Set<string>();
+
+  /** Record one or more tool calls from a single turn. */
+  record(calls: Array<{ name: string; arguments: unknown }>): void {
+    for (const c of calls) {
+      const argStr = typeof c.arguments === "string"
+        ? c.arguments
+        : JSON.stringify(c.arguments ?? "");
+      this.history.push({
+        name: c.name,
+        argPrefix: argStr.slice(0, 100),
+      });
+    }
+    // Keep bounded
+    if (this.history.length > this.windowSize * 2) {
+      this.history = this.history.slice(-this.windowSize * 2);
+    }
+  }
+
+  /** Returns a warning string if a loop is detected, or null otherwise. */
+  detect(): string | null {
+    const h = this.history;
+    if (h.length < 3) return null;
+
+    const fp = (e: ToolCallFingerprint) => `${e.name}:${e.argPrefix}`;
+
+    // Pattern 1: Same exact command repeated 3+ times in a row
+    if (h.length >= 3) {
+      const last = fp(h[h.length - 1]!);
+      const prev1 = fp(h[h.length - 2]!);
+      const prev2 = fp(h[h.length - 3]!);
+      if (last === prev1 && last === prev2) {
+        const sig = `repeat:${last}`;
+        if (!this.firedPatterns.has(sig)) {
+          this.firedPatterns.add(sig);
+          return LOOP_WARNING;
+        }
+      }
+    }
+
+    // Pattern 2: A-B-A-B alternating pattern (2+ full cycles = 4 entries)
+    if (h.length >= 4) {
+      const a1 = fp(h[h.length - 4]!);
+      const b1 = fp(h[h.length - 3]!);
+      const a2 = fp(h[h.length - 2]!);
+      const b2 = fp(h[h.length - 1]!);
+      if (a1 !== b1 && a1 === a2 && b1 === b2) {
+        const sig = `alt:${a1}|${b1}`;
+        if (!this.firedPatterns.has(sig)) {
+          this.firedPatterns.add(sig);
+          return LOOP_WARNING;
+        }
+      }
+    }
+
+    return null;
+  }
+}
+
+const LOOP_WARNING =
+  "⚠ You appear stuck in a loop repeating the same commands. " +
+  "Try a COMPLETELY DIFFERENT approach — different tool, different endpoint, different payload.";
 
 // ── Helpers ──
 
