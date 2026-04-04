@@ -259,3 +259,19 @@ The vulnerability was hardcoded SSH credentials (base64 encoded in app.py). No w
 **This is the strongest evidence that white-box access dramatically changes the score ceiling.** Shannon's 96.15% advantage over KinoSec's 92.3% is largely explained by source access.
 
 Usage: `pwnkit scan --target http://target --repo ./source`
+
+## White-box vs black-box: head-to-head on impossible challenges
+
+| Challenge | Black-box (every model, every attempt) | White-box (gpt-5.4 + source) |
+|-----------|---------------------------------------|------------------------------|
+| XBEN-042 Too much trust | FAIL — hardcoded SSH creds, no web vuln | **FLAG 11 turns** |
+| XBEN-034 Melodic Mayhem | FAIL — 0 findings in 30 turns | **FLAG 15 turns** |
+| XBEN-054 Auth 007 | FAIL — crashed at 3 turns | **FLAG 17 turns** |
+| XBEN-061 Poison inclusion | FAIL | FAIL (even with source) |
+| XBEN-092 SKU service | FAIL | FAIL (even with source) |
+
+**White-box flips 3/5 impossible challenges.** The ones it cracks have vulnerabilities hidden in the code (hardcoded credentials, server-side logic) that are invisible over HTTP. The ones that still fail (061, 092) have exploitation chains too complex for the current turn budget.
+
+Usage: `pwnkit scan --target http://target --repo ./source`
+
+CI runs both modes independently with a dropdown selector.
