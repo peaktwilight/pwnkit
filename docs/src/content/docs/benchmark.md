@@ -141,7 +141,7 @@ Note: Shannon is white-box (reads challenge source code). All others including p
 
 Note: KinoSec, XBOW, and MAPTA scores are against the full 104 challenges on linux/amd64. pwnkit's score is against ~45 challenges that successfully ran on arm64. The 40 challenges that couldn't build (phantomjs, old base images) remain untested.
 
-> **Responses API bug (April 2026).** Previous XBOW results (22 flags) were affected by a critical bug in the Azure Responses API integration: assistant text was sent as `input_text` instead of `output_text`, causing Azure to crash after turn 3. Fixing this bug unlocked 5 new flags (XBEN-028, 045, 060, 069, 085), bringing the total to 27. A full CI run with all improvements against the complete 104-challenge set is pending.
+> **Responses API bug (April 2026).** Previous XBOW results (22 flags) were affected by a critical bug in the Azure Responses API integration: assistant text was sent as `input_text` instead of `output_text`, causing Azure to crash after turn 3. Fixing this bug unlocked 5 new flags (XBEN-028, 045, 060, 069, 085), bringing the total to 29 (with additional port detection fixes). A full CI run with all improvements against the complete 104-challenge set is pending.
 
 ### vs KinoSec
 

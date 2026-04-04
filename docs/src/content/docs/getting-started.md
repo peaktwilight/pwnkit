@@ -50,7 +50,7 @@ This discovers the attack surface, launches targeted attacks (prompt injection, 
 npx pwnkit-cli scan --target https://your-app.com --mode web
 ```
 
-Runs autonomous pentesting against a web application using a shell-first approach. The agent gets `shell_exec` as its primary tool and uses curl, python3, bash pipelines, and standard pentesting utilities to probe for CORS misconfigurations, exposed files, SSRF, XSS, SQL injection, SSTI, and other traditional web vulnerabilities. See [Architecture](/architecture/) for why shell-first beats structured tools.
+Runs autonomous pentesting against a web application using a shell-first approach. The agent gets `bash` as its primary tool and uses curl, python3, bash pipelines, and standard pentesting utilities to probe for CORS misconfigurations, exposed files, SSRF, XSS, SQL injection, SSTI, and other traditional web vulnerabilities. See [Architecture](/architecture/) for why shell-first beats structured tools.
 
 ### Audit an npm package
 

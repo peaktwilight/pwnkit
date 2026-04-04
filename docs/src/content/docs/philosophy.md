@@ -48,7 +48,7 @@ The minimal approach wins because it reduces the decision space. For full benchm
 
 ### Influences
 
-- **[pi-mono](https://github.com/badlogic/pi-mono)** -- minimal coding agent with bash as the primary tool. Bash is the Swiss army knife.
+- **[pi-mono](https://github.com/badlogic/pi-mono)** -- minimal coding agent — bash is the primary tool. Bash is the Swiss army knife.
 - **[Terminus](https://www.tbench.ai/news/terminus)** -- single tmux tool, 74.7% on Terminal-Bench.
 - **[XBOW](https://xbow.com/blog/core-components-ai-pentesting-framework)** -- structured tools + real security tooling, 85%.
 - **[KinoSec](https://kinosec.ai)** -- 92.3% on XBOW, black-box HTTP.
@@ -121,6 +121,28 @@ XBOW [provides challenge descriptions to all agents](https://xbow.com/blog/core-
 ### Shell-first validated
 
 XBOW's own blog confirms that shell access outperforms structured HTTP tools. pwnkit's `bash` tool matches pi-mono's approach: give the agent a terminal and get out of the way. The research confirms this is the right call.
+
+## A/B test results: what works and what doesn't
+
+We A/B tested every improvement against the XBOW benchmark. Here's what actually moved the score and what didn't.
+
+**What worked:**
+- Fixing the Responses API output_text bug: +5 flags (agent was crashing at turn 3)
+- Port detection fix: +2 flags (challenges that never ran before)
+- Shell-first approach: +15 flags vs structured tools (which got 0)
+- Challenge hints: helped on a few challenges (standard practice)
+- Clean minimal prompt: same results as the 180-line version in fewer tokens
+
+**What didn't work:**
+- 770-line vulnerability playbook: +1 detection, +0 flags (model already knows techniques)
+- Sub-agent spawning (spawn_agent): agent never used it, prefers bash
+- Tool router hook: model doesn't hallucinate tool names with 3 tools
+- Planning phase: helps with consistency, doesn't crack new challenges
+- Reflection checkpoints: prevents repetition, doesn't flip hard challenges
+
+**The conclusion:** the framework should get out of the model's way. 3 tools, a 25-line prompt, and let the model's training do the work. The ceiling is the model (gpt-5.4), not the framework.
+
+**Model comparison matters:** KinoSec uses Claude Sonnet (92.3%), Shannon uses Claude Opus (96.15%), deadend-cli uses Kimi K2.5 (78%). We use Azure gpt-5.4 (73%). Switching models would likely change the score more than any framework improvement.
 
 ## What this means
 

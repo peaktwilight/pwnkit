@@ -59,7 +59,7 @@ The `--mode` flag controls what kind of target is being scanned.
 | Mode | Description |
 |------|-------------|
 | `llm` | Probe LLM/AI endpoints with prompt injection, jailbreaks, exfiltration, and tool poisoning attacks. **Default for `scan`.** |
-| `web` | Shell-first autonomous pentesting for web applications. The agent uses `shell_exec` (curl, python3, bash) as its primary tool to probe for CORS, headers, exposed files, SSRF, XSS, SQLi, SSTI, and more. |
+| `web` | Shell-first autonomous pentesting for web applications. The agent uses `bash` (curl, python3, bash) as its primary tool to probe for CORS, headers, exposed files, SSRF, XSS, SQLi, SSTI, and more. |
 | `mcp` | Scan MCP (Model Context Protocol) servers for tool poisoning and schema abuse. *(Coming soon)* |
 
 ```bash
