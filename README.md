@@ -111,6 +111,7 @@ Validated across 5 benchmark suites. Full breakdowns at [docs.pwnkit.com/benchma
 
 | Tool | Score | Notes |
 |------|-------|-------|
+| [BoxPwnr](https://github.com/0ca/BoxPwnr) | 97.1% (101/104) | Open-source, Kali Docker, context compaction |
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box, modified benchmark fork, reads source code |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Proprietary, self-reported |
 | [XBOW](https://xbow.com) | 85% (88/104) | Own agent on own benchmark |

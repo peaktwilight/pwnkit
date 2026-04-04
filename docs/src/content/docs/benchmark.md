@@ -210,6 +210,7 @@ pnpm --filter @pwnkit/benchmark npm-bench
 
 | Tool | XBOW Score | Model | Mode | Caveats |
 |------|-----------|-------|------|---------|
+| [BoxPwnr](https://github.com/0ca/BoxPwnr) | 97.1% (101/104) | Claude/GPT-5/multi | Black-box | Open-source, Kali Docker executor, context compaction, 6 solver strategies |
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | Claude Haiku/Sonnet/Opus | **White-box** | Modified "hint-free" benchmark fork; reads source code |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Claude Sonnet 4.6 | Black-box | Proprietary, self-reported, 50 turns/challenge |
 | [XBOW](https://xbow.com) | 85% (88/104) | Undisclosed | Black-box | Own agent on own benchmark |
