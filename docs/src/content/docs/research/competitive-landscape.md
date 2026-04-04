@@ -11,11 +11,20 @@ For pwnkit's own benchmark scores, see the [Benchmark](/benchmark/) page. For th
 
 | Agent | Score | Model | Approach | Cost | Key differentiator |
 |-------|-------|-------|----------|------|--------------------|
+| [BoxPwnr](https://github.com/0ca/BoxPwnr) | 97.1% (101/104) | Claude, GPT-5, others | Modular shell-first | Unknown | Context compaction + loop detection |
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | Claude Opus/Sonnet/Haiku 3-tier | White-box, multi-agent | ~$50/scan | Source-to-sink taint analysis |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Claude Sonnet 4.6 | Black-box only | Unknown (proprietary) | 50-turn hard cap, pure HTTP |
 | [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% (88/104) | Not disclosed | Single meta-agent | Unknown | Self-rewriting prompts |
 | [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~76/98) | Kimi K2.5 | Single-agent CLI | $122/104 challenges | ADaPT recursive decomposition |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | GPT-5 | 3-role multi-agent | $21.38 total | Evidence-gated branching |
+
+### BoxPwnr (97.1%)
+
+Current XBOW leader by Francisco Oca (0ca). Modular framework with four components: Orchestrator (run management), Solver (LLM interaction), Executor (Docker sandbox), and Platform (challenge interface). Six solver strategies: `single_loop_xmltag` (default, shell-first), `single_loop`, `single_loop_compactation` (context compaction at 60% window), `claude_code` delegation, `codex` delegation, and `hacksynth` (multi-agent). The default strategy uses XML-tag shell-first execution -- the LLM emits bash commands inside `<COMMAND>` tags, which run in a full Kali Linux Docker container with all security tools pre-installed.
+
+Key techniques: context compaction triggers at 60% window fill (summarize and continue), loop/oscillation detection catches the agent repeating failed commands, and progress handoff between attempts preserves findings across retries. Cost tracking is built into the orchestrator. Supports Claude, GPT-5, DeepSeek, Grok-4, Gemini 3, and Kimi K2.5.
+
+Beyond XBOW, BoxPwnr has solved HTB 250/523 (47.8%), PortSwigger 163/270 (60.4%), Cybench 40/40 (100%), and picoCTF 373/509 (73.3%). The breadth of benchmark coverage across five platforms is unmatched. Notably, the same author created the patched XBOW fork that pwnkit uses for its benchmark environment.
 
 ### Shannon (96.15%)
 
@@ -60,13 +69,14 @@ Ranked by expected impact and implementation complexity. Estimates based on chal
 | 1 | Early-stop + retry at turn 20 | +3-5 flags | 1x | **Shipped** |
 | 2 | Blind SQLi script templates | +2-4 flags | 1x | **Shipped** |
 | 3 | Patched fork for all 104 challenges | +10-15 flags | 1x | **Shipped** |
-| 4 | Context relay at 30k tokens | +3-5 flags | 1x | Planned |
-| 5 | Dynamic playbooks after recon | +3-5 flags | 1x | Planned |
-| 6 | EGATS tree search | +5-9 flags | 2-3x | Planned |
-| 7 | Best-of-3 racing | +5-8 flags | 3x | Evaluating |
-| 8 | External working memory | +2-3 flags | 1x | Planned |
-| 9 | Confidence-gated spawn_agent | +2-4 flags | 1.5x | Planned |
-| 10 | RAG from prior solves | +2-4 flags | 1x | Planned |
+| 4 | Context compaction at 60% window | +3-5 flags | 1x | **Shipped** |
+| 5 | Loop/oscillation detection | +2-3 flags | 1x | **Shipped** |
+| 6 | Dynamic playbooks after recon | +3-5 flags | 1x | Planned |
+| 7 | EGATS tree search | +5-9 flags | 2-3x | Planned |
+| 8 | Best-of-3 racing | +5-8 flags | 3x | Evaluating |
+| 9 | External working memory | +2-3 flags | 1x | Planned |
+| 10 | Confidence-gated spawn_agent | +2-4 flags | 1.5x | Planned |
+| 11 | RAG from prior solves | +2-4 flags | 1x | Planned |
 
 ### Shipped
 
@@ -76,9 +86,11 @@ Ranked by expected impact and implementation complexity. Estimates based on chal
 
 **Patched XBOW fork for all 104 challenges.** Several XBOW challenges had environment bugs (broken Docker configs, missing dependencies, timing issues). The patched fork fixes these so the agent isn't fighting infrastructure. This is the single highest-impact change: +10-15 flags from challenges that were previously unsolvable due to benchmark bugs.
 
-### Planned
+**Loop/oscillation detection.** Detects when the agent is repeating the same failed commands or oscillating between two ineffective approaches. When a loop is detected, the agent is forced to change strategy or escalate. Based on BoxPwnr's oscillation detection mechanism, which catches the most common failure mode in long-running pentesting sessions -- the agent trying the same exploit with minor variations indefinitely.
 
-**Context relay at 30k tokens.** When the context window hits 30k tokens (~40% of a 75k window), extract key findings and relay them to a fresh context. Prevents the quality degradation observed past 40% fill. The agent loses ability to connect earlier findings to current state as context grows. Relay resets this.
+**Context compaction at 60% window.** When the context window reaches 60% capacity, summarize the current state (discovered endpoints, credentials, attack progress) and continue with a compacted context. Prevents the quality degradation that occurs past 40-60% fill. Based on BoxPwnr's `single_loop_compactation` solver, which triggers compaction at 60% and has proven effective across hundreds of challenges. More aggressive than the originally planned 30k-token relay -- compaction preserves the full conversation thread rather than doing a hard reset.
+
+### Planned
 
 **Dynamic playbooks after recon.** After the initial recon phase, generate a challenge-specific playbook based on what the agent found (tech stack, endpoints, auth mechanism). Replaces the generic 25-line prompt with targeted instructions. Cyber-AutoAgent's self-rewriting prompts are the extreme version of this.
 
@@ -117,11 +129,12 @@ CHAP at NDSS 2026 introduces challenge-aware heuristic planning -- the agent cla
 | Blind SQLi templates | deadend-cli blind SQLi solves | +2-4 flags |
 | Patched XBOW fork | Challenge-level bug analysis | +10-15 flags |
 | Shell-first architecture | TermiAgent, meta-analysis | Foundation -- 7.4% cost of multi-agent |
+| Loop detection | BoxPwnr oscillation detection | +2-3 flags |
+| Context compaction | BoxPwnr 60% window compaction | +3-5 flags |
 
 ## What's next
 
 **Near-term (next 2 weeks):**
-- Context relay at 30k tokens -- the single highest-impact unshipped technique
 - Dynamic playbooks after recon -- leverage the agent's own recon to specialize its prompt
 
 **Medium-term (next month):**
