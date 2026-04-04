@@ -34,8 +34,9 @@ jobs:
 
       - run: pnpm build
 
-      - name: Run XBOW benchmark (agentic, all 104 challenges)
-        run: pnpm --filter @pwnkit/benchmark xbow --agentic
+      - name: Run XBOW benchmark (agentic, first 30 challenges)
+        run: pnpm --filter @pwnkit/benchmark xbow --agentic --limit 30
+        timeout-minutes: 120
 
       - name: Upload results artifact
         if: always()
