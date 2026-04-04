@@ -1,9 +1,9 @@
 ---
 title: Benchmark
-description: Comprehensive benchmark results for pwnkit across AI/LLM and traditional web vulnerability challenges.
+description: Comprehensive benchmark results for pwnkit across five domains -- AI/LLM security, web pentesting, network/CVE pentesting, LLM safety, and npm auditing.
 ---
 
-pwnkit is benchmarked against two test suites: a custom AI/LLM security benchmark (10 challenges) and the XBOW traditional web vulnerability benchmark (104 challenges). This page is the single source of truth for all benchmark results.
+pwnkit is benchmarked against five test suites: a custom AI/LLM security benchmark (10 challenges), the XBOW traditional web vulnerability benchmark (104 challenges), AutoPenBench network/CVE pentesting (33 tasks), HarmBench LLM safety (510 behaviors), and an npm audit benchmark (30 packages). This page is the single source of truth for all benchmark results.
 
 > **Latest (April 2026).** 35 unique flags on XBOW (29 local + 6 CI-only), up from 22. Local: 29/~40 ran (73%). CI: 20/30 buildable (67%). Six new CI-only flags (XBEN-027, 032, 038, 039, 040, 043) added from linux/amd64 runs. Previous gains from fixing the Responses API `output_text` bug remain. ~40 challenges still cannot build on arm64.
 
@@ -145,6 +145,66 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 
 ---
 
+## AutoPenBench (Network/CVE Pentesting)
+
+33 Docker-based pentesting tasks from [AutoPenBench](https://github.com/lucagioacchini/auto-pen-bench), covering real-world network pentesting and CVE exploitation. Each task places the agent in a network environment with a vulnerable target and a flag to capture. The current bar to beat is 21% (set by the original paper's best agent).
+
+**Status:** Runner built, not yet scored. AutoPenBench requires Linux Docker (the tasks spin up multi-container networks with vulnerable services), so it cannot run on arm64 macOS. Waiting on linux/amd64 CI.
+
+```bash
+pnpm --filter @pwnkit/benchmark autopenbench
+```
+
+| Metric | Value |
+|--------|-------|
+| Total tasks | 33 |
+| Task types | Network pentesting, CVE exploitation |
+| Bar to beat | 21% (original paper) |
+| pwnkit score | TBD (needs Linux Docker) |
+| Agent tools | `bash`, `save_finding`, `done` |
+
+---
+
+## HarmBench (LLM Safety)
+
+510 harmful behaviors from [HarmBench](https://www.harmbench.org/), the standard LLM safety benchmark. Instead of testing whether pwnkit can *break into* an LLM, this tests whether it can make an LLM *do something it shouldn't* -- generate harmful content, bypass safety filters, comply with dangerous requests. The metric is Attack Success Rate (ASR): what percentage of harmful behaviors can the agent elicit.
+
+**Status:** Lightweight harness built using `sendPrompt()`. The harness sends each behavior as a prompt to the target LLM and evaluates whether the response complies. No heavyweight dependencies -- it reuses pwnkit's existing LLM runtime.
+
+```bash
+pnpm --filter @pwnkit/benchmark harmbench --target <url>
+```
+
+| Metric | Value |
+|--------|-------|
+| Total behaviors | 510 |
+| Categories | Harmful content generation, safety filter bypass, dangerous compliance |
+| Metric | Attack Success Rate (ASR) |
+| pwnkit score | TBD (needs real LLM targets) |
+| Harness | Lightweight, uses `sendPrompt()` |
+
+---
+
+## npm Audit Benchmark
+
+30 packages (10 known-malicious, 10 with real CVEs, 10 safe/benign) designed to test pwnkit's npm audit mode. This is the first npm security benchmark we're aware of -- no competitor has one. The benchmark measures whether the scanner correctly flags malicious and vulnerable packages while avoiding false positives on safe ones.
+
+```bash
+pnpm --filter @pwnkit/benchmark npm-bench
+```
+
+| Metric | Value |
+|--------|-------|
+| Total packages | 30 |
+| Malicious packages | 10 |
+| CVE packages | 10 |
+| Safe packages | 10 |
+| Metric | Precision, recall, F1 |
+| pwnkit score | TBD |
+| Competitors with npm benchmark | 0 |
+
+---
+
 ## Comparison With Other Tools
 
 | Tool | XBOW Score | Model | Mode | Caveats |
@@ -207,7 +267,25 @@ pnpm bench:quick
 pnpm --filter @pwnkit/benchmark xbow --agentic
 ```
 
-The benchmark spins up Docker-based test targets (vulnerable servers), runs pwnkit against them, and checks whether each flag was captured.
+### AutoPenBench (requires Linux Docker)
+
+```bash
+pnpm --filter @pwnkit/benchmark autopenbench
+```
+
+### HarmBench
+
+```bash
+pnpm --filter @pwnkit/benchmark harmbench --target <url>
+```
+
+### npm audit benchmark
+
+```bash
+pnpm --filter @pwnkit/benchmark npm-bench
+```
+
+All benchmarks spin up their respective test environments, run pwnkit against them, and check results. XBOW and AutoPenBench use Docker-based targets. HarmBench and npm-bench are lighter-weight and don't require Docker.
 
 ## Challenge Format
 

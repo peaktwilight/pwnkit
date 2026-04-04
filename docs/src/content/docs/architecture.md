@@ -28,7 +28,7 @@ A single agent session that:
 
 The research agent's tool set depends on the target type:
 
-- **Web targets:** `bash` (primary -- run curl, python3, bash, sqlmap, anything), `save_finding`, `done`. The structured tools (`crawl_page`, `submit_form`, `http_request`) are available but optional -- benchmarking showed the agent performs better with just shell access.
+- **Web targets:** `bash` (primary -- run curl, python3, bash, sqlmap, anything), `browser` (Playwright-based headless browser for XSS testing and JavaScript-rendered pages), `save_finding`, `done`. The structured tools (`crawl_page`, `submit_form`, `http_request`) are available but optional -- benchmarking showed the agent performs better with just shell access.
 - **LLM targets:** `send_prompt` (talk to LLM endpoints), `bash`, `save_finding`, `done`.
 - **Source/npm targets:** `read_file`, `search_code`, `list_files`, `run_command`, `save_finding`.
 
@@ -136,6 +136,7 @@ Each agent has access to a set of tools depending on the scan type:
 | Tool | Used in | Purpose |
 |------|---------|---------|
 | `bash` | Web, LLM, Verify | **Primary tool for web pentesting.** Run any shell command (curl, python3, bash, sqlmap, nmap, etc.). Renamed from `shell_exec` to match [pi-mono](https://github.com/badlogic/pi-mono)'s naming convention. |
+| `browser` | Web | Playwright-based headless browser for XSS testing and JavaScript-rendered pages. Complements `bash`/curl for cases where a real browser DOM is needed. |
 | `save_finding` | All modes | Record a discovered vulnerability with PoC |
 | `done` | All modes | Signal that the agent has finished |
 | `send_prompt` | LLM | Send prompts to LLM/AI endpoints |
