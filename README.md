@@ -30,7 +30,7 @@
 
 ---
 
-Autonomous agents that discover, attack, and verify vulnerabilities across LLM endpoints, web apps, npm packages, and source code. Every finding is independently re-exploited by a blind verify agent to kill false positives.
+Autonomous AI agents that pentest web apps, LLM endpoints, npm packages, and source code. The agent gets a `bash` tool and acts like a real pentester — writing curl commands, Python exploit scripts, and chaining vulnerabilities. Every finding is independently re-exploited by a blind verify agent to kill false positives.
 
 ```bash
 npx pwnkit-cli
@@ -39,27 +39,29 @@ npx pwnkit-cli
 ## Quick Start
 
 ```bash
-# Scan an LLM endpoint
-npx pwnkit-cli scan --target https://your-app.com/api/chat
-
 # Pentest a web app
 npx pwnkit-cli scan --target https://example.com --mode web
+
+# Scan an LLM endpoint
+npx pwnkit-cli scan --target https://your-app.com/api/chat
 
 # Audit an npm package
 npx pwnkit-cli audit lodash
 
 # Review source code
-npx pwnkit-cli review ./my-ai-app
+npx pwnkit-cli review ./my-app
 
 # Auto-detect — just give it a target
-npx pwnkit-cli express          # audits npm package
-npx pwnkit-cli ./my-repo        # reviews source code
-npx pwnkit-cli https://api.com  # scans endpoint
+npx pwnkit-cli https://example.com
+npx pwnkit-cli express
+npx pwnkit-cli ./my-repo
 ```
 
-See the [full documentation](https://docs.pwnkit.com/getting-started) for configuration, runtime modes, and CI/CD setup.
+See the [documentation](https://docs.pwnkit.com) for configuration, runtime modes, and CI/CD setup.
 
 ## How It Works
+
+The agent gets 3 tools: `bash`, `save_finding`, `done`. It runs curl, writes Python scripts, chains exploits — the same way a human pentester works. No templates, no static rules.
 
 ```
   Research Agent              Blind Verify Agent           Report
@@ -68,25 +70,35 @@ See the [full documentation](https://docs.pwnkit.com/getting-started) for config
                               can't reproduce? killed
 ```
 
-The blind verification is the differentiator. The verify agent can't be biased by the research agent's reasoning — same principle as double-blind peer review.
+The blind verification is the differentiator. The verify agent can't be biased by the research agent's reasoning.
 
 ## Benchmark
 
-10 AI/LLM security challenges with flag-based verification. Extract the flag or fail.
+### XBOW (traditional web vulnerabilities)
 
-| Mode | Detection | Flag Extraction |
-|------|-----------|-----------------|
-| **Agentic** (with AI) | **100%** (10/10) | **100%** (10/10) |
-| Baseline (no AI) | 30% (3/10) | 20% (2/10) |
+Tested against the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) — 104 Docker CTF challenges covering SQLi, IDOR, SSTI, SSRF, file upload, deserialization, auth bypass, and more.
 
-All categories covered: prompt injection, system prompt extraction, PII leakage, encoding bypass, jailbreaks, multi-turn escalation, CORS, sensitive paths, MCP SSRF, indirect injection.
+**23+ flags extracted** across IDOR, SQLi, blind SQLi, SSTI, RCE, SSRF, LFI, XXE, file upload, deserialization, auth bypass, business logic, and cookie manipulation.
+
+| Tool | Score | Approach |
+|------|-------|----------|
+| Shannon | 96.15% | White-box, source-aware |
+| KinoSec | 92.3% | Black-box, proprietary |
+| XBOW | 85% | Purpose-built |
+| Cyber-AutoAgent | 84.62% | Open-source, meta-agent |
+| pwnkit | testing | Open-source, shell-first |
+
+### AI/LLM security
+
+10 custom challenges covering prompt injection, jailbreaks, system prompt extraction, PII leakage, encoding bypass, multi-turn escalation, MCP SSRF.
+
+**100% (10/10)** — all flags extracted, zero false positives.
 
 ```bash
-pnpm bench              # baseline (deterministic, no API key)
-pnpm bench --agentic    # full agentic pipeline with AI
+pnpm bench --agentic    # AI/LLM benchmark
 ```
 
-Our benchmark covers AI/LLM-specific attack surfaces. This is a different domain from [XBOW](https://github.com/xbow-engineering/validation-benchmarks) (traditional web vulns) and KinoSec (black-box web pentesting) — the scores measure different things. See the [benchmark docs](https://docs.pwnkit.com/benchmark) for details.
+See [benchmark details](https://docs.pwnkit.com/benchmark).
 
 ## GitHub Action
 
