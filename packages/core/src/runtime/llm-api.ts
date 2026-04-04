@@ -34,6 +34,7 @@ function parseCodexAzureConfig(): {
   baseUrl?: string;
   model?: string;
   wireApi?: WireApi;
+  reasoningEffort?: string;
 } {
   const configPath = `${process.env.HOME ?? ""}/.codex/config.toml`;
   if (!existsSync(configPath)) return {};
@@ -44,11 +45,13 @@ function parseCodexAzureConfig(): {
     const baseUrlMatch = azureSectionMatch?.[1]?.match(/base_url\s*=\s*"([^"]+)"/);
     const wireApiMatch = azureSectionMatch?.[1]?.match(/wire_api\s*=\s*"([^"]+)"/);
     const modelMatch = content.match(/\nmodel\s*=\s*"([^"]+)"/);
+    const reasoningMatch = content.match(/model_reasoning_effort\s*=\s*"([^"]+)"/);
 
     return {
       baseUrl: baseUrlMatch?.[1],
       model: modelMatch?.[1],
       wireApi: wireApiMatch?.[1] === "responses" ? "responses" : "chat_completions",
+      reasoningEffort: reasoningMatch?.[1],
     };
   } catch {
     return {};
@@ -65,6 +68,7 @@ function detectProvider(configApiKey?: string): {
   baseUrl: string;
   defaultModel: string;
   wireApi: WireApi;
+  reasoningEffort?: string;
 } {
   // If an explicit API key is passed via config, try to guess the provider from the key prefix
   if (configApiKey) {
@@ -128,6 +132,7 @@ function detectProvider(configApiKey?: string): {
       baseUrl: process.env.AZURE_OPENAI_BASE_URL ?? process.env.OPENAI_BASE_URL ?? azureConfig.baseUrl ?? "https://api.openai.com/v1",
       defaultModel: process.env.AZURE_OPENAI_MODEL ?? azureConfig.model ?? DEFAULT_OPENAI_MODEL,
       wireApi: (process.env.AZURE_OPENAI_WIRE_API as WireApi) ?? azureConfig.wireApi ?? "chat_completions",
+      reasoningEffort: azureConfig.reasoningEffort,
     };
   }
 
@@ -176,6 +181,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
   private baseUrl: string;
   private model: string;
   private wireApi: WireApi;
+  private reasoningEffort?: string;
 
   constructor(config: RuntimeConfig) {
     this.config = config;
@@ -184,6 +190,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
     this.apiKey = detected.apiKey;
     this.baseUrl = detected.baseUrl;
     this.wireApi = detected.wireApi;
+    this.reasoningEffort = process.env.PWNKIT_REASONING_EFFORT ?? detected.reasoningEffort;
     const requestedModel = config.model ?? process.env.PWNKIT_MODEL;
     // "free" is a special alias for the free OpenRouter model
     if (requestedModel === "free" && this.provider === "openrouter") {
@@ -536,6 +543,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
           model: this.model,
           input,
           max_output_tokens: 8192,
+          ...(this.reasoningEffort ? { reasoning: { effort: this.reasoningEffort } } : {}),
         };
 
         if (tools.length > 0) {
