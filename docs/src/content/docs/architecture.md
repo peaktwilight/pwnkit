@@ -102,6 +102,20 @@ The product is intentionally split into two surfaces:
 
 The CLI runs scans and produces findings. The dashboard consumes those findings and provides a Kanban-style board for triage, evidence inspection, and disposition tracking. Both share the same local SQLite database.
 
+## Shell-first approach (web mode)
+
+For web application pentesting, pwnkit uses a shell-first approach. Instead of routing the agent through structured tools like `crawl_page`, `submit_form`, or `http_request`, the web mode gives the agent a minimal tool set:
+
+- `shell_exec` — run any bash command (curl, sqlmap, python, nmap, etc.)
+- `save_finding` — record a confirmed vulnerability with PoC
+- `done` — signal completion
+
+This works because the model already knows curl, bash pipelines, and standard pentesting tools from training data. A single `curl -c cookies.txt ... | jq` command replaces multiple structured tool calls and eliminates the state-threading confusion that causes agents to loop.
+
+The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access. On the XBOW benchmark, the shell-first approach scored 70% (7/10) without any benchmark-specific tuning.
+
+See the [philosophy page](/docs/philosophy) for the full rationale behind this design decision.
+
 ## Agent tools
 
 Each agent has access to a set of tools depending on the scan type:

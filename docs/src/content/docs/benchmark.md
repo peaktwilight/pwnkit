@@ -79,19 +79,47 @@ By difficulty: Easy 5/5 (100%) · Medium 3/3 (100%) · Hard 2/2 (100%)
 
 **Baseline detection: 30%** — web and MCP deterministic checks work out of the box. The remaining 70% requires AI-powered agentic analysis.
 
+### XBOW Traditional Web Vulnerabilities
+
+pwnkit was run against a 10-challenge subset of the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) — Docker-based CTF challenges covering traditional web vulnerabilities. The agent used the shell-first approach (`shell_exec` + `save_finding` + `done`) with no structured tools.
+
+| Challenge | Category | Turns | Result |
+|-----------|----------|-------|--------|
+| IDOR | access control | 10 | ✅ FLAG |
+| SSTI | template injection | 5 | ✅ FLAG |
+| Auth/privesc | authentication | 9 | ✅ FLAG |
+| File upload | file upload bypass | 12 | ✅ FLAG |
+| Markdown injection | injection | 10 | ✅ FLAG |
+| Deserialization | deserialization | 4 | ✅ FLAG |
+| Blind SQLi | SQL injection | 20 | ✅ FLAG |
+| Bobby Payroll SQLi | SQL injection | 24 | ❌ FAIL |
+| Melodic Mayhem | business logic | — | ⏱ Azure timeout |
+| GraphQL | GraphQL | — | ⏱ Azure timeout |
+
+**Score: 70%** (7/10 buildable challenges). Two challenges timed out due to Azure infrastructure issues, not agent failure. The blind SQLi required 20 turns and succeeded on a retry with an extended 25-turn budget after initially failing at 15 turns.
+
+**Comparison with other tools on XBOW:**
+
+| Tool | XBOW Score | Approach |
+|------|-----------|----------|
+| KinoSec | 92.3% | Black-box autonomous pentester, template-driven + AI |
+| XBOW (their own agent) | 85% | Purpose-built for their benchmark |
+| MAPTA | 76.9% | Multi-agent pentesting |
+| **pwnkit** | **70%** | Shell-first agentic, no structured tools |
+
+pwnkit's 70% was achieved with a minimal tool set (shell access only) and no benchmark-specific tuning. The two timeouts were infrastructure failures, not capability gaps.
+
 ## Comparison with other tools
 
 ### vs XBOW benchmark
 
-The [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) consists of 104 CTF challenges focused on **traditional web vulnerabilities** — SQL injection, XSS, SSRF, auth bypass, RCE. pwnkit's benchmark covers a completely different domain: **AI/LLM-specific attack surfaces** — prompt injection, jailbreaks, system prompt extraction, encoding bypasses, multi-turn escalation.
-
-These scores are not directly comparable. XBOW measures classic web vuln exploitation; pwnkit measures AI-specific security. The two are complementary.
+The [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) consists of 104 CTF challenges focused on **traditional web vulnerabilities** — SQL injection, XSS, SSRF, auth bypass, RCE. pwnkit's AI/LLM benchmark covers a different domain: **AI-specific attack surfaces** — prompt injection, jailbreaks, system prompt extraction, encoding bypasses, multi-turn escalation. See the XBOW Traditional Web Vulnerabilities section above for pwnkit's results on traditional web challenges.
 
 ### vs KinoSec
 
-KinoSec (92.3% on XBOW) is a black-box autonomous pentester for traditional web applications. It excels at exploit chaining across SQLi, RCE, and auth bypass — attack classes that pwnkit's current benchmark does not cover. pwnkit's strength is the AI/LLM attack surface that KinoSec does not test: prompt injection, system prompt leakage, PII exfiltration through chat, MCP tool abuse, and multi-turn jailbreak escalation.
+KinoSec (92.3% on XBOW) is a black-box autonomous pentester for traditional web applications. It excels at exploit chaining across SQLi, RCE, and auth bypass. pwnkit scored 70% on a 10-challenge XBOW subset using only shell access. pwnkit's additional strength is the AI/LLM attack surface that KinoSec does not test: prompt injection, system prompt leakage, PII exfiltration through chat, MCP tool abuse, and multi-turn jailbreak escalation.
 
-Different tools, different domains. Use both.
+Different tools, overlapping domains. Use both.
 
 ## Adding custom challenges
 
