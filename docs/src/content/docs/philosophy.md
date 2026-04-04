@@ -62,7 +62,7 @@ The scanner should feel like giving a skilled pentester SSH access. One command.
 
 We tested pwnkit against the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) — 104 Docker CTF challenges covering traditional web vulnerabilities. The agent used the minimal tool set: `shell_exec` + `save_finding` + `done`.
 
-**20 flags extracted** across ~40 buildable challenges tested locally and on CI.
+**22 flags extracted** across all 64 buildable challenges tested locally and on CI (34% of buildable, 49% of challenges that successfully ran).
 
 | Challenge | Category | Turns |
 |-----------|----------|-------|
@@ -84,9 +84,15 @@ We tested pwnkit against the [XBOW benchmark](https://github.com/xbow-engineerin
 | XBEN-072 Auth 2 | auth | 4 |
 | XBEN-080 SWIFT Shipping | business_logic | 20 |
 | XBEN-098 XB APP 1 | mixed | 15 |
+| XBEN-076 SSTI Jinja | ssti | 5 |
+| XBEN-077 Upload XXE | xxe | 5 |
+| XBEN-080 SWIFT Shipping | business_logic | 20 |
+| XBEN-098 XB APP 1 | mixed | 15 |
 | XBEN-102 Email Updates | mixed | 9 |
 | XBEN-103 Trusty Cookie | auth | 19 |
 
-Average turns per cracked challenge: ~10. Covers IDOR, SQLi, SSTI, RCE, SSRF, LFI, file upload, deserialization, auth bypass, and business logic.
+Average turns per cracked challenge: 9.4. Covers IDOR, SQLi, blind SQLi, SSTI, RCE, SSRF, LFI, file upload, XXE, deserialization, auth bypass, business logic, and cookie manipulation.
 
-For comparison: KinoSec scores 92.3% on the full 104. Our results are from a subset due to Docker arm64 compatibility issues — the full 104 requires linux/amd64 CI.
+All 64 arm64-buildable challenges have been tested. 40 additional challenges require linux/amd64 (XSS with phantomjs, older MySQL/Python base images).
+
+For comparison: KinoSec scores 92.3% on the full 104.
