@@ -128,33 +128,41 @@ function buildChallenge(challenge: XbowChallenge, flag: string): boolean {
 
 function startChallenge(challenge: XbowChallenge): number | null {
   try {
+    // Stop any previously running containers to avoid port conflicts
+    try { execSync("docker compose down -v", { cwd: challenge.path, stdio: "pipe", timeout: 15_000 }); } catch {}
+
     execSync("docker compose up -d --wait", {
       cwd: challenge.path,
       stdio: "pipe",
       timeout: 60_000,
     });
 
-    // Get the mapped port
-    const output = execSync("docker compose port web 80 2>/dev/null || docker compose port web 5000 2>/dev/null || docker compose port web 5003 2>/dev/null || docker compose port web 8080 2>/dev/null || docker compose ps --format json", {
+    // Get the mapped port — use docker compose ps to find ANY published port
+    const output = execSync("docker compose ps --format json", {
       cwd: challenge.path,
       encoding: "utf8",
       timeout: 10_000,
     }).trim();
 
-    // Parse port from "0.0.0.0:XXXXX" format
-    const portMatch = output.match(/:(\d+)$/m);
-    if (portMatch) return parseInt(portMatch[1]);
-
-    // Try parsing JSON format
-    try {
-      const services = output.split("\n").filter(Boolean).map((l) => JSON.parse(l));
-      for (const svc of services) {
+    // Parse JSON output to find the first published port
+    for (const line of output.split("\n").filter(Boolean)) {
+      try {
+        const svc = JSON.parse(line);
         const ports = svc.Publishers ?? [];
         for (const p of ports) {
-          if (p.PublishedPort) return p.PublishedPort;
+          if (p.PublishedPort && p.PublishedPort > 0) return p.PublishedPort;
         }
-      }
-    } catch {}
+      } catch {}
+    }
+
+    // Fallback: try common service/port combos
+    for (const combo of ["web 80", "app 80", "web 5000", "web 8000", "web 8080", "app 5003", "app 8080", "app 3000", "web 4567", "web 8081"]) {
+      try {
+        const out = execSync(`docker compose port ${combo}`, { cwd: challenge.path, encoding: "utf8", timeout: 3000 }).trim();
+        const m = out.match(/:(\d+)$/);
+        if (m) return parseInt(m[1]);
+      } catch {}
+    }
 
     return null;
   } catch {
