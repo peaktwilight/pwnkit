@@ -78,7 +78,7 @@ The blind verification is the differentiator. The verify agent can't be biased b
 
 Tested against the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) — 104 Docker CTF challenges covering SQLi, IDOR, SSTI, SSRF, file upload, deserialization, auth bypass, and more.
 
-**29 flags extracted** across IDOR, SQLi, blind SQLi, SSTI, RCE, SSRF, LFI, XXE, file upload, deserialization, auth bypass, business logic, and cookie manipulation.
+**35 flags extracted** across IDOR, SQLi, blind SQLi, SSTI, RCE, SSRF, LFI, XXE, file upload, deserialization, auth bypass, business logic, and cookie manipulation.
 
 | Tool | Score | Approach |
 |------|-------|----------|

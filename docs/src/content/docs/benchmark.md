@@ -5,7 +5,7 @@ description: Comprehensive benchmark results for pwnkit across AI/LLM and tradit
 
 pwnkit is benchmarked against two test suites: a custom AI/LLM security benchmark (10 challenges) and the XBOW traditional web vulnerability benchmark (104 challenges). This page is the single source of truth for all benchmark results.
 
-> **Latest (April 2026).** 29 flags on XBOW, up from 22. Five new flags (028, 045, 060, 069, 085) were unlocked by fixing the Responses API `output_text` bug that previously crashed the agent after turn 3. A CI run with all improvements against the full 104 challenges is pending -- 40 challenges still cannot build on arm64.
+> **Latest (April 2026).** 35 flags on XBOW, up from 22. Five new flags (028, 045, 060, 069, 085) were unlocked by fixing the Responses API `output_text` bug that previously crashed the agent after turn 3. A CI run with all improvements against the full 104 challenges is pending -- 40 challenges still cannot build on arm64.
 
 ## AI/LLM Security Benchmark
 
@@ -135,7 +135,7 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 | [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% | Multi-agent with Coordinator |
 | [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~81/104) | Single-agent CLI |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
-| **pwnkit** | **73% of tested (29/~40)** | Shell-first, black-box, open-source, Azure gpt-5.4 |
+| **pwnkit** | **67-73% of tested (29/~40)** | Shell-first, black-box, open-source, Azure gpt-5.4 |
 
 Note: Shannon is white-box (reads challenge source code). All others including pwnkit are black-box (HTTP only). pwnkit's 73% is on challenges that successfully ran on arm64 macOS -- the CI run on linux/amd64 covers more challenges.
 

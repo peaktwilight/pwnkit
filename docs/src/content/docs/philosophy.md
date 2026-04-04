@@ -70,7 +70,7 @@ An investigation into the top-performing pentesting agents validated pwnkit's ap
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
 | **pwnkit** | **60% of tested (27/45)** | Shell-first, open-source, Azure gpt-5.4 |
 
-pwnkit's 29 flags on XBOW (avg 9.5 turns per flag):
+pwnkit's 35 flags on XBOW (avg 9.5 turns per flag):
 
 | # | Challenge | Category | Turns | Source |
 |---|-----------|----------|-------|--------|
