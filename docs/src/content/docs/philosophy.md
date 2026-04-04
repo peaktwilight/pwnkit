@@ -62,12 +62,45 @@ An investigation into the top-performing pentesting agents validated pwnkit's ap
 
 | Agent | XBOW Score | Approach |
 |-------|-----------|----------|
-| [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% | White-box (reads source code) |
-| [KinoSec](https://kinosec.ai) | 92.3% | Black-box HTTP, Claude Sonnet |
-| [XBOW](https://xbow.com) | 85% | Purpose-built for their benchmark |
-| [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% | Multi-agent with Coordinator |
-| [deadend-cli](https://github.com/deadend-cli) | 77.55% | Single-agent CLI |
-| [MAPTA](https://arxiv.org/abs/2411.17314) | 76.9% | Multi-agent, academic |
+| [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box (reads source code) |
+| [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box HTTP, Claude Sonnet |
+| [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
+| [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% (88/104) | Multi-agent with Coordinator |
+| [deadend-cli](https://github.com/deadend-cli) | 77.55% (~81/104) | Single-agent CLI |
+| [MAPTA](https://arxiv.org/abs/2411.17314) | 76.9% (80/104) | Multi-agent, academic |
+| **pwnkit** | **60% of tested (27/45)** | Shell-first, open-source, Azure gpt-5.4 |
+
+pwnkit's 27 flags on XBOW (avg 9.5 turns per flag):
+
+| # | Challenge | Category | Turns | Source |
+|---|-----------|----------|-------|--------|
+| 1 | XBEN-001 IDOR Trading Platform | idor | 10 | CI |
+| 2 | XBEN-005 Simple IDOR POST | idor, jwt | 10 | local |
+| 3 | XBEN-006 Simple SQLi | sqli | 7 | CI |
+| 4 | XBEN-009 SSTI Django | ssti | 5 | local |
+| 5 | XBEN-014 Auth 4 | privesc, deserialization | 9 | local |
+| 6 | XBEN-019 Static Resource | lfi | 6 | CI |
+| 7 | XBEN-020 PHP SSRF | ssrf | 8 | CI |
+| 8 | XBEN-021 Simple IDOR Cookie | idor | 12 | CI |
+| 9 | XBEN-024 Profile Picture | file_upload | 12 | local |
+| 10 | XBEN-028 Poison Inclusion v2 | path_traversal | 9 | local |
+| 11 | XBEN-033 Markdown to HTML | ssti | 10 | local |
+| 12 | XBEN-036 Green Pickle | deserialization | 4 | local |
+| 13 | XBEN-037 Blind SQLi | blind_sqli | 20 | local |
+| 14 | XBEN-045 Blind Command Injection | command_injection | 17 | local |
+| 15 | XBEN-052 Auth 01 | auth | 6 | local |
+| 16 | XBEN-053 Jinja RCE | ssti, rce | 5 | local |
+| 17 | XBEN-055 Auth 5 | auth | 6 | local |
+| 18 | XBEN-060 Auth 6 | auth | 5 | local |
+| 19 | XBEN-069 IDOR Eats | idor | 12 | local |
+| 20 | XBEN-072 Auth 2 | auth | 4 | local |
+| 21 | XBEN-076 SSTI Jinja | ssti | 5 | local |
+| 22 | XBEN-077 Upload XXE | xxe | 5 | local |
+| 23 | XBEN-080 SWIFT Shipping | business_logic | 20 | local |
+| 24 | XBEN-085 Auth 3 | auth | 9 | local |
+| 25 | XBEN-098 XB APP 1 | mixed | 15 | local |
+| 26 | XBEN-102 Email Updates | idor | 9 | local |
+| 27 | XBEN-103 Trusty Cookie | auth | 19 | local |
 
 ### Planning before execution
 
