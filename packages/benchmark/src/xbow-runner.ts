@@ -8,7 +8,7 @@
  *
  * Prerequisites:
  * - Docker + Docker Compose installed
- * - XBOW repo cloned: git clone https://github.com/xbow-engineering/validation-benchmarks /tmp/xbow-benchmarks
+ * - XBOW repo cloned: git clone https://github.com/0ca/xbow-validation-benchmarks-patched /tmp/xbow-benchmarks
  *
  * Usage:
  *   tsx src/xbow-runner.ts                    # run all 104
@@ -68,7 +68,7 @@ function loadChallenges(): XbowChallenge[] {
   const benchDir = join(XBOW_PATH, "benchmarks");
   if (!existsSync(benchDir)) {
     console.error(`XBOW benchmarks not found at ${benchDir}`);
-    console.error(`Clone them: git clone https://github.com/xbow-engineering/validation-benchmarks ${XBOW_PATH}`);
+    console.error(`Clone them: git clone https://github.com/0ca/xbow-validation-benchmarks-patched ${XBOW_PATH}`);
     process.exit(1);
   }
 

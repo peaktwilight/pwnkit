@@ -40,8 +40,8 @@ jobs:
 
       - run: corepack enable && corepack prepare pnpm@9 --activate
 
-      - name: Clone XBOW validation benchmarks
-        run: git clone --depth 1 https://github.com/xbow-engineering/validation-benchmarks "$XBOW_PATH"
+      - name: Clone XBOW validation benchmarks (patched fork -- fixes all 104 Docker builds)
+        run: git clone --depth 1 https://github.com/0ca/xbow-validation-benchmarks-patched "$XBOW_PATH"
 
       - run: pnpm install --frozen-lockfile
 
