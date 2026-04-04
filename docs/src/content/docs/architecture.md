@@ -3,7 +3,7 @@ title: Architecture
 description: How the 4-stage pipeline, runtime adapters, and MCP integration work.
 ---
 
-pwnkit is a general-purpose autonomous pentesting framework that covers LLM endpoints, web applications, npm packages, and source code. It runs autonomous AI agents in a discover-attack-verify-report pipeline. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions, adapting its strategy based on what it learns. Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
+pwnkit is a fully autonomous agentic pentesting framework that covers LLM endpoints, web applications, npm packages, and source code. It runs autonomous AI agents in a discover-attack-verify-report pipeline. For web pentesting, the agent uses a shell-first approach -- `shell_exec` (curl, python3, bash) is the primary tool, not structured APIs. For LLM and code targets, the agent uses specialized tools (`send_prompt`, `read_file`). Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
 
 ## The pipeline
 
@@ -23,7 +23,13 @@ A single agent session that:
 2. **Attacks** the target -- crafts multi-turn attacks spanning prompt injection, jailbreaks, tool poisoning, data exfiltration (LLM), CORS misconfiguration, SSRF, XSS, path traversal, header injection (web), supply chain and malicious code analysis (npm), and vulnerability patterns (source code)
 3. **Writes PoC code** -- produces a proof-of-concept that demonstrates each vulnerability
 
-The research agent has access to tools like `send_prompt` (for LLM endpoints), `read_file` (for source review), `run_command` (for package audits and web probing), and `http_request` (for web app pentesting). It adapts its strategy based on what it discovers -- if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection. For web apps, it escalates from fingerprinting to active exploitation. For source code, it traces data flows from user input to dangerous sinks.
+The research agent's tool set depends on the target type:
+
+- **Web targets:** `shell_exec` (primary -- run curl, python3, bash, sqlmap, anything), `save_finding`, `done`. The structured tools (`crawl_page`, `submit_form`, `http_request`) are available but optional -- benchmarking showed the agent performs better with just shell access.
+- **LLM targets:** `send_prompt` (talk to LLM endpoints), `shell_exec`, `save_finding`, `done`.
+- **Source/npm targets:** `read_file`, `search_code`, `list_files`, `run_command`, `save_finding`.
+
+The agent adapts its strategy based on what it discovers -- if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection. For web apps, it escalates from fingerprinting to active exploitation using real pentesting tools via shell. For source code, it traces data flows from user input to dangerous sinks.
 
 ### 2. Verify agent (Blind validation)
 
@@ -112,20 +118,24 @@ For web application pentesting, pwnkit uses a shell-first approach. Instead of r
 
 This works because the model already knows curl, bash pipelines, and standard pentesting tools from training data. A single `curl -c cookies.txt ... | jq` command replaces multiple structured tool calls and eliminates the state-threading confusion that causes agents to loop.
 
-The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access. On the XBOW benchmark, the shell-first approach scored 70% (7/10) without any benchmark-specific tuning.
+The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access. On the XBOW benchmark, the shell-first approach extracted 22 flags from ~45 tested challenges (49%) across 13 vulnerability categories, with no benchmark-specific tuning.
 
-See the [philosophy page](/docs/philosophy) for the full rationale behind this design decision.
+See the [Philosophy](/philosophy/) page for the full rationale behind this design decision and the [Benchmark](/benchmark/) page for detailed results.
 
 ## Agent tools
 
 Each agent has access to a set of tools depending on the scan type:
 
-| Tool | Used by | Purpose |
+| Tool | Used in | Purpose |
 |------|---------|---------|
-| `read_file` | Research, Verify | Read source files for code review |
-| `run_command` | Research, Verify | Execute commands in a sandbox |
-| `send_prompt` | Research, Verify | Send prompts to LLM endpoints |
-| `save_finding` | Research | Record a discovered vulnerability with PoC |
-| `list_files` | Research | Enumerate files in a directory |
-| `search_code` | Research | Search for patterns across a codebase |
-| `http_request` | Research, Verify | Send HTTP requests for web app pentesting |
+| `shell_exec` | Web, LLM, Verify | **Primary tool for web pentesting.** Run any shell command (curl, python3, bash, sqlmap, nmap, etc.) |
+| `save_finding` | All modes | Record a discovered vulnerability with PoC |
+| `done` | All modes | Signal that the agent has finished |
+| `send_prompt` | LLM | Send prompts to LLM/AI endpoints |
+| `read_file` | Source, npm | Read source files for code review |
+| `run_command` | Source, npm | Execute commands in a sandbox |
+| `list_files` | Source, npm | Enumerate files in a directory |
+| `search_code` | Source, npm | Search for patterns across a codebase |
+| `crawl_page` | Web (optional) | Crawl a web page -- available but `shell_exec` with curl is preferred |
+| `submit_form` | Web (optional) | Submit a form -- available but `shell_exec` with curl is preferred |
+| `http_request` | Web (optional) | Send HTTP requests -- available but `shell_exec` with curl is preferred |

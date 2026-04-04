@@ -30,7 +30,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 export OPENAI_API_KEY="sk-..."
 ```
 
-pwnkit checks for keys in this order: **OpenRouter > Anthropic > Azure OpenAI > OpenAI**. If none are set, the `api` runtime will not work, but you can still use `--runtime claude`, `--runtime codex`, or `--runtime gemini` if those CLIs are installed and authenticated.
+pwnkit checks for keys in this order: **OpenRouter > Anthropic > Azure OpenAI > OpenAI**. For Azure, you can also set `AZURE_OPENAI_BASE_URL`, `AZURE_OPENAI_MODEL`, and `AZURE_OPENAI_WIRE_API` for full control. If no API keys are set, the `api` runtime will not work, but you can still use `--runtime claude`, `--runtime codex`, or `--runtime gemini` if those CLIs are installed and authenticated.
 
 See [API Keys](/api-keys/) for full details on supported providers.
 
@@ -50,7 +50,7 @@ This discovers the attack surface, launches targeted attacks (prompt injection, 
 npx pwnkit-cli scan --target https://your-app.com --mode web
 ```
 
-Runs autonomous pentesting against a web application -- probing for CORS misconfigurations, exposed files, SSRF, XSS, and other traditional web vulnerabilities.
+Runs autonomous pentesting against a web application using a shell-first approach. The agent gets `shell_exec` as its primary tool and uses curl, python3, bash pipelines, and standard pentesting utilities to probe for CORS misconfigurations, exposed files, SSRF, XSS, SQL injection, SSTI, and other traditional web vulnerabilities. See [Architecture](/architecture/) for why shell-first beats structured tools.
 
 ### Audit an npm package
 

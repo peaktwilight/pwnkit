@@ -11,7 +11,7 @@ pwnkit's `api` runtime (the default) makes direct HTTP calls to an LLM provider.
 |----------|---------------------|-------|
 | **OpenRouter** | `OPENROUTER_API_KEY` | Recommended. One key, access to many models (Claude, GPT-4, Llama, Mistral, and more). Includes free-tier models. Get a key at [openrouter.ai](https://openrouter.ai). |
 | **Anthropic** | `ANTHROPIC_API_KEY` | Direct access to Claude models. Get a key at [console.anthropic.com](https://console.anthropic.com). |
-| **Azure OpenAI** | `AZURE_OPENAI_API_KEY` | Azure-hosted OpenAI models. Also requires `AZURE_OPENAI_ENDPOINT`. |
+| **Azure OpenAI** | `AZURE_OPENAI_API_KEY` | Azure-hosted OpenAI models. See [Azure configuration](#azure-openai-configuration) below for additional settings. |
 | **OpenAI** | `OPENAI_API_KEY` | Direct access to GPT models. Get a key at [platform.openai.com](https://platform.openai.com). |
 
 ## Priority order
@@ -57,6 +57,26 @@ OpenRouter acts as a unified gateway to many LLM providers. Benefits:
 - **Free-tier models available** — useful for testing and CI
 - **Automatic fallback** — if one provider is down, OpenRouter can route to another
 - **Usage dashboard** — track costs across all models in one place
+
+## Azure OpenAI configuration
+
+Azure OpenAI requires additional environment variables beyond the API key:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AZURE_OPENAI_API_KEY` | Yes | Your Azure OpenAI API key |
+| `AZURE_OPENAI_BASE_URL` | No | Base URL for your Azure deployment (defaults to `https://api.openai.com/v1`) |
+| `AZURE_OPENAI_MODEL` | No | Model deployment name (e.g., `gpt-4o`, `gpt-5.4`) |
+| `AZURE_OPENAI_WIRE_API` | No | Wire API format: `chat_completions` (default) or `responses` |
+
+```bash
+export AZURE_OPENAI_API_KEY="your-azure-key"
+export AZURE_OPENAI_BASE_URL="https://your-resource.openai.azure.com"
+export AZURE_OPENAI_MODEL="gpt-4o"
+export AZURE_OPENAI_WIRE_API="responses"
+```
+
+This is particularly useful if you already have an Azure OpenAI deployment (e.g., from Codex) and want to reuse it with pwnkit.
 
 ## Alternative: CLI runtimes
 
