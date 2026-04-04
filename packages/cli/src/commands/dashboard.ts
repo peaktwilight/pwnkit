@@ -568,11 +568,11 @@ function caseIdFromTarget(target: string): string {
   return `case:${encodeURIComponent(target.trim().toLowerCase())}`;
 }
 
-function inferCaseTargetType(scan: DBScanRow | undefined): "endpoint" | "package" | "repository" | "web-app" | "unknown" {
+function inferCaseTargetType(scan: DBScanRow | undefined): "ai-app" | "package" | "repository" | "web-app" | "unknown" {
   if (!scan) return "unknown";
   if (scan.mode === "web") return "web-app";
-  if (scan.mode === "probe" || scan.mode === "mcp") return "endpoint";
-  if (scan.target.startsWith("http://") || scan.target.startsWith("https://")) return "endpoint";
+  if (scan.mode === "probe" || scan.mode === "mcp") return "ai-app";
+  if (scan.target.startsWith("http://") || scan.target.startsWith("https://")) return "ai-app";
   if (scan.target.startsWith("/") || scan.target.startsWith(".") || scan.target.includes("/")) return "repository";
   if (!scan.target.includes(" ")) return "package";
   return "unknown";
@@ -583,7 +583,7 @@ function buildCases(scans: DBScanRow[], groups: ReturnType<typeof groupFindings>
   const map = new Map<string, {
     id: string;
     target: string;
-    targetType: "endpoint" | "package" | "repository" | "web-app" | "unknown";
+    targetType: "ai-app" | "package" | "repository" | "web-app" | "unknown";
     latestScanId: string | null;
     latestTimestamp: number;
     scanIds: Set<string>;

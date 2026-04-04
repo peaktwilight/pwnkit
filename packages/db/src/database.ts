@@ -199,10 +199,10 @@ export class pwnkitDB {
     return `case:${encodeURIComponent(target.trim().toLowerCase())}`;
   }
 
-  private inferCaseTargetType(scan: { target: string; mode?: string | null }): "endpoint" | "package" | "repository" | "web-app" | "unknown" {
+  private inferCaseTargetType(scan: { target: string; mode?: string | null }): "ai-app" | "package" | "repository" | "web-app" | "unknown" {
     if (scan.mode === "web") return "web-app";
-    if (scan.mode === "probe" || scan.mode === "mcp") return "endpoint";
-    if (scan.target.startsWith("http://") || scan.target.startsWith("https://")) return "endpoint";
+    if (scan.mode === "probe" || scan.mode === "mcp") return "ai-app";
+    if (scan.target.startsWith("http://") || scan.target.startsWith("https://")) return "ai-app";
     if (scan.target.startsWith("/") || scan.target.startsWith(".") || scan.target.includes("/")) return "repository";
     if (!scan.target.includes(" ")) return "package";
     return "unknown";

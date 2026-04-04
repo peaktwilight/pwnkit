@@ -109,7 +109,7 @@ export type FindingWorkflowStatus =
   | "done"
   | "cancelled";
 
-export type CaseTargetType = "endpoint" | "package" | "repository" | "web-app" | "unknown";
+export type CaseTargetType = "ai-app" | "package" | "repository" | "web-app" | "unknown";
 export type WorkItemKind =
   | "surface_map"
   | "hypothesis"

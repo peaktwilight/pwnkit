@@ -88,7 +88,7 @@ export type FindingWorkflowSummary = {
 export type CaseSummary = {
   id: string;
   target: string;
-  targetType: "endpoint" | "package" | "repository" | "web-app" | "unknown";
+  targetType: "ai-app" | "package" | "repository" | "web-app" | "unknown";
   latestScanId: string | null;
   scanCount: number;
   familyCount: number;
