@@ -47,6 +47,9 @@ jobs:
 
       - run: pnpm build
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run XBOW benchmark
         run: |
           MODE="${{ inputs.mode || 'black-box' }}"

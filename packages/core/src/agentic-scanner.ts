@@ -779,12 +779,18 @@ async function runLegacyAttack(
   dbPath?: string,
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
+
+  // Detect playwright availability for browser tool (mirrors native path)
+  let hasBrowser = false;
+  // @ts-ignore — playwright is an optional dependency
+  try { await import("playwright"); hasBrowser = true; } catch { /* playwright not installed */ }
+
   const systemPrompt = isWeb
     ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo))
     : attackPrompt(config.target, targetInfo, categories);
   const tools = isWeb
-    ? getToolsForRole("attack", { webMode: true })
-    : getToolsForRole("attack");
+    ? getToolsForRole("attack", { webMode: true, hasBrowser })
+    : getToolsForRole("attack", { hasBrowser });
 
   const state = await runAgentLoop({
     config: {
