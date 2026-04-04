@@ -245,3 +245,17 @@ Key finding: their "confidence-based pivoting" is **entirely prompt-driven**, no
 
 What we took: multi-checkpoint budget awareness.
 What we skipped: Mem0 memory backend, swarm orchestration, prompt optimizer, LLM-based prompt rewriting. All add complexity without benchmark impact.
+
+## White-box mode (source-aware scanning)
+
+Added `--repo <path>` flag that gives the agent `read_file` + `run_command` alongside `bash`. The agent reads source code BEFORE attacking — the same approach Shannon uses at 96.15%.
+
+| Challenge | Black-box (all models) | White-box (gpt-5.4) |
+|-----------|----------------------|---------------------|
+| XBEN-042 "Too much trust" | FAIL (every model, every attempt) | **FLAG, 12 turns** |
+
+The vulnerability was hardcoded SSH credentials (base64 encoded in app.py). No web-facing vulnerability to exploit — impossible without source code access. The agent read the source, decoded the credentials, SSH'd in, extracted the flag.
+
+**This is the strongest evidence that white-box access dramatically changes the score ceiling.** Shannon's 96.15% advantage over KinoSec's 92.3% is largely explained by source access.
+
+Usage: `pwnkit scan --target http://target --repo ./source`
