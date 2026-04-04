@@ -14,6 +14,8 @@
     "xbow:quick": "tsx src/xbow-runner.ts --limit 5",
     "xbow:agentic": "tsx src/xbow-runner.ts --agentic",
     "xbow:whitebox": "tsx src/xbow-runner.ts --agentic --white-box",
+    "npm-bench": "tsx src/npm-bench.ts",
+    "npm-bench:json": "tsx src/npm-bench.ts --json",
     "report": "tsx src/report.ts"
   },
   "dependencies": {
