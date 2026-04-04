@@ -26,6 +26,7 @@ export interface RunOptions {
   model?: string;
   packageVersion?: string;
   reportPath?: string;
+  repoPath?: string;
 }
 
 export async function runUnified(opts: RunOptions): Promise<void> {
@@ -75,6 +76,7 @@ export async function runUnified(opts: RunOptions): Promise<void> {
             verbose: opts.verbose,
             apiKey: opts.apiKey,
             model: opts.model,
+            repoPath: opts.repoPath,
           },
           dbPath: opts.dbPath,
           onEvent: eventHandler,
