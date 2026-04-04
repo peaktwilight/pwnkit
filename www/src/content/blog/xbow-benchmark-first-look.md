@@ -1,6 +1,6 @@
 ---
 title: "running pwnkit against the XBOW benchmark"
-date: "2026-04-07"
+date: "2026-04-04"
 description: "XBOW has 104 Docker CTF challenges covering traditional web vulns. we pointed pwnkit at it. here's what happened."
 readTime: "8 min read"
 ---

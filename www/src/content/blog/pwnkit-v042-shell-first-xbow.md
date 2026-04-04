@@ -1,5 +1,5 @@
 ---
-title: "pwnkit v0.4: shell-first pentesting, 23 XBOW flags, and the bug that broke everything"
+title: "pwnkit v0.4: shell-first pentesting, 27 XBOW flags, and the bug that broke everything"
 date: "2026-04-04"
 description: "we rebuilt pwnkit's agent architecture from structured tools to shell-first, cracked 23 XBOW benchmark challenges, and found a serialization bug that was crashing the agent after 3 turns."
 readTime: "10 min read"
@@ -36,7 +36,7 @@ we kept `bash` as the primary tool for the rest of v0.4. every benchmark improve
 
 XBOW is the gold standard for evaluating AI pentesting agents. 104 challenges across real vulnerability categories, each requiring actual exploitation &mdash; not just detection, but flag extraction.
 
-pwnkit v0.4.2 extracted 23 flags across 13 vulnerability categories:
+pwnkit v0.4.2 extracted 27 flags across 13 vulnerability categories:
 
 - **injection**: SQLi, blind SQLi, SSTI, command injection
 - **access control**: IDOR, auth bypass, business logic flaws

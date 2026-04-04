@@ -1,6 +1,6 @@
 ---
 title: "the attack surface XBOW and KinoSec don't test"
-date: "2026-04-10"
+date: "2026-04-04"
 description: "traditional web vuln benchmarks miss the entire AI/LLM security attack surface. prompt injection, jailbreaks, MCP tool abuse -- none of it shows up in XBOW's 104 challenges."
 readTime: "9 min read"
 ---
