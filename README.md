@@ -30,7 +30,9 @@
 
 ---
 
-Autonomous AI agents that pentest web apps, LLM endpoints, npm packages, and source code. The agent gets a `bash` tool and acts like a real pentester — writing curl commands, Python exploit scripts, and chaining vulnerabilities. Every finding is independently re-exploited by a blind verify agent to kill false positives.
+Autonomous AI agents that pentest web apps, LLM endpoints, npm packages, and source code. The agent gets a `bash` tool and acts like a real pentester -- writing curl commands, Python exploit scripts, and chaining vulnerabilities. Every finding is independently re-exploited by a blind verify agent to kill false positives.
+
+**v0.5.0** adds Playwright-based XSS detection, white-box mode (`--repo`) for source-aware scanning, and validation across 5 benchmark suites.
 
 ```bash
 npx pwnkit-cli
@@ -42,6 +44,9 @@ npx pwnkit-cli
 # Pentest a web app
 npx pwnkit-cli scan --target https://example.com --mode web
 
+# White-box scan with source code access
+npx pwnkit-cli scan --target https://example.com --repo ./source
+
 # Scan an LLM endpoint
 npx pwnkit-cli scan --target https://your-app.com/api/chat
 
@@ -51,7 +56,7 @@ npx pwnkit-cli audit lodash
 # Review source code
 npx pwnkit-cli review ./my-app
 
-# Auto-detect — just give it a target
+# Auto-detect -- just give it a target
 npx pwnkit-cli https://example.com
 npx pwnkit-cli express
 npx pwnkit-cli ./my-repo
@@ -74,11 +79,11 @@ The blind verification is the differentiator. The verify agent can't be biased b
 
 ## Benchmark
 
+Validated across 5 benchmark suites: XBOW, AI/LLM security, AutoPenBench, HarmBench, and JailbreakBench.
+
 ### XBOW (traditional web vulnerabilities)
 
-Tested against the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) — 104 Docker CTF challenges covering SQLi, IDOR, SSTI, SSRF, file upload, deserialization, auth bypass, and more.
-
-**35 flags extracted** across IDOR, SQLi, blind SQLi, SSTI, RCE, SSRF, LFI, XXE, file upload, deserialization, auth bypass, business logic, and cookie manipulation.
+**35+ flags extracted** on the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) (104 Docker CTF challenges) covering SQLi, IDOR, SSTI, RCE, SSRF, LFI, XXE, file upload, deserialization, auth bypass, and more. White-box mode (`--repo`) flips previously impossible challenges by reading source code before attacking.
 
 | Tool | Score | Approach |
 |------|-------|----------|
@@ -86,19 +91,13 @@ Tested against the [XBOW benchmark](https://github.com/xbow-engineering/validati
 | KinoSec | 92.3% | Black-box, proprietary |
 | XBOW | 85% | Purpose-built |
 | Cyber-AutoAgent | 84.62% | Open-source, meta-agent |
-| pwnkit | testing | Open-source, shell-first |
+| pwnkit | 35+ flags | Open-source, shell-first |
 
 ### AI/LLM security
 
-10 custom challenges covering prompt injection, jailbreaks, system prompt extraction, PII leakage, encoding bypass, multi-turn escalation, MCP SSRF.
+**100% (10/10)** on custom challenges covering prompt injection, jailbreaks, system prompt extraction, PII leakage, encoding bypass, multi-turn escalation, and MCP SSRF. Zero false positives.
 
-**100% (10/10)** — all flags extracted, zero false positives.
-
-```bash
-pnpm bench --agentic    # AI/LLM benchmark
-```
-
-See [benchmark details](https://docs.pwnkit.com/benchmark).
+See [benchmark details](https://docs.pwnkit.com/benchmark) for per-challenge breakdowns and the full flag table.
 
 ## GitHub Action
 

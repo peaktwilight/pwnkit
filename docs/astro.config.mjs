@@ -53,7 +53,12 @@ export default defineConfig({
         },
         {
           label: "Research",
-          slug: "research",
+          items: [
+            { label: "Overview", slug: "research" },
+            { label: "Shell-First Rationale", slug: "research/shell-first" },
+            { label: "Model Comparison", slug: "research/model-comparison" },
+            { label: "XBOW Analysis", slug: "research/xbow-analysis" },
+          ],
         },
         {
           label: "API Keys",

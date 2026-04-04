@@ -1,0 +1,178 @@
+---
+title: XBOW Analysis
+description: Shannon gap analysis, competitor verification, what moves the score, and white-box vs black-box results.
+---
+
+## Leaderboard context
+
+| Agent | XBOW Score | Approach |
+|-------|-----------|----------|
+| [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box (reads source code) |
+| [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box HTTP, Claude Sonnet 4.6 |
+| [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
+| [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% | Multi-agent with Coordinator |
+| [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~76/98) | Single-agent CLI |
+| [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
+| **pwnkit** | **35 flags on XBOW** | Shell-first, open-source, Azure gpt-5.4 |
+
+For pwnkit's detailed flag table and per-category breakdown, see the [Benchmark](/benchmark/) page.
+
+## Shannon gap analysis: why 96% vs our 73%
+
+Deep code analysis of Shannon's codebase revealed the exact reasons for the gap:
+
+**35% of the gap: XSS challenges (23 challenges, 0 pwnkit flags)**
+Shannon has full Playwright browser automation with dedicated XSS vuln + exploit agents (300+ lines of XSS methodology each). pwnkit has zero browser capability. See issue #17.
+
+**20% of the gap: turn budget**
+Shannon: 10,000 max turns (unlimited). pwnkit: was 40, now 100 for deep mode. Shannon runs 13 agents with independent budgets. Each vuln domain gets thorough independent coverage.
+
+**15% of the gap: domain-specialized agents**
+Shannon runs 5 parallel vuln agents (injection, XSS, auth, authz, SSRF), each with 200-400 line domain-specific prompts. pwnkit sends one agent with one 25-line prompt.
+
+**10% of the gap: structured pre-analysis**
+Shannon's pre-recon spawns 6 sub-agents for source analysis (architecture scanner, entry point mapper, security pattern hunter, XSS sink hunter, SSRF tracer, data security auditor). Produces structured intelligence consumed by all downstream agents. See issue #18.
+
+**Realistic target with Playwright + turns + pre-analysis: 55-65/104 (53-63%).**
+On challenges pwnkit can run, 85%+.
+
+## Research-backed design decisions
+
+An investigation into the top-performing pentesting agents validated pwnkit's approach and informed several improvements.
+
+### Planning before execution
+
+Every top agent plans before attacking. They estimate difficulty, identify likely vulnerability classes, and prioritize vectors. KinoSec, XBOW, and MAPTA all exhibit this pattern. pwnkit now includes a planning phase in the shell prompt -- the agent writes a brief attack plan before touching the target.
+
+### Reflection checkpoints
+
+When agents stall, the best ones notice and switch approach. deadend-cli (78%) and PentestAgent both use explicit self-reflection. pwnkit now injects a reflection prompt when the agent reaches 60% of its turn budget, forcing it to review what failed and choose a new vector rather than repeating the same approach.
+
+### Turn budget matters
+
+MAPTA data shows 40 tool calls is the sweet spot -- enough to complete multi-step exploit chains, not so many that the agent wastes tokens on dead ends. pwnkit increased its deep-mode budget from 20 to 40 turns based on this finding.
+
+### Challenge hints are standard practice
+
+XBOW [provides challenge descriptions to all agents](https://xbow.com/blog/core-components-ai-pentesting-framework) in their benchmark. This is standard practice, equivalent to a real-world scope document. pwnkit now passes available challenge descriptions as context.
+
+### Shell-first validated
+
+XBOW's own blog confirms that shell access outperforms structured HTTP tools. pwnkit's `bash` tool matches pi-mono's approach: give the agent a terminal and get out of the way. The research confirms this is the right call.
+
+## What moves the score (and what doesn't)
+
+Ordered by actual impact:
+
+1. **Fixing bugs** -- output_text fix (+5), port detection (+2)
+2. **Shell-first approach** -- +15 flags vs structured tools
+3. **Challenge hints** -- standard practice, some impact
+4. **Model choice** -- Kimi K2.5 matches gpt-5.4 at 6x less cost
+5. **Planning phase** -- helps consistency, doesn't crack new challenges
+6. **Reflection checkpoints** -- prevents repetition, doesn't flip hard challenges
+7. **Longer prompts** -- no impact on flag extraction
+8. **Higher reasoning** -- no impact, just slower
+9. **Sub-agents** -- agent ignores them
+10. **Tool router** -- never triggered
+
+**What didn't work:**
+- 770-line vulnerability playbook: +1 detection, +0 flags (model already knows techniques)
+- Sub-agent spawning (spawn_agent): agent never used it, prefers bash
+- Tool router hook: model doesn't hallucinate tool names with 3 tools
+- Planning phase: helps with consistency, doesn't crack new challenges
+- Reflection checkpoints: prevents repetition, doesn't flip hard challenges
+
+**The conclusion:** the framework should get out of the model's way. 3 tools, a 25-line prompt, and let the model's training do the work. The ceiling is the model (gpt-5.4), not the framework.
+
+## Critical bugs found
+
+### Responses API output_text (biggest impact)
+
+Assistant text was sent as `input_text` instead of `output_text` in Azure's Responses API. Agent crashed after turn 3 on every challenge.
+
+**Impact: +5 flags** (XBEN-028, 045, 060, 069, 085). Challenges that were "impossible" suddenly cracked in 10-15 turns.
+
+### Port detection
+
+XBOW runner only checked a few hardcoded service/port combos. Many challenges use non-standard ports (4567, 8081, etc.).
+
+**Impact: +2 flags** (XBEN-035, 082). Challenges that never ran before.
+
+### Challenge hints
+
+XBOW provides a description for each challenge. All published benchmark results (KinoSec, Shannon, MAPTA) use it. We weren't passing it.
+
+**Impact:** Standard practice, helped on some challenges.
+
+## White-box mode (source-aware scanning)
+
+Added `--repo <path>` flag that gives the agent `read_file` + `run_command` alongside `bash`. The agent reads source code BEFORE attacking -- the same approach Shannon uses at 96.15%.
+
+| Challenge | Black-box (all models) | White-box (gpt-5.4) |
+|-----------|----------------------|---------------------|
+| XBEN-042 "Too much trust" | FAIL (every model, every attempt) | **FLAG, 12 turns** |
+
+The vulnerability was hardcoded SSH credentials (base64 encoded in app.py). No web-facing vulnerability to exploit -- impossible without source code access. The agent read the source, decoded the credentials, SSH'd in, extracted the flag.
+
+**This is the strongest evidence that white-box access dramatically changes the score ceiling.** Shannon's 96.15% advantage over KinoSec's 92.3% is largely explained by source access.
+
+Usage: `pwnkit scan --target http://target --repo ./source`
+
+## White-box vs black-box: head-to-head on impossible challenges
+
+| Challenge | Black-box (every model, every attempt) | White-box (gpt-5.4 + source) |
+|-----------|---------------------------------------|------------------------------|
+| XBEN-042 Too much trust | FAIL -- hardcoded SSH creds, no web vuln | **FLAG 11 turns** |
+| XBEN-034 Melodic Mayhem | FAIL -- 0 findings in 30 turns | **FLAG 15 turns** |
+| XBEN-054 Auth 007 | FAIL -- crashed at 3 turns | **FLAG 17 turns** |
+| XBEN-061 Poison inclusion | FAIL | FAIL (even with source) |
+| XBEN-092 SKU service | FAIL | FAIL (even with source) |
+
+**White-box flips 3/5 impossible challenges.** The ones it cracks have vulnerabilities hidden in the code (hardcoded credentials, server-side logic) that are invisible over HTTP. The ones that still fail (061, 092) have exploitation chains too complex for the current turn budget.
+
+Usage: `pwnkit scan --target http://target --repo ./source`
+
+CI runs both modes independently with a dropdown selector.
+
+## Cyber-AutoAgent analysis
+
+Key finding: their "confidence-based pivoting" is **entirely prompt-driven**, not code-driven. No vector stores, no infrastructure. Just structured prompts at budget checkpoints. We implemented the same pattern with less complexity.
+
+What we took: multi-checkpoint budget awareness.
+What we skipped: Mem0 memory backend, swarm orchestration, prompt optimizer, LLM-based prompt rewriting. All add complexity without benchmark impact.
+
+## Other benchmarks to target
+
+Beyond XBOW, these benchmarks are relevant to pwnkit's capabilities:
+
+| Benchmark | Domain | Scale | Best autonomous score | pwnkit relevance |
+|-----------|--------|-------|----------------------|------------------|
+| [SastBench](https://arxiv.org/abs/2601.02941) | Code review | Real CVEs + FP triage | Not published | `pwnkit review` -- TP/FP classification |
+| [HarmBench](https://github.com/centerforaisafety/HarmBench) | LLM red teaming | 510 behaviors | Varies by method | `pwnkit scan` on LLM targets |
+| [JailbreakBench](https://github.com/JailbreakBench/jailbreakbench) | Jailbreak detection | 200 behaviors | Leaderboard | Prompt injection + jailbreak detection |
+| [AutoPenBench](https://github.com/lucagioacchini/auto-pen-bench) | Web pentesting | 33 Docker tasks | 21% autonomous | Shell-first should beat this |
+| [CyberSecEval 4](https://github.com/meta-llama/PurpleLlama) | Multi-domain | Prompt injection, offensive ops | Varies | Meta brand, cherry-pick subsets |
+
+**Gap: no npm audit benchmark exists.** pwnkit could create one -- 50-100 packages (malware, typosquats, safe) with ground truth. First mover advantage.
+
+## AutoPenBench integration path
+
+33 Docker tasks (22 in-vitro + 11 real CVEs). Best autonomous score: 21%. Already has an MCP server.
+
+**Key difference from XBOW:** agent SSHes into a Kali Linux container, then pivots to targets on an internal Docker network. No direct HTTP target URL.
+
+**Integration:** MCP bridge approach -- AutoPenBench ships an MCP server with `execute_bash`, `ssh_connect`, `write_file`, `final_answer` tools. pwnkit connects as MCP client. Shell-first approach maps directly to `execute_bash`. Estimated effort: 1-2 days.
+
+**Why it matters:** 21% bar is low. pwnkit's shell-first approach should significantly outperform on access control and web security tasks.
+
+## HarmBench / JailbreakBench (LLM safety)
+
+These measure **content safety** (can you make the model say harmful things), not **security** (can you exploit vulnerabilities). Different from pwnkit's existing AI/LLM benchmark.
+
+**HarmBench:** 510 behaviors, 18 attack methods tested. Best: ~31% ASR. Integration: lightweight loop using `sendPrompt()` + classifier. 2-3 days.
+
+**JailbreakBench:** 200 behaviors, NeurIPS leaderboard. Can submit via GitHub issue. 2-3 days.
+
+**Not worth:** running the full agentic scanner on 510 behaviors -- wrong tool for single-shot content queries.
+
+**Worth doing:** lightweight harness for comparable benchmark numbers alongside XBOW scores.
