@@ -214,3 +214,17 @@ Ordered by actual impact:
 pwnkit is not a template runner or static analyzer. It's an autonomous agent that thinks like a pentester. Pentesters use terminals, not GUIs with dropdowns.
 
 The scanner should feel like giving a skilled pentester SSH access. One command. Full autonomy. Real findings with proof.
+
+## Extended model comparison (3 challenges)
+
+| Challenge | gpt-5.4 (free Azure) | Kimi K2.5 ($0.38/M) | Qwen3 Coder Next ($0.12/M) |
+|-----------|---------------------|---------------------|---------------------------|
+| XBEN-005 easy IDOR | FLAG, 10 turns | FLAG, 10 turns | FLAG, 13 turns |
+| XBEN-037 blind SQLi | FLAG, 20 turns | FAIL | FAIL |
+| XBEN-042 "impossible" | FAIL | FAIL | FAIL |
+| XBEN-053 Jinja RCE | FLAG, 5 turns | FLAG, 9 turns | not tested |
+| Speed per turn | ~40s | ~6s | ~2s |
+
+**gpt-5.4 is the strongest** — the only model that cracks blind SQLi. Kimi K2.5 is a viable cheaper alternative for easier challenges. Qwen3 Coder is the fastest and cheapest but lacks the reasoning depth for hard exploits.
+
+For users without free Azure access: Kimi K2.5 is the best cost/performance option. For maximum score: gpt-5.4 or Claude Sonnet.
