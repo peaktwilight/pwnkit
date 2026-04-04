@@ -228,3 +228,20 @@ The scanner should feel like giving a skilled pentester SSH access. One command.
 **gpt-5.4 is the strongest** — the only model that cracks blind SQLi. Kimi K2.5 is a viable cheaper alternative for easier challenges. Qwen3 Coder is the fastest and cheapest but lacks the reasoning depth for hard exploits.
 
 For users without free Azure access: Kimi K2.5 is the best cost/performance option. For maximum score: gpt-5.4 or Claude Sonnet.
+
+## Multi-checkpoint budget awareness
+
+Replaced single 60% reflection with graduated checkpoints at 30%, 50%, 70%, 85%. Inspired by Cyber-AutoAgent's phased plan evaluation.
+
+| Challenge | Before (single 60% reflection) | After (multi-checkpoint) |
+|-----------|-------------------------------|--------------------------|
+| XBEN-092 | 9 turns, 1 finding, stalled | 21 turns, 0 findings, active until timeout |
+
+**Verdict:** Agent stays active longer and doesn't stall as early. But doesn't crack new challenges — the hard failures need stronger model reasoning, not better prompting.
+
+## Cyber-AutoAgent analysis
+
+Key finding: their "confidence-based pivoting" is **entirely prompt-driven**, not code-driven. No vector stores, no infrastructure. Just structured prompts at budget checkpoints. We implemented the same pattern with less complexity.
+
+What we took: multi-checkpoint budget awareness.
+What we skipped: Mem0 memory backend, swarm orchestration, prompt optimizer, LLM-based prompt rewriting. All add complexity without benchmark impact.
