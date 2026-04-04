@@ -311,10 +311,21 @@ function buildInitialPrompt(config: NativeAgentConfig): string {
 }
 
 function buildContinuePrompt(config: NativeAgentConfig, turnCount: number): string {
-  // Reflection checkpoint at ~60% of turn budget
-  const reflectionPoint = Math.floor(config.maxTurns * 0.6);
-  if (turnCount >= reflectionPoint && turnCount < reflectionPoint + 2) {
-    return `REFLECTION CHECKPOINT: You have used ${turnCount} of ${config.maxTurns} turns. Review what you have tried so far. What attack vectors remain untested? What partial results hint at the right approach? Try a COMPLETELY DIFFERENT approach if current one is not working. Use your tools — do not just describe what you would do.`;
+  const pct = turnCount / config.maxTurns;
+  const remaining = config.maxTurns - turnCount;
+
+  // Multi-checkpoint budget awareness (inspired by Cyber-AutoAgent)
+  if (pct >= 0.85) {
+    return `FINAL PUSH: ${remaining} turns left. Go for the highest-confidence exploit path ONLY. No more exploration — exploit what you found. Use your tools.`;
+  }
+  if (pct >= 0.7) {
+    return `URGENCY: ${remaining} turns left. If current approach is not working, SWITCH NOW to a completely different technique. Use your tools.`;
+  }
+  if (pct >= 0.5) {
+    return `HALFWAY: ${remaining} turns left. List every approach tried and its result. What is the MOST PROMISING untested vector? Focus there. Use your tools.`;
+  }
+  if (pct >= 0.3) {
+    return `STATUS: ${remaining} turns left. Summarize what you have learned. What is your top hypothesis? Use your tools to test it.`;
   }
 
   switch (config.role) {
@@ -323,7 +334,7 @@ function buildContinuePrompt(config: NativeAgentConfig, turnCount: number): stri
     case "verify":
       return turnCount < 2
         ? "You must use your target interaction tools. Start by sending prompts or HTTP requests to the configured target. Do not just describe what you would do."
-        : "Continue testing the configured target. Use send_prompt or http_request or shell_exec, record confirmed findings with save_finding, and call done only when the target has been thoroughly assessed.";
+        : "Continue testing. Use your tools — do not just describe what you would do.";
     case "audit":
     case "review":
     default:
