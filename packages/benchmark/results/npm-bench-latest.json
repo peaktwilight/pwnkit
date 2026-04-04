@@ -1,0 +1,329 @@
+{
+  "timestamp": "2026-04-04T20:25:17.946Z",
+  "depth": "quick",
+  "totalCases": 30,
+  "accuracy": 0.3333333333333333,
+  "detectionRate": 0,
+  "falsePositiveRate": 0,
+  "f1": 0,
+  "totalDurationMs": 51,
+  "results": [
+    {
+      "pkg": "event-stream",
+      "verdict": "malicious",
+      "reason": "supply-chain attack — flatmap-stream dependency",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 7,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "ua-parser-js",
+      "verdict": "malicious",
+      "reason": "compromised version shipped crypto-miner",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "colors",
+      "verdict": "malicious",
+      "reason": "maintainer sabotaged with infinite loop (v1.4.1+)",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "faker",
+      "verdict": "malicious",
+      "reason": "maintainer sabotaged, replaced with ENDGAME",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "node-ipc",
+      "verdict": "malicious",
+      "reason": "protestware / peacenotwar geo-targeted wiper",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "coa",
+      "verdict": "malicious",
+      "reason": "hijacked — malicious preinstall script",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "rc",
+      "verdict": "malicious",
+      "reason": "hijacked — malicious preinstall script",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "eslint-scope",
+      "verdict": "malicious",
+      "reason": "credential-theft via npm token exfiltration",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "crossenv",
+      "verdict": "malicious",
+      "reason": "typosquat of cross-env — data exfiltration",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "loadsh",
+      "verdict": "malicious",
+      "reason": "typosquat of lodash",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "lodash@4.17.20",
+      "verdict": "vulnerable",
+      "reason": "prototype pollution CVE-2021-23337",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "minimist@1.2.5",
+      "verdict": "vulnerable",
+      "reason": "prototype pollution CVE-2021-44906",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 3,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "node-forge@0.9.0",
+      "verdict": "vulnerable",
+      "reason": "multiple CVEs in older forge",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 3,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "express@4.17.1",
+      "verdict": "vulnerable",
+      "reason": "path traversal in serve-static dep",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "axios@0.21.0",
+      "verdict": "vulnerable",
+      "reason": "SSRF CVE-2021-3749",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "tar@4.4.12",
+      "verdict": "vulnerable",
+      "reason": "arbitrary file overwrite CVE-2021-32803",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "glob-parent@5.1.0",
+      "verdict": "vulnerable",
+      "reason": "ReDoS CVE-2021-35065",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "json5@2.2.1",
+      "verdict": "vulnerable",
+      "reason": "prototype pollution CVE-2022-46175",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "qs@6.5.2",
+      "verdict": "vulnerable",
+      "reason": "prototype pollution CVE-2022-24999",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "semver@7.3.7",
+      "verdict": "vulnerable",
+      "reason": "ReDoS CVE-2022-25883",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "express@latest",
+      "verdict": "safe",
+      "reason": "widely-used, patched",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "react@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "typescript@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "zod@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "drizzle-orm@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "vitest@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "esbuild@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 2,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "chalk@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "commander@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    },
+    {
+      "pkg": "dotenv@latest",
+      "verdict": "safe",
+      "reason": "well-maintained, no known issues",
+      "findingsCount": 0,
+      "hasFindings": false,
+      "correct": false,
+      "durationMs": 1,
+      "error": "spawn pwnkit ENOENT"
+    }
+  ],
+  "verdictBreakdown": {
+    "malicious": {
+      "total": 10,
+      "correct": 0,
+      "rate": 0
+    },
+    "vulnerable": {
+      "total": 10,
+      "correct": 0,
+      "rate": 0
+    },
+    "safe": {
+      "total": 10,
+      "correct": 0,
+      "rate": 0
+    }
+  }
+}
