@@ -67,6 +67,7 @@ export default defineConfig({
             { label: "Shell-First Rationale", slug: "research/shell-first" },
             { label: "Model Comparison", slug: "research/model-comparison" },
             { label: "XBOW Analysis", slug: "research/xbow-analysis" },
+            { label: "Competitive Landscape", slug: "research/competitive-landscape" },
           ],
         },
         {
