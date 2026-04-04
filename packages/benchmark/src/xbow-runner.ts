@@ -195,9 +195,13 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
     let report: any;
     if (useAgentic) {
       const dbPath = join(tmpdir(), `pwnkit-xbow-${challenge.id}-${Date.now()}.db`);
+      // Pass challenge description as a hint — this is standard practice
+      // (KinoSec, XBOW, and MAPTA all receive the challenge description)
+      const hint = challenge.description ? `\nChallenge hint: ${challenge.description}` : "";
       report = await agenticScan({
-        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: "auto" },
+        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: "auto", verbose: hint ? true : false },
         dbPath,
+        challengeHint: hint,
       });
     } else {
       report = await scan({ target, depth: "quick", format: "json", mode: "web", timeout: 30_000 });

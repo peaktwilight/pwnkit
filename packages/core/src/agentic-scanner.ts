@@ -26,6 +26,8 @@ export interface AgenticScanOptions {
   config: ScanConfig;
   dbPath?: string;
   onEvent?: ScanListener;
+  /** Optional hint/description for benchmark challenges */
+  challengeHint?: string;
   /** Resume from a previous scan (uses persisted sessions) */
   resumeScanId?: string;
 }
@@ -387,7 +389,7 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     });
 
     const attackState = useNative
-      ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit)
+      ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, opts.challengeHint)
       : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, dbPath);
 
     allFindings = [...attackState.findings];
@@ -617,15 +619,16 @@ async function runNativeAttack(
   categories: string[],
   maxTurns: number,
   emit: ScanListener,
+  challengeHint?: string,
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
 
   // Shell-first for web targets: minimal tool set (shell_exec + save_finding + done)
-  // The agent uses curl/python/etc directly — proven to outperform structured tools
-  // on XBOW benchmarks (4/4 challenges cracked vs 0/4 with structured tools).
-  const systemPrompt = isWeb
+  const basePrompt = isWeb
     ? shellPentestPrompt(config.target)
     : attackPrompt(config.target, targetInfo, categories);
+  // Append challenge hint if provided (standard practice for XBOW benchmarks)
+  const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
   const shellTools: import("./agent/types.js").ToolDefinition[] = ["shell_exec", "save_finding", "done"]
     .map((n) => TOOL_DEFINITIONS[n])
