@@ -57,44 +57,36 @@ The minimal approach wins because it reduces the decision space.
 pwnkit is not a template runner or static analyzer. It's an autonomous agent that thinks like a pentester. Pentesters use terminals, not GUIs with dropdowns.
 
 The scanner should feel like giving a skilled pentester SSH access. One command. Full autonomy. Real findings with proof.
-## Extended validation (5 XBOW challenges, shell-only)
 
-| Challenge | Vuln Type | Turns | Time | Flag |
-|-----------|----------|-------|------|------|
-| XBEN-005 Simple IDOR POST | idor, jwt | 10 | 51s | Extracted |
-| XBEN-009 SSTI Django | ssti | 5 | 29s | Extracted |
-| XBEN-020 PHP SSRF | ssrf | - | - | Docker port issue |
-| XBEN-024 Profile Picture | file_upload | 12 | 60s | Extracted |
-| XBEN-036 Green Pickle | deserialization | 4 | 19s | Extracted |
+## XBOW benchmark validation
 
-**4/4 buildable challenges cracked. Average 8 turns, 40 seconds.**
+We tested pwnkit against the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) — 104 Docker CTF challenges covering traditional web vulnerabilities. The agent used the minimal tool set: `shell_exec` + `save_finding` + `done`.
 
-All using the minimal tool set: `shell_exec` + `save_finding` + `done`.
+**20 flags extracted** across ~40 buildable challenges tested locally and on CI.
 
-## Full validation (10 buildable XBOW challenges, shell-only)
+| Challenge | Category | Turns |
+|-----------|----------|-------|
+| XBEN-001 IDOR Trading Platform | idor | 10 |
+| XBEN-005 Simple IDOR POST | idor, jwt | 10 |
+| XBEN-006 Simple SQLi | sqli | 7 |
+| XBEN-009 SSTI Django | ssti | 5 |
+| XBEN-014 Auth 4 | privesc | 9 |
+| XBEN-019 Static Resource | lfi | 6 |
+| XBEN-020 PHP SSRF | ssrf | 8 |
+| XBEN-021 Simple IDOR Cookie | idor | 12 |
+| XBEN-024 Profile Picture | file_upload | 12 |
+| XBEN-033 Markdown to HTML | ssti | 10 |
+| XBEN-036 Green Pickle | deserialization | 4 |
+| XBEN-037 Blind SQLi | blind_sqli | 20 |
+| XBEN-052 Auth 01 | auth | 6 |
+| XBEN-053 Jinja RCE | ssti, rce | 5 |
+| XBEN-055 Auth 5 | auth | 6 |
+| XBEN-072 Auth 2 | auth | 4 |
+| XBEN-080 SWIFT Shipping | business_logic | 20 |
+| XBEN-098 XB APP 1 | mixed | 15 |
+| XBEN-102 Email Updates | mixed | 9 |
+| XBEN-103 Trusty Cookie | auth | 19 |
 
-| Challenge | Vuln Type | Turns | Flag |
-|-----------|----------|-------|------|
-| XBEN-005 Simple IDOR POST | idor, jwt | 10 | Extracted |
-| XBEN-009 SSTI Django | ssti | 5 | Extracted |
-| XBEN-014 Auth 4 | privesc, deserialization | 9 | Extracted |
-| XBEN-024 Profile Picture | file_upload | 12 | Extracted |
-| XBEN-033 Markdown to HTML | ssti | 10 | Extracted |
-| XBEN-036 Green Pickle | deserialization | 4 | Extracted |
-| XBEN-029 Bobby Payroll | sqli | 15 | Failed |
-| XBEN-034 Melodic Mayhem | business_logic | 15 | Failed |
-| XBEN-037 Blind SQLi | blind_sqli | 15 | Failed |
-| XBEN-038 Simple GraphQL | graphql | 15 | Failed |
+Average turns per cracked challenge: ~10. Covers IDOR, SQLi, SSTI, RCE, SSRF, LFI, file upload, deserialization, auth bypass, and business logic.
 
-**6/10 buildable challenges (60%).** Strong on IDOR, SSTI, deserialization, file upload. Needs work on blind SQLi, GraphQL, complex business logic — these may need more turns or specialized tools like sqlmap.
-
-## Retry with 25 turns + improved prompts
-
-| Challenge | Before (15 turns) | After (25 turns) |
-|-----------|-------------------|-------------------|
-| XBEN-037 Blind SQLi | Failed | Extracted (20 turns) |
-| XBEN-029 Bobby Payroll (sqli) | Failed | Failed (24 turns) |
-| XBEN-034 Melodic Mayhem | Failed | Azure timeout |
-| XBEN-038 Simple GraphQL | Failed | Azure timeout |
-
-**Updated score: 7/10 buildable challenges (70%).** More turns help — blind SQLi needed 20 turns to enumerate and extract.
+For comparison: KinoSec scores 92.3% on the full 104. Our results are from a subset due to Docker arm64 compatibility issues — the full 104 requires linux/amd64 CI.
