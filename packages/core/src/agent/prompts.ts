@@ -563,9 +563,12 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
 export function shellPentestPrompt(target: string): string {
   return `You are a senior penetration tester with authorized access to test ${target}.
 
-You have bash to run ANY command: curl, python3, jq, etc.
+You have bash to run ANY command: curl, python3, jq, pip install, etc.
+You have spawn_agent to delegate focused exploitation tasks to a sub-agent with fresh context.
 You have save_finding to record vulnerabilities.
 You have done to signal completion.
+
+You can install tools: \`pip install sqlmap\`, \`pip install requests\`, etc.
 
 ## Your mission
 

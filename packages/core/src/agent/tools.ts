@@ -210,6 +210,17 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     required: ["command"],
   },
 
+  spawn_agent: {
+    name: "spawn_agent",
+    description:
+      "Spawn a focused sub-agent with fresh context for a specific exploitation task. Use when you've found a vulnerability and need deep exploitation (e.g., SQLi table enumeration, multi-step auth chain). The sub-agent gets its own turn budget and returns findings.",
+    parameters: {
+      task: { type: "string", description: "What the sub-agent should do. Be specific: include the target URL, the vulnerability found, and what to extract." },
+      max_turns: { type: "number", description: "Turn budget for the sub-agent (default 15, max 25)" },
+    },
+    required: ["task"],
+  },
+
   done: {
     name: "done",
     description:
@@ -472,6 +483,8 @@ export class ToolExecutor {
           return this.updateTarget(call.arguments);
         case "bash":
           return await this.shellExec(call.arguments);
+        case "spawn_agent":
+          return await this.spawnAgent(call.arguments);
         case "done":
           return this.markDone(call.arguments);
         default:
@@ -870,6 +883,59 @@ export class ToolExecutor {
 
       const msg = err.killed ? "Command timed out" : (err.message ?? String(err));
       return { success: false, output: null, error: msg.slice(0, 2_000) };
+    }
+  }
+
+  private async spawnAgent(args: Record<string, unknown>): Promise<ToolResult> {
+    const task = args.task as string;
+    if (!task) return { success: false, output: null, error: "Task description is required" };
+
+    const maxTurns = Math.min((args.max_turns as number) ?? 15, 25);
+
+    try {
+      // Dynamic import to avoid circular dependency
+      const { runNativeAgentLoop } = await import("./native-loop.js");
+      const { LlmApiRuntime } = await import("../runtime/llm-api.js");
+
+      const rt = new LlmApiRuntime({ type: "api" as any, timeout: 60_000 });
+      if (!(await rt.isAvailable())) {
+        return { success: false, output: null, error: "No API key available for sub-agent" };
+      }
+
+      const subTools: ToolDefinition[] = ["bash", "save_finding", "done"]
+        .map((n) => TOOL_DEFINITIONS[n])
+        .filter((t): t is ToolDefinition => t !== undefined);
+
+      const state = await runNativeAgentLoop({
+        config: {
+          role: "attack",
+          systemPrompt: `You are a focused exploitation agent. Your ONLY job:\n\n${task}\n\nUse bash to run curl, python3, or any command. Save findings with save_finding. Call done when finished.`,
+          tools: subTools,
+          maxTurns,
+          target: this.ctx.target,
+          scanId: this.ctx.scanId + "-sub",
+        },
+        runtime: rt,
+        db: null,
+      });
+
+      // Merge sub-agent findings into parent context
+      for (const f of state.findings) {
+        this.ctx.findings.push(f);
+      }
+
+      return {
+        success: true,
+        output: {
+          turns: state.turnCount,
+          findings: state.findings.length,
+          summary: state.summary,
+          done: state.done,
+        },
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, output: null, error: msg.slice(0, 500) };
     }
   }
 

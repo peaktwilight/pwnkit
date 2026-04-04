@@ -630,7 +630,7 @@ async function runNativeAttack(
   // Append challenge hint if provided (standard practice for XBOW benchmarks)
   const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
-  const shellTools: import("./agent/types.js").ToolDefinition[] = ["bash", "save_finding", "done"]
+  const shellTools: import("./agent/types.js").ToolDefinition[] = ["bash", "spawn_agent", "save_finding", "done"]
     .map((n) => TOOL_DEFINITIONS[n])
     .filter((t): t is import("./agent/types.js").ToolDefinition => t !== undefined);
 
