@@ -38,6 +38,8 @@ await build({
     "drizzle-orm",
     "drizzle-orm/*",
     "cfonts",
+    "playwright",
+    "playwright-core",
   ],
   plugins: [stubPlugin],
 });
