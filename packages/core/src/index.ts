@@ -53,3 +53,7 @@ export type {
 } from "./agent/index.js";
 
 export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./db/schema.js";
+
+// Structured verification pipeline
+export { runStructuredVerify } from "./triage/verify-pipeline.js";
+export type { VerifyResult, StepResult, VerifyVerdict, VerifyStepName } from "./triage/verify-pipeline.js";
