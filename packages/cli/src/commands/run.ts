@@ -28,6 +28,7 @@ export interface RunOptions {
   reportPath?: string;
   repoPath?: string;
   auth?: AuthConfig;
+  exportTarget?: string;
 }
 
 export async function runUnified(opts: RunOptions): Promise<void> {
@@ -122,6 +123,30 @@ export async function runUnified(opts: RunOptions): Promise<void> {
         execFile(openCmd, [filePath], () => {});
       } else {
         console.log(output);
+      }
+    }
+
+    // ── Export findings to issue tracker if requested ──
+    if (opts.exportTarget) {
+      const match = opts.exportTarget.match(/^github:(.+\/.+)$/);
+      if (!match) {
+        console.error(
+          chalk.red(`Invalid --export format: '${opts.exportTarget}'. Expected: github:owner/repo`),
+        );
+        process.exit(2);
+      }
+      const repo = match[1];
+      const reportAny = report as any;
+      const findings = reportAny.findings ?? [];
+      if (findings.length === 0) {
+        console.log(chalk.yellow("No findings to export."));
+      } else {
+        const { exportToGitHubIssues } = await import("../exporters/github-issues.js");
+        console.log(chalk.blue(`Exporting ${findings.length} finding(s) to GitHub Issues on ${repo}...`));
+        const result = await exportToGitHubIssues(findings, repo);
+        console.log(
+          chalk.green(`Export complete: ${result.created} created, ${result.skipped} skipped (duplicates).`),
+        );
       }
     }
 

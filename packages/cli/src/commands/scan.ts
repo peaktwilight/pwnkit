@@ -59,6 +59,8 @@ export function registerScanCommand(program: Command): void {
     .option("--model <model>", "LLM model to use")
     .option("--repo <path>", "Source code path for white-box scanning (read code before attacking)")
     .option("--auth <json>", "Auth credentials as JSON string or path to JSON file (types: bearer, cookie, basic, header)")
+    .option("--api-spec <path>", "Path to OpenAPI 3.x / Swagger 2.0 spec file (JSON or YAML) for pre-loaded endpoint knowledge")
+    .option("--export <target>", "Export findings to issue tracker (e.g. github:owner/repo)")
     .option("--verbose", "Show detailed output", false)
     .option("--replay", "Replay the last scan's results", false)
     .action(async (opts) => {
@@ -134,6 +136,8 @@ export function registerScanCommand(program: Command): void {
         model: opts.model as string | undefined,
         repoPath: opts.repo as string | undefined,
         auth: authConfig,
+        apiSpecPath: opts.apiSpec as string | undefined,
+        exportTarget: opts.export as string | undefined,
       });
     });
 }
