@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { scan, agenticScan } from "@pwnkit/core";
 import { tmpdir } from "node:os";
+import type { RuntimeMode } from "@pwnkit/shared";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const XBOW_PATH = process.env.XBOW_PATH ?? "/tmp/xbow-benchmarks";
@@ -41,6 +42,7 @@ const retries = args.includes("--retries") ? parseInt(args[args.indexOf("--retri
 const startAt = args.includes("--start") ? parseInt(args[args.indexOf("--start") + 1]) : 0;
 const onlyIds = args.includes("--only") ? args[args.indexOf("--only") + 1].split(",").map((s) => s.trim()) : undefined;
 const whiteBox = args.includes("--white-box");
+const runtimeArg = args.includes("--runtime") ? args[args.indexOf("--runtime") + 1] : "auto";
 
 // ── Types ──
 interface XbowChallenge {
@@ -63,6 +65,23 @@ interface XbowResult {
   findingsCount: number;
   durationMs: number;
   error?: string;
+}
+
+interface XbowReport {
+  timestamp: string;
+  mode: "baseline" | "agentic";
+  runtime: string;
+  whiteBox: boolean;
+  retries: number;
+  challenges: number;
+  built: number;
+  started: number;
+  passed: number;
+  flags: number;
+  buildFailures: number;
+  startupFailures: number;
+  scanErrors: number;
+  results: XbowResult[];
 }
 
 // ── Load Challenges ──
@@ -212,7 +231,7 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       // White-box: pass source code path so agent reads code before attacking
       const repoPath = whiteBox ? challenge.path : undefined;
       report = await agenticScan({
-        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: "auto", verbose: hint ? true : false, repoPath },
+        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: runtimeArg as RuntimeMode, verbose: hint ? true : false, repoPath },
         dbPath,
         challengeHint: hint,
       });
@@ -313,13 +332,35 @@ async function main() {
 
   const passed = results.filter((r) => r.passed).length;
   const flags = results.filter((r) => r.flagFound).length;
+  const buildFailures = results.filter((r) => r.error === "Docker build failed").length;
+  const startupFailures = results.filter((r) => r.error === "Docker start failed or port not found").length;
+  const scanErrors = results.filter((r) => r.error && r.error !== "Docker build failed" && r.error !== "Docker start failed or port not found").length;
+  const built = challenges.length - buildFailures;
+  const started = built - startupFailures;
+  const report: XbowReport = {
+    timestamp: new Date().toISOString(),
+    mode: useAgentic ? "agentic" : "baseline",
+    runtime: useAgentic ? runtimeArg : "baseline",
+    whiteBox,
+    retries,
+    challenges: challenges.length,
+    built,
+    started,
+    passed,
+    flags,
+    buildFailures,
+    startupFailures,
+    scanErrors,
+    results,
+  };
 
   if (jsonOutput) {
-    console.log(JSON.stringify({ challenges: challenges.length, passed, flags, results }, null, 2));
+    console.log(JSON.stringify(report, null, 2));
   } else {
     console.log("\n  ──────────────────────────────────────");
     console.log(`  Detection:       \x1b[1m${passed}/${challenges.length}\x1b[0m  (${(passed / challenges.length * 100).toFixed(1)}%)`);
     console.log(`  Flag extraction: \x1b[1m${flags}/${challenges.length}\x1b[0m  (${(flags / challenges.length * 100).toFixed(1)}%)`);
+    console.log(`  Built / started: \x1b[1m${built}/${started}\x1b[0m  (build fails: ${buildFailures}, start fails: ${startupFailures})`);
     console.log(`  Total time:      ${(results.reduce((a, r) => a + r.durationMs, 0) / 1000).toFixed(0)}s`);
 
     // By tag
@@ -342,7 +383,7 @@ async function main() {
   // Save results
   const resultsDir = join(__dirname, "..", "results");
   mkdirSync(resultsDir, { recursive: true });
-  writeFileSync(join(resultsDir, "xbow-latest.json"), JSON.stringify({ timestamp: new Date().toISOString(), challenges: challenges.length, passed, flags, results }, null, 2));
+  writeFileSync(join(resultsDir, "xbow-latest.json"), JSON.stringify(report, null, 2));
 }
 
 main().catch((err) => {

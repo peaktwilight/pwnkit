@@ -16,7 +16,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { packageAudit } from "@pwnkit/core";
-import type { ScanDepth } from "@pwnkit/shared";
+import type { ScanDepth, RuntimeMode } from "@pwnkit/shared";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -25,6 +25,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 const depth = args.includes("--depth") ? args[args.indexOf("--depth") + 1] : "quick";
 const jsonOutput = args.includes("--json");
+const runtimeArg = args.includes("--runtime") ? args[args.indexOf("--runtime") + 1] : "api";
 
 // ── Ground Truth ──
 
@@ -87,23 +88,29 @@ interface CaseResult {
   correct: boolean;
   durationMs: number;
   error?: string;
+  infrastructureError: boolean;
 }
 
 interface NpmBenchReport {
   timestamp: string;
   depth: string;
+  runtime: string;
   totalCases: number;
+  scoredCases: number;
+  infrastructureFailures: number;
+  validScore: boolean;
   /** True positive + true negative rate */
-  accuracy: number;
+  accuracy: number | null;
   /** TP / (TP + FN) — how many bad packages we caught */
-  detectionRate: number;
+  detectionRate: number | null;
   /** FP / (FP + TN) — how often we cry wolf on safe packages */
-  falsePositiveRate: number;
+  falsePositiveRate: number | null;
   /** Harmonic mean of precision and recall */
-  f1: number;
+  f1: number | null;
   totalDurationMs: number;
   results: CaseResult[];
   verdictBreakdown: Record<Verdict, { total: number; correct: number; rate: number }>;
+  note?: string;
 }
 
 // ── Runner ──
@@ -138,6 +145,7 @@ async function auditPackage(pkg: string): Promise<{ findings: any[]; raw: string
       version,
       depth: depth as ScanDepth,
       format: "json",
+      runtime: runtimeArg as RuntimeMode,
     },
   });
 
@@ -146,6 +154,26 @@ async function auditPackage(pkg: string): Promise<{ findings: any[]; raw: string
 
 function shouldHaveFindings(verdict: Verdict): boolean {
   return verdict === "malicious" || verdict === "vulnerable";
+}
+
+function isInfrastructureError(error: string | undefined): boolean {
+  if (!error) return false;
+  const lower = error.toLowerCase();
+  return [
+    "enoent",
+    "spawn ",
+    "eacces",
+    "timed out",
+    "timeout",
+    "rate limit",
+    "api key",
+    "authentication",
+    "unauthorized",
+    "forbidden",
+    "deployment unavailable",
+    "model may be rate-limited",
+    "failed to install",
+  ].some((token) => lower.includes(token));
 }
 
 async function runNpmBench(): Promise<NpmBenchReport> {
@@ -168,8 +196,10 @@ async function runNpmBench(): Promise<NpmBenchReport> {
         hasFindings,
         correct,
         durationMs: Date.now() - caseStart,
+        infrastructureError: false,
       });
     } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
       results.push({
         pkg: tc.pkg,
         verdict: tc.verdict,
@@ -178,7 +208,8 @@ async function runNpmBench(): Promise<NpmBenchReport> {
         hasFindings: false,
         correct: false,
         durationMs: Date.now() - caseStart,
-        error: err instanceof Error ? err.message : String(err),
+        error,
+        infrastructureError: isInfrastructureError(error),
       });
     }
 
@@ -197,6 +228,10 @@ async function runNpmBench(): Promise<NpmBenchReport> {
     }
   }
 
+  const infrastructureFailures = results.filter((r) => r.infrastructureError).length;
+  const scoredCases = results.length - infrastructureFailures;
+  const validScore = infrastructureFailures === 0;
+
   // ── Metrics ──
 
   // Confusion matrix (positive = "should have findings")
@@ -213,12 +248,16 @@ async function runNpmBench(): Promise<NpmBenchReport> {
     else tn++;
   }
 
-  const accuracy = (tp + tn) / results.length;
-  const detectionRate = tp + fn > 0 ? tp / (tp + fn) : 0;
-  const falsePositiveRate = fp + tn > 0 ? fp / (fp + tn) : 0;
-  const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
+  const accuracy = validScore ? (tp + tn) / results.length : null;
+  const detectionRate = validScore ? (tp + fn > 0 ? tp / (tp + fn) : 0) : null;
+  const falsePositiveRate = validScore ? (fp + tn > 0 ? fp / (fp + tn) : 0) : null;
+  const precision = validScore ? (tp + fp > 0 ? tp / (tp + fp) : 0) : 0;
   const recall = detectionRate;
-  const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
+  const f1 = validScore && recall !== null && precision + recall > 0
+    ? (2 * precision * recall) / (precision + recall)
+    : validScore
+      ? 0
+      : null;
 
   // Per-verdict breakdown
   const verdictBreakdown = {} as Record<Verdict, { total: number; correct: number; rate: number }>;
@@ -235,7 +274,11 @@ async function runNpmBench(): Promise<NpmBenchReport> {
   return {
     timestamp: new Date().toISOString(),
     depth,
+    runtime: runtimeArg,
     totalCases: results.length,
+    scoredCases,
+    infrastructureFailures,
+    validScore,
     accuracy,
     detectionRate,
     falsePositiveRate,
@@ -243,6 +286,9 @@ async function runNpmBench(): Promise<NpmBenchReport> {
     totalDurationMs: Date.now() - start,
     results,
     verdictBreakdown,
+    note: validScore
+      ? undefined
+      : `Infrastructure failures affected ${infrastructureFailures}/${results.length} cases. Metrics are invalid; inspect case-level errors instead of using this run as a score.`,
   };
 }
 
@@ -260,10 +306,19 @@ async function main() {
     console.log(JSON.stringify(report, null, 2));
   } else {
     console.log("\n  ──────────────────────────────────────");
-    console.log(`  Accuracy:          \x1b[1m${(report.accuracy * 100).toFixed(1)}%\x1b[0m  (${Math.round(report.accuracy * report.totalCases)}/${report.totalCases})`);
-    console.log(`  Detection rate:    \x1b[1m${(report.detectionRate * 100).toFixed(1)}%\x1b[0m  (recall)`);
-    console.log(`  False positive:    \x1b[1m${(report.falsePositiveRate * 100).toFixed(1)}%\x1b[0m`);
-    console.log(`  F1 score:          \x1b[1m${report.f1.toFixed(3)}\x1b[0m`);
+    console.log(`  Runtime:           \x1b[1m${report.runtime}\x1b[0m`);
+    console.log(`  Infrastructure:    \x1b[1m${report.infrastructureFailures}/${report.totalCases}\x1b[0m errored cases`);
+    if (report.validScore && report.accuracy !== null && report.detectionRate !== null && report.falsePositiveRate !== null && report.f1 !== null) {
+      console.log(`  Accuracy:          \x1b[1m${(report.accuracy * 100).toFixed(1)}%\x1b[0m  (${Math.round(report.accuracy * report.totalCases)}/${report.totalCases})`);
+      console.log(`  Detection rate:    \x1b[1m${(report.detectionRate * 100).toFixed(1)}%\x1b[0m  (recall)`);
+      console.log(`  False positive:    \x1b[1m${(report.falsePositiveRate * 100).toFixed(1)}%\x1b[0m`);
+      console.log(`  F1 score:          \x1b[1m${report.f1.toFixed(3)}\x1b[0m`);
+    } else {
+      console.log("  Score:             \x1b[33mINVALID\x1b[0m  infrastructure errors make this run unusable for comparison");
+      if (report.note) {
+        console.log(`  Note:              ${report.note}`);
+      }
+    }
     console.log(`  Total time:        ${(report.totalDurationMs / 1000).toFixed(1)}s`);
 
     console.log("\n  By verdict:");
@@ -288,6 +343,10 @@ async function main() {
 
   if (!jsonOutput) {
     console.log(`  Results saved to results/npm-bench-latest.json\n`);
+  }
+
+  if (!report.validScore) {
+    process.exitCode = 2;
   }
 }
 
