@@ -7,6 +7,7 @@ import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
 import type { pwnkitDB } from "@pwnkit/db";
+import { features as featureFlags } from "./features.js";
 
 // ── Tool Registry ──
 
@@ -236,6 +237,16 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
       max_turns: { type: "number", description: "Turn budget for the sub-agent (default 15, max 25)" },
     },
     required: ["task"],
+  },
+
+  web_search: {
+    name: "web_search",
+    description:
+      "Search the web for CVE details, API documentation, or security technique references. Cannot be used to find writeups or solutions.",
+    parameters: {
+      query: { type: "string", description: "Search query" },
+    },
+    required: ["query"],
   },
 
   done: {
@@ -536,6 +547,8 @@ export class ToolExecutor {
           return await this.shellExec(call.arguments);
         case "browser":
           return await this.browserAction(call.arguments);
+        case "web_search":
+          return await this.webSearch(call.arguments);
         case "spawn_agent":
           return await this.spawnAgent(call.arguments);
         case "done":
@@ -1323,6 +1336,97 @@ export class ToolExecutor {
     }
   }
 
+  // ── Web search (anti-cheat gated) ──
+
+  private static WEB_SEARCH_BLOCKLIST = [
+    "writeup",
+    "walkthrough",
+    "solution",
+    "ctf write",
+    "how to solve",
+    "flag{",
+    "exploit-db",
+  ];
+
+  private async webSearch(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!featureFlags.webSearch) {
+      return { success: false, output: null, error: "web_search is disabled. Set PWNKIT_FEATURE_WEB_SEARCH=1 to enable." };
+    }
+
+    const query = (args.query as string ?? "").trim();
+    if (!query) {
+      return { success: false, output: null, error: "query is required" };
+    }
+
+    // Anti-cheat: block queries that look for writeups/solutions
+    const lowerQuery = query.toLowerCase();
+    for (const blocked of ToolExecutor.WEB_SEARCH_BLOCKLIST) {
+      if (lowerQuery.includes(blocked)) {
+        return {
+          success: false,
+          output: null,
+          error: `Blocked: search query contains disallowed term "${blocked}". Web search cannot be used to find writeups, solutions, or exploits.`,
+        };
+      }
+    }
+
+    const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15_000);
+
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "pwnkit/1.0" },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        return { success: false, output: null, error: `Search failed with status ${res.status}` };
+      }
+
+      const html = await res.text();
+
+      // Parse DuckDuckGo HTML results — each result lives in a <div class="result">
+      const results: Array<{ title: string; url: string; snippet: string }> = [];
+      const resultRe = /<a[^>]+class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;
+      let m: RegExpExecArray | null;
+      while ((m = resultRe.exec(html)) !== null && results.length < 5) {
+        const rawUrl = m[1];
+        const title = m[2].replace(/<[^>]+>/g, "").trim();
+        const snippet = m[3].replace(/<[^>]+>/g, "").trim();
+
+        // DuckDuckGo wraps URLs in a redirect — extract the actual destination
+        let finalUrl = rawUrl;
+        try {
+          const parsed = new URL(rawUrl, "https://duckduckgo.com");
+          const uddg = parsed.searchParams.get("uddg");
+          if (uddg) finalUrl = decodeURIComponent(uddg);
+        } catch { /* keep raw */ }
+
+        if (title || snippet) {
+          results.push({ title, url: finalUrl, snippet });
+        }
+      }
+
+      if (results.length === 0) {
+        return { success: true, output: { message: "No results found.", results: [] } };
+      }
+
+      const formatted = results
+        .map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet}`)
+        .join("\n\n");
+
+      return { success: true, output: { message: `Top ${results.length} results:`, formatted, results } };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, output: null, error: `Web search failed: ${msg}` };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   private updateTarget(args: Record<string, unknown>): ToolResult {
     if (args.type) this.ctx.targetInfo.type = args.type as TargetInfo["type"];
     if (args.model) this.ctx.targetInfo.model = args.model as string;
@@ -1366,7 +1470,8 @@ export class ToolExecutor {
 export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMode?: boolean; hasBrowser?: boolean }): ToolDefinition[] {
   const common = ["query_findings", "done"];
   const browserTools = opts?.hasBrowser ? ["browser"] : [];
-  const networkTools = ["http_request", "crawl", "submit_form", "bash", ...browserTools, "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const webSearchTools = featureFlags.webSearch ? ["web_search"] : [];
+  const networkTools = ["http_request", "crawl", "submit_form", "bash", ...browserTools, ...webSearchTools, "send_prompt", "save_finding", "update_finding", "update_target", ...common];
   const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {

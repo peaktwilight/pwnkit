@@ -18,6 +18,8 @@ export const features = {
   externalMemory: env("PWNKIT_FEATURE_EXTERNAL_MEMORY", false),
   /** Inject prior attempt findings when retrying */
   progressHandoff: env("PWNKIT_FEATURE_PROGRESS_HANDOFF", false),
+  /** Allow the agent to search the web for CVE details, docs, and technique references */
+  webSearch: env("PWNKIT_FEATURE_WEB_SEARCH", false),
 };
 
 function env(key: string, defaultValue: boolean): boolean {

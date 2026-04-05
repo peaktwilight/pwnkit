@@ -85,7 +85,7 @@ ${sysPrompt}
 - Use send_prompt to interact with the target
 - Use save_finding for EVERY vulnerability discovered
 - Be creative — combine techniques, use multi-turn approaches
-- If one approach fails, try another angle
+- If one approach fails, try another angle${featureFlags.webSearch ? "\n- Use web_search to look up CVE details, API documentation, or technique references when needed. Do NOT search for writeups or solutions." : ""}
 - Call done when you've exhausted your attack surface${featureFlags.externalMemory ? EXTERNAL_MEMORY_INSTRUCTION : ""}`;
 }
 

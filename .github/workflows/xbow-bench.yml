@@ -51,10 +51,13 @@ jobs:
 
       - run: pnpm build
 
-      - name: Install Playwright browsers
+      - name: Install pentest tools
         run: |
+          # Playwright for XSS challenges
           npm install -g playwright 2>/dev/null || true
-          playwright install --with-deps chromium 2>/dev/null || echo "Playwright install skipped — XSS challenges will run without browser tool"
+          playwright install --with-deps chromium 2>/dev/null || echo "Playwright install skipped"
+          # Common pentest tools the agent can use via bash
+          sudo apt-get update -qq && sudo apt-get install -y -qq sqlmap nmap nikto 2>/dev/null || echo "Some pentest tools failed to install"
 
       - name: Configure feature flags
         run: |
@@ -73,12 +76,15 @@ jobs:
             echo "PWNKIT_FEATURE_DYNAMIC_PLAYBOOKS=1" >> "$GITHUB_ENV"
             echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=1" >> "$GITHUB_ENV"
             echo "PWNKIT_FEATURE_PROGRESS_HANDOFF=1" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_WEB_SEARCH=1" >> "$GITHUB_ENV"
             echo "Running with ALL features including experimental"
           else
             for f in $(echo "$FEATURES" | tr ',' ' '); do
               case "$f" in
                 playbooks) echo "PWNKIT_FEATURE_DYNAMIC_PLAYBOOKS=1" >> "$GITHUB_ENV" ;;
                 memory) echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=1" >> "$GITHUB_ENV" ;;
+                web_search) echo "PWNKIT_FEATURE_WEB_SEARCH=1" >> "$GITHUB_ENV" ;;
+                handoff) echo "PWNKIT_FEATURE_PROGRESS_HANDOFF=1" >> "$GITHUB_ENV" ;;
               esac
             done
             echo "Running with features: $FEATURES"
@@ -90,10 +96,10 @@ jobs:
           LIMIT="${{ inputs.limit || '50' }}"
           if [ "$MODE" = "white-box" ]; then
             echo "Running WHITE-BOX (source-aware) benchmark..."
-            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 2
+            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 3
           else
             echo "Running BLACK-BOX benchmark..."
-            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 2
+            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3
           fi
         timeout-minutes: 180
 

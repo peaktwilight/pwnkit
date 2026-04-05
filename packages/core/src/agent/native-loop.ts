@@ -11,6 +11,7 @@ import type { ToolDefinition, ToolCall, ToolResult, ToolContext, AgentRole } fro
 import { ToolExecutor, getToolsForRole } from "./tools.js";
 import { features } from "./features.js";
 import { detectPlaybooks, buildPlaybookInjection } from "./playbooks.js";
+import { estimateCost } from "./cost.js";
 import type { pwnkitDB } from "@pwnkit/db";
 import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
 
@@ -58,6 +59,8 @@ export interface NativeAgentState {
   earlyStopNoProgress: boolean;
   /** Brief description of tools/approaches used before the early stop (for retry context). */
   attemptSummary: string;
+  /** Approximate USD cost based on token usage and model pricing. */
+  estimatedCostUsd: number;
 }
 
 /**
@@ -137,6 +140,7 @@ export async function runNativeAgentLoop(
     totalUsage: { inputTokens: 0, outputTokens: 0 },
     earlyStopNoProgress: false,
     attemptSummary: "",
+    estimatedCostUsd: 0,
   };
 
   // Early-stop tracking: has the agent called save_finding at least once?
@@ -144,8 +148,9 @@ export async function runNativeAgentLoop(
   // Collect tool names used for the attempt summary (deduped)
   const toolsUsedSet = new Set<string>();
 
-  // Context window compaction flag — only compact once per session
-  let contextCompacted = false;
+  // Context window compaction — allow re-compaction as context regrows
+  let compactionCount = 0;
+  let tokensAtLastCompaction = 0;
 
   // Dynamic playbook injection — only inject once per session
   let playbookInjected = false;
@@ -185,17 +190,24 @@ export async function runNativeAgentLoop(
     }
 
     // ── Context window compaction (BoxPwnr-inspired) ──
-    // When the context grows too large, summarize old messages while preserving
-    // critical ones (credentials, flags, findings). Only compact once.
+    // Trigger at 60% of context window (~77k tokens for 128k models).
+    // Allow multiple compactions as context regrows — don't re-compact until
+    // tokens have grown by at least 30k since last compaction.
+    const COMPACTION_THRESHOLD = 77_000;
+    const COMPACTION_REGROW = 30_000;
     if (
       features.contextCompaction
-      && !contextCompacted
-      && state.totalUsage.inputTokens > 30_000
+      && state.totalUsage.inputTokens > COMPACTION_THRESHOLD
+      && state.totalUsage.inputTokens - tokensAtLastCompaction > COMPACTION_REGROW
       && state.messages.length > 15
     ) {
       const beforeCount = state.messages.length;
-      state.messages = compactMessages(state.messages);
-      contextCompacted = true;
+
+      // Use LLM-based compaction if we have the runtime, otherwise regex
+      state.messages = await compactMessagesWithLLM(state.messages, runtime, config.systemPrompt);
+
+      compactionCount++;
+      tokensAtLastCompaction = state.totalUsage.inputTokens;
 
       const afterCount = state.messages.length;
       onEvent?.("context_compacted", {
@@ -203,6 +215,7 @@ export async function runNativeAgentLoop(
         inputTokens: state.totalUsage.inputTokens,
         messagesBefore: beforeCount,
         messagesAfter: afterCount,
+        compactionNumber: compactionCount,
       });
       if (db) {
         db.logEvent({
@@ -215,6 +228,7 @@ export async function runNativeAgentLoop(
             inputTokens: state.totalUsage.inputTokens,
             messagesBefore: beforeCount,
             messagesAfter: afterCount,
+            compactionNumber: compactionCount,
           },
           timestamp: Date.now(),
         });
@@ -440,6 +454,9 @@ export async function runNativeAgentLoop(
   state.attackResults = toolCtx.attackResults;
   state.targetInfo = toolCtx.targetInfo;
 
+  // Compute estimated cost
+  state.estimatedCostUsd = estimateCost(state.totalUsage);
+
   if (!state.done && !state.earlyStopNoProgress) {
     state.summary = `Agent reached max turns (${config.maxTurns}) without completing.`;
   }
@@ -458,6 +475,7 @@ export async function runNativeAgentLoop(
         findingCount: state.findings.length,
         done: state.done,
         usage: state.totalUsage,
+        estimatedCostUsd: state.estimatedCostUsd,
         summary: state.summary.slice(0, 500),
       },
       timestamp: Date.now(),
@@ -552,57 +570,89 @@ function extractKeyFindings(messages: NativeMessage[]): string {
 }
 
 /**
- * Compact the conversation by replacing middle messages with a summary.
- * Preserves: first message (initial prompt) + critical messages + last 8 messages.
- * Returns a new messages array. Does NOT mutate the input.
+ * Compact the conversation using LLM-based summarization.
+ *
+ * Approach (BoxPwnr-inspired):
+ * 1. Serialize all middle messages (between first prompt and last 10 turns) to text
+ * 2. Ask the LLM to produce a concise technical summary (preserving creds, endpoints, findings)
+ * 3. Rebuild conversation: [system + initial prompt] → [assistant ack] → [user: summary] → [tail]
+ *
+ * Falls back to regex-based extraction if LLM summarization fails.
  */
-function compactMessages(messages: NativeMessage[]): NativeMessage[] {
-  const preserveTailCount = 8;
+async function compactMessagesWithLLM(
+  messages: NativeMessage[],
+  runtime: NativeRuntime,
+  systemPrompt: string,
+): Promise<NativeMessage[]> {
+  const preserveTailCount = 10;
 
   if (messages.length <= preserveTailCount + 2) {
     return messages; // not enough messages to compact
   }
 
-  const firstMessage = messages[0]!; // initial user prompt — always keep
+  const firstMessage = messages[0]!;
   const tailStart = messages.length - preserveTailCount;
   const tail = messages.slice(tailStart);
   const middle = messages.slice(1, tailStart);
 
-  // Separate critical messages from the middle
-  const criticalMiddle = middle.filter(isCriticalMessage);
+  // Serialize middle messages for summarization
+  const conversationText = middle
+    .map((m) => {
+      const prefix = m.role === "assistant" ? "[Assistant]" : "[Tool Output]";
+      return `${prefix}\n${serializeMessageToText(m)}`;
+    })
+    .join("\n\n")
+    .slice(0, 50_000); // Cap to avoid overwhelming the summary call
 
-  // Build summary from all middle messages
-  const keyFindings = extractKeyFindings(middle);
-  const summaryText = [
-    "## Scan Progress Summary (compacted)",
-    "",
-    `Compacted ${middle.length} messages into this summary.`,
-    criticalMiddle.length > 0
-      ? `${criticalMiddle.length} critical messages preserved separately below.`
-      : "",
-    "",
-    "### Key findings, credentials, endpoints, and attack results:",
-    keyFindings || "(no notable findings extracted from compacted messages)",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  // Also extract regex findings as fallback / supplement
+  const regexFindings = extractKeyFindings(middle);
 
-  // Build critical context text
-  const criticalTexts = criticalMiddle
-    .map((m) => serializeMessageToText(m))
-    .filter((t) => t.length > 0)
-    .slice(0, 20) // cap to avoid bloat
-    .join("\n---\n");
+  // Try LLM summarization
+  let summaryText: string;
+  try {
+    const summaryResult = await runtime.executeNative(
+      "You are a concise technical summarizer for a security testing conversation.",
+      [
+        {
+          role: "user",
+          content: [{
+            type: "text",
+            text: `Summarize this security testing conversation. Preserve ALL:\n- URLs and endpoints discovered\n- Credentials, tokens, cookies, API keys found\n- Technologies and frameworks identified\n- Vulnerabilities found or suspected\n- Attack attempts and their results (success/failure)\n- Any flags or partial flags seen\n\nBe concise but complete. Use bullet points.\n\nCONVERSATION:\n${conversationText}`,
+          }],
+        },
+      ],
+      [], // no tools for summary
+    );
 
-  const userSummaryContent = criticalTexts
-    ? `${summaryText}\n\n### Preserved critical context:\n${criticalTexts}`
-    : summaryText;
+    // Extract text from result
+    const textBlocks = summaryResult.content.filter(
+      (b): b is NativeContentBlock & { type: "text" } => b.type === "text",
+    );
+    summaryText = textBlocks.map((b) => b.text).join("\n");
 
-  // Rebuild the conversation with correct role alternation:
-  // user (initial) -> assistant (ack) -> user (summary) -> [tail...]
+    if (!summaryText || summaryText.length < 50) {
+      throw new Error("LLM summary too short or empty");
+    }
+  } catch {
+    // Fallback to regex extraction
+    summaryText = [
+      "## Scan Progress Summary (compacted)",
+      "",
+      `Compacted ${middle.length} messages.`,
+      "",
+      "### Key findings, credentials, endpoints:",
+      regexFindings || "(no findings extracted)",
+    ].join("\n");
+  }
+
+  // Append regex findings that may have been missed by LLM
+  if (regexFindings) {
+    summaryText += `\n\n### Additional extracted context:\n${regexFindings}`;
+  }
+
+  // Rebuild with correct role alternation
   const compacted: NativeMessage[] = [firstMessage];
 
-  // Insert summary as assistant + user pair to maintain alternation
   compacted.push({
     role: "assistant",
     content: [{ type: "text", text: "I have been working on this scan. Here is my progress so far." }],
@@ -610,11 +660,10 @@ function compactMessages(messages: NativeMessage[]): NativeMessage[] {
 
   compacted.push({
     role: "user",
-    content: [{ type: "text", text: userSummaryContent }],
+    content: [{ type: "text", text: `[COMPACTED CONVERSATION SUMMARY]\n\n${summaryText}\n\nPlease continue from where we left off. What should we try next?` }],
   });
 
-  // Append the tail, ensuring correct role alternation.
-  // Last compacted message is role=user, so tail must start with assistant.
+  // Append the tail, ensuring correct role alternation
   let tailIdx = 0;
   while (tailIdx < tail.length && tail[tailIdx]!.role !== "assistant") {
     tailIdx++;
@@ -623,7 +672,7 @@ function compactMessages(messages: NativeMessage[]): NativeMessage[] {
   let lastRole: "user" | "assistant" = "user";
   for (let i = tailIdx; i < tail.length; i++) {
     const msg = tail[i]!;
-    if (msg.role === lastRole) continue; // skip to maintain alternation
+    if (msg.role === lastRole) continue;
     compacted.push(msg);
     lastRole = msg.role;
   }

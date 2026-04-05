@@ -18,7 +18,7 @@ import {
 } from "./agent/prompts.js";
 import { features } from "./agent/features.js";
 import type { ScanEvent, ScanListener } from "./scanner.js";
-import type { NativeRuntime } from "./runtime/types.js";
+import type { NativeRuntime, NativeMessage, NativeContentBlock } from "./runtime/types.js";
 import { isMcpTarget } from "./http.js";
 import { discoverMcpTarget, runMcpSecurityChecks } from "./mcp.js";
 import { createScanContext, finalize } from "./context.js";
@@ -568,6 +568,7 @@ interface AgentOutput {
   targetInfo: Partial<import("@pwnkit/shared").TargetInfo>;
   summary: string;
   turnCount: number;
+  estimatedCostUsd: number;
 }
 
 // ── Native (Claude API) stage runners ──
@@ -608,6 +609,7 @@ async function runNativeDiscovery(
     targetInfo: state.targetInfo,
     summary: state.summary,
     turnCount: state.turnCount,
+    estimatedCostUsd: state.estimatedCostUsd,
   };
 }
 
@@ -703,7 +705,12 @@ async function runNativeAttack(
       timestamp: Date.now(),
     });
 
-    const retrySystemPrompt = systemPrompt + `\n\n## RETRY — Previous Attempt Failed\n\nA previous attack attempt used ${state.turnCount} turns and found NOTHING.\n${state.attemptSummary}\n\nYou MUST try a COMPLETELY DIFFERENT approach:\n- Different entry points and endpoints\n- Different vulnerability classes (if SQLi failed, try SSTI/command injection/SSRF/path traversal)\n- Different tools and techniques (if curl failed, try Python scripts; if GET failed, try POST)\n- Different encoding and bypass techniques\n- Look for indirect/second-order vulnerabilities\n\nDo NOT repeat the same strategies. Be creative and aggressive.`;
+    // Build structured progress handoff from the first attempt's conversation
+    const progressSection = features.progressHandoff
+      ? formatProgressHandoff(extractProgressFromAttempt(state.messages))
+      : "";
+
+    const retrySystemPrompt = systemPrompt + `\n\n## RETRY — Previous Attempt Failed\n\nA previous attack attempt used ${state.turnCount} turns and found NOTHING.\n${state.attemptSummary}\n${progressSection}\nYou MUST try a COMPLETELY DIFFERENT approach:\n- Different entry points and endpoints\n- Different vulnerability classes (if SQLi failed, try SSTI/command injection/SSRF/path traversal)\n- Different tools and techniques (if curl failed, try Python scripts; if GET failed, try POST)\n- Different encoding and bypass techniques\n- Look for indirect/second-order vulnerabilities\n\nDo NOT repeat the same strategies. Be creative and aggressive.`;
 
     const retryState = await runNativeAgentLoop({
       config: {
@@ -733,6 +740,7 @@ async function runNativeAttack(
       targetInfo: { ...state.targetInfo, ...retryState.targetInfo },
       summary: combinedSummary,
       turnCount: totalTurns,
+      estimatedCostUsd: state.estimatedCostUsd + retryState.estimatedCostUsd,
     };
   }
 
@@ -743,7 +751,136 @@ async function runNativeAttack(
     targetInfo: state.targetInfo,
     summary: state.summary,
     turnCount: state.turnCount,
+    estimatedCostUsd: state.estimatedCostUsd,
   };
+}
+
+// ── Progress Handoff: extract structured findings from a failed attempt's conversation ──
+
+interface AttemptProgress {
+  endpoints: string[];
+  credentials: string[];
+  technologies: string[];
+  attacksTried: string[];
+}
+
+/**
+ * Regex-extract structured progress from the first attempt's messages.
+ * No LLM call — pure pattern matching on tool results.
+ */
+function extractProgressFromAttempt(messages: NativeMessage[]): AttemptProgress {
+  const endpoints = new Set<string>();
+  const credentials = new Set<string>();
+  const technologies = new Set<string>();
+  const attacksTried = new Set<string>();
+
+  // Patterns
+  const urlPattern = /https?:\/\/[^\s"'<>)\]}{,]+/g;
+  const credPatterns = [
+    /(?:login|username|user|email)[\s:="']+([^\s"'<>,;}{)(\]]{2,60})/gi,
+    /(?:password|passwd|pass|pwd)[\s:="']+([^\s"'<>,;}{)(\]]{2,60})/gi,
+    /(?:token|cookie|session[_-]?id|api[_-]?key|bearer|jwt|authorization)[\s:="']+([^\s"'<>,;}{)(\]]{2,80})/gi,
+  ];
+  const techPatterns = [
+    /(?:server|x-powered-by|x-framework):\s*([^\r\n]+)/gi,
+    /(?:express|flask|django|rails|spring|laravel|next\.?js|fastapi|gin|fiber|sinatra|koa)/gi,
+    /(?:mysql|postgres(?:ql)?|sqlite|mongodb|redis|mariadb)/gi,
+    /(?:php|python|ruby|node(?:\.?js)?|java|golang|go|rust|\.net)/gi,
+  ];
+  const curlPattern = /curl\s+[^\n]{10,}/g;
+
+  for (const msg of messages) {
+    for (const block of msg.content) {
+      let text = "";
+      if (block.type === "tool_result") {
+        text = block.content;
+      } else if (block.type === "text") {
+        text = block.text;
+      } else if (block.type === "tool_use") {
+        // Extract curl commands from shell_exec / run_command arguments
+        const input = block.input as Record<string, unknown>;
+        const cmd = (input.command ?? input.cmd ?? "") as string;
+        if (cmd) text = cmd;
+        // Also capture the URL from http_request tool
+        const url = (input.url ?? "") as string;
+        if (url) endpoints.add(url);
+      }
+
+      if (!text) continue;
+
+      // Extract URLs/endpoints
+      for (const match of text.matchAll(urlPattern)) {
+        const u = match[0].replace(/[.,;:!?)}\]]+$/, ""); // strip trailing punctuation
+        if (u.length < 200) endpoints.add(u);
+      }
+
+      // Extract credentials
+      for (const pattern of credPatterns) {
+        for (const match of text.matchAll(pattern)) {
+          const full = match[0].trim();
+          if (full.length < 200) credentials.add(full);
+        }
+      }
+
+      // Extract technologies
+      for (const pattern of techPatterns) {
+        for (const match of text.matchAll(pattern)) {
+          const tech = (match[1] ?? match[0]).trim();
+          if (tech.length < 100) technologies.add(tech);
+        }
+      }
+
+      // Extract curl commands (as attacks tried)
+      for (const match of text.matchAll(curlPattern)) {
+        const cmd = match[0].trim();
+        if (cmd.length < 300) attacksTried.add(cmd);
+      }
+    }
+  }
+
+  return {
+    endpoints: [...endpoints].slice(0, 30),
+    credentials: [...credentials].slice(0, 20),
+    technologies: [...technologies].slice(0, 15),
+    attacksTried: [...attacksTried].slice(0, 25),
+  };
+}
+
+/** Format extracted progress into a section for the retry system prompt. */
+function formatProgressHandoff(progress: AttemptProgress): string {
+  const sections: string[] = ["## Previous Attempt Summary", ""];
+
+  if (progress.endpoints.length > 0) {
+    sections.push("### URLs/Endpoints Discovered");
+    for (const ep of progress.endpoints) sections.push(`- ${ep}`);
+    sections.push("");
+  }
+
+  if (progress.credentials.length > 0) {
+    sections.push("### Credentials / Tokens Found");
+    for (const c of progress.credentials) sections.push(`- ${c}`);
+    sections.push("");
+  }
+
+  if (progress.technologies.length > 0) {
+    sections.push("### Technologies Identified");
+    for (const t of progress.technologies) sections.push(`- ${t}`);
+    sections.push("");
+  }
+
+  if (progress.attacksTried.length > 0) {
+    sections.push("### Attacks Already Tried (do NOT repeat these)");
+    for (const a of progress.attacksTried) sections.push(`- \`${a}\``);
+    sections.push("");
+  }
+
+  // Only return if we actually extracted something useful
+  const hasContent = progress.endpoints.length > 0
+    || progress.credentials.length > 0
+    || progress.technologies.length > 0
+    || progress.attacksTried.length > 0;
+
+  return hasContent ? sections.join("\n") : "";
 }
 
 /** Format targetInfo from the discovery stage into a human-readable summary for the web attack prompt. */
@@ -831,6 +968,7 @@ async function runLegacyDiscovery(
     targetInfo: state.targetInfo,
     summary: state.summary,
     turnCount: state.turnCount,
+    estimatedCostUsd: 0, // Legacy runtime does not track token usage
   };
 }
 
@@ -891,6 +1029,7 @@ async function runLegacyAttack(
     targetInfo: state.targetInfo,
     summary: state.summary,
     turnCount: state.turnCount,
+    estimatedCostUsd: 0, // Legacy runtime does not track token usage
   };
 }
 
