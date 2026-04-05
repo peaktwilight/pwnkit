@@ -3,6 +3,8 @@ export { runNativeAgentLoop } from "./native-loop.js";
 export { ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./tools.js";
 export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt, sourceVerifyPrompt, researchPrompt, blindVerifyPrompt } from "./prompts.js";
 export { features } from "./features.js";
+export { DockerExecutor, execInDocker } from "./docker-executor.js";
+export type { DockerExecResult } from "./docker-executor.js";
 export { estimateCost } from "./cost.js";
 export { PLAYBOOKS, detectPlaybooks, buildPlaybookInjection } from "./playbooks.js";
 export type {

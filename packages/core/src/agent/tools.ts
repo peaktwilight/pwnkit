@@ -8,6 +8,7 @@ import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.
 import { sendPrompt, extractResponseText } from "../http.js";
 import type { pwnkitDB } from "@pwnkit/db";
 import { features as featureFlags } from "./features.js";
+import { execInDocker, DockerExecutor } from "./docker-executor.js";
 
 // ── Tool Registry ──
 
@@ -504,7 +505,7 @@ export class ToolExecutor {
     return this._playwrightAvailable;
   }
 
-  /** Clean up browser resources. Call when the agent loop ends. */
+  /** Clean up browser and Docker resources. Call when the agent loop ends. */
   async cleanup(): Promise<void> {
     try {
       if (this._browserPage) {
@@ -517,6 +518,16 @@ export class ToolExecutor {
       }
     } catch {
       // Best-effort cleanup
+    }
+
+    // Stop Docker container if it was used
+    if (featureFlags.dockerExecutor) {
+      try {
+        const docker = DockerExecutor.getInstance();
+        await docker.stop();
+      } catch {
+        // Best-effort cleanup
+      }
     }
   }
 
@@ -919,6 +930,11 @@ export class ToolExecutor {
 
     const timeoutSec = Math.min((args.timeout as number) ?? 30, 120);
 
+    // Route through Kali Docker container when feature flag is enabled
+    if (featureFlags.dockerExecutor) {
+      return this.shellExecDocker(command, timeoutSec);
+    }
+
     try {
       const { execSync } = await import("node:child_process");
       const result = execSync(command, {
@@ -956,6 +972,29 @@ export class ToolExecutor {
       }
 
       const msg = err.killed ? "Command timed out" : (err.message ?? String(err));
+      return { success: false, output: null, error: msg.slice(0, 2_000) };
+    }
+  }
+
+  /** Execute a bash command inside the Kali Docker container. */
+  private async shellExecDocker(command: string, timeoutSec: number): Promise<ToolResult> {
+    try {
+      const result = await execInDocker(command, timeoutSec, this.ctx.target);
+      const output = (result.output ?? "").slice(0, 10_000);
+
+      this.persistToolArtifact("bash", {
+        command: command.slice(0, 500),
+        output: output.slice(0, 2_000),
+        docker: true,
+      });
+
+      if (result.timedOut) {
+        return { success: false, output: output || null, error: "Command timed out (docker)" };
+      }
+
+      return { success: true, output };
+    } catch (err: any) {
+      const msg = err.message ?? String(err);
       return { success: false, output: null, error: msg.slice(0, 2_000) };
     }
   }

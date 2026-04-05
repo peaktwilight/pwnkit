@@ -20,6 +20,8 @@ export const features = {
   progressHandoff: env("PWNKIT_FEATURE_PROGRESS_HANDOFF", false),
   /** Allow the agent to search the web for CVE details, docs, and technique references */
   webSearch: env("PWNKIT_FEATURE_WEB_SEARCH", false),
+  /** Run bash commands inside a Kali Docker container with full pentesting toolset */
+  dockerExecutor: env("PWNKIT_FEATURE_DOCKER_EXECUTOR", false),
 };
 
 function env(key: string, defaultValue: boolean): boolean {
