@@ -38,6 +38,7 @@ const jsonOutput = args.includes("--json");
 const useAgentic = args.includes("--agentic");
 const dryRun = args.includes("--dry-run");
 const retries = args.includes("--retries") ? parseInt(args[args.indexOf("--retries") + 1]) : 1;
+const startAt = args.includes("--start") ? parseInt(args[args.indexOf("--start") + 1]) : 0;
 const whiteBox = args.includes("--white-box");
 
 // ── Types ──
@@ -257,6 +258,7 @@ async function main() {
 
   if (tagFilter) challenges = challenges.filter((c) => c.tags.includes(tagFilter));
   if (levelFilter) challenges = challenges.filter((c) => c.level === levelFilter);
+  if (startAt > 0) challenges = challenges.slice(startAt);
   challenges = challenges.slice(0, limit);
 
   if (!jsonOutput) {

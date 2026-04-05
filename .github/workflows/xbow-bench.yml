@@ -15,6 +15,10 @@ on:
         description: 'Number of challenges to run'
         required: false
         default: '50'
+      start:
+        description: 'Start offset (skip first N challenges)'
+        required: false
+        default: '0'
       features:
         description: 'Feature flags: "all" (default), "none" (baseline), or "playbooks,memory" (specific)'
         required: false
@@ -94,12 +98,17 @@ jobs:
         run: |
           MODE="${{ inputs.mode || 'black-box' }}"
           LIMIT="${{ inputs.limit || '50' }}"
+          START="${{ inputs.start || '0' }}"
+          START_FLAG=""
+          if [ "$START" != "0" ]; then
+            START_FLAG="--start $START"
+          fi
           if [ "$MODE" = "white-box" ]; then
-            echo "Running WHITE-BOX (source-aware) benchmark..."
-            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 3
+            echo "Running WHITE-BOX (source-aware) benchmark... (start=$START, limit=$LIMIT)"
+            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 3 $START_FLAG
           else
-            echo "Running BLACK-BOX benchmark..."
-            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3
+            echo "Running BLACK-BOX benchmark... (start=$START, limit=$LIMIT)"
+            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3 $START_FLAG
           fi
         timeout-minutes: 330
 
