@@ -30,6 +30,7 @@ export interface RunOptions {
   auth?: AuthConfig;
   apiSpecPath?: string;
   exportTarget?: string;
+  race?: boolean;
 }
 
 export async function runUnified(opts: RunOptions): Promise<void> {
@@ -82,6 +83,7 @@ export async function runUnified(opts: RunOptions): Promise<void> {
             repoPath: opts.repoPath,
             auth: opts.auth,
             apiSpecPath: opts.apiSpecPath,
+            race: opts.race,
           },
           dbPath: opts.dbPath,
           onEvent: eventHandler,

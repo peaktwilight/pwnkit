@@ -52,6 +52,10 @@ export type {
   NativeAgentState,
 } from "./agent/index.js";
 
+// Strategy racing (best-of-N)
+export { raceStrategies, raceWithDefaults, DEFAULT_STRATEGIES } from "./racing.js";
+export type { AttackStrategy, RaceConfig, RaceResult, StrategyResult } from "./racing.js";
+
 export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./db/schema.js";
 
 // API spec parser

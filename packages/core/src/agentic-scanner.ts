@@ -24,6 +24,8 @@ import { discoverMcpTarget, runMcpSecurityChecks } from "./mcp.js";
 import { createScanContext, finalize } from "./context.js";
 import { generateRemediation } from "./remediation.js";
 import { parseApiSpec } from "./api-spec.js";
+import { raceWithDefaults } from "./racing.js";
+import type { RaceResult } from "./racing.js";
 
 export interface AgenticScanOptions {
   config: ScanConfig;
@@ -409,9 +411,57 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       timestamp: Date.now(),
     });
 
-    const attackState = useNative
-      ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, opts.challengeHint, apiSpecPromptText)
-      : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, dbPath, apiSpecPromptText);
+    // ── Best-of-N Racing (--race flag) ──
+    // When enabled, run multiple attack strategies in parallel and take the first success.
+    let attackState: AgentOutput;
+
+    if (config.race && useNative) {
+      emit({
+        type: "stage:start",
+        stage: "attack",
+        message: "Racing 5 strategies in parallel (best-of-N)...",
+      });
+
+      const raceResult = await raceWithDefaults(
+        config.target,
+        scanId,
+        nativeApiRuntime,
+        db,
+        {
+          maxConcurrency: config.maxConcurrency ?? 3,
+          repoPath: config.repoPath,
+          challengeHint: opts.challengeHint,
+        },
+      );
+
+      // Convert RaceResult to AgentOutput
+      if (raceResult.winner) {
+        attackState = {
+          findings: raceResult.winner.findings,
+          targetInfo: discoveryState.targetInfo,
+          summary: `[race:${raceResult.winner.strategyName}] ${raceResult.winner.summary}`,
+          turnCount: raceResult.totalTurns,
+          estimatedCostUsd: raceResult.totalCostUsd,
+        };
+      } else {
+        // All strategies failed — combine findings from all attempts
+        const combinedFindings = raceResult.allResults.flatMap((r) => r.findings);
+        const summaryParts = raceResult.allResults.map(
+          (r) => `${r.strategyName}: ${r.succeeded ? "success" : "failed"} (${r.turnCount} turns)`,
+        );
+        attackState = {
+          findings: combinedFindings,
+          targetInfo: discoveryState.targetInfo,
+          summary: `All ${raceResult.allResults.length} strategies failed. ${summaryParts.join("; ")}`,
+          turnCount: raceResult.totalTurns,
+          estimatedCostUsd: raceResult.totalCostUsd,
+        };
+      }
+    } else {
+      attackState = useNative
+        ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, opts.challengeHint, apiSpecPromptText)
+        : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, dbPath, apiSpecPromptText);
+    }
 
     allFindings = [...attackState.findings];
 

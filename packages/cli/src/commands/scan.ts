@@ -61,6 +61,7 @@ export function registerScanCommand(program: Command): void {
     .option("--auth <json>", "Auth credentials as JSON string or path to JSON file (types: bearer, cookie, basic, header)")
     .option("--api-spec <path>", "Path to OpenAPI 3.x / Swagger 2.0 spec file (JSON or YAML) for pre-loaded endpoint knowledge")
     .option("--export <target>", "Export findings to issue tracker (e.g. github:owner/repo)")
+    .option("--race", "Enable best-of-N strategy racing: run multiple attack strategies in parallel", false)
     .option("--verbose", "Show detailed output", false)
     .option("--replay", "Replay the last scan's results", false)
     .action(async (opts) => {
@@ -138,6 +139,7 @@ export function registerScanCommand(program: Command): void {
         auth: authConfig,
         apiSpecPath: opts.apiSpec as string | undefined,
         exportTarget: opts.export as string | undefined,
+        race: opts.race as boolean | undefined,
       });
     });
 }

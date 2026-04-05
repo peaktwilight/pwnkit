@@ -49,6 +49,8 @@ export interface ScanConfig {
   auth?: AuthConfig;
   /** Path to an OpenAPI 3.x / Swagger 2.0 spec file for pre-loaded endpoint knowledge */
   apiSpecPath?: string;
+  /** Enable best-of-N strategy racing: run multiple attack strategies in parallel, take the first that succeeds */
+  race?: boolean;
 }
 
 // ── Attack Templates ──
