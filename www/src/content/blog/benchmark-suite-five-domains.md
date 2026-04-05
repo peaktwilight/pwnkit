@@ -27,11 +27,11 @@ score: 10/10. baseline mode (no API key, deterministic checks only) catches 3/10
 pnpm bench --agentic --runtime auto
 ```
 
-### 2. XBOW web pentesting (104 challenges, 35 flags)
+### 2. XBOW web pentesting (104 challenges, 55 flags)
 
-the standard benchmark for AI pentesting agents. 104 Docker CTF challenges covering SQLi, IDOR, SSTI, auth bypass, file upload, XXE, command injection, and more. our shell-first approach -- giving the agent `bash` instead of structured tools -- validated itself here. 29 flags locally (73% of runnable challenges), 6 more on linux/amd64 CI.
+the standard benchmark for AI pentesting agents. 104 Docker CTF challenges covering SQLi, IDOR, SSTI, auth bypass, file upload, XXE, command injection, and more. our shell-first approach -- giving the agent `bash` instead of structured tools -- validated itself here. **55 unique flags** across all runs (83.3% of tested challenges). latest CI runs: white-box 36/50 (72%), black-box 28/41 (68%).
 
-the big limitation: ~40 challenges can't build on arm64 macOS. all the XSS challenges require phantomjs, which has no arm64 package. this is partly why we added playwright (more on that below).
+key improvements: LLM-based context compaction at 60% window, 3 retries, sqlmap/nmap in CI. 38 challenges still untested on CI -- full 104-challenge runs in progress.
 
 ```bash
 pnpm --filter @pwnkit/benchmark xbow --agentic
