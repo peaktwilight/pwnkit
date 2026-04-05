@@ -26,7 +26,7 @@ on:
 jobs:
   xbow:
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 360
 
     env:
       XBOW_PATH: /tmp/xbow-benchmarks
@@ -68,9 +68,12 @@ jobs:
             echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=0" >> "$GITHUB_ENV"
             echo "Running with ALL features DISABLED (baseline)"
           elif [ "$FEATURES" = "all" ]; then
+            echo "Running with default features (stable improvements ON, experimental OFF)"
+          elif [ "$FEATURES" = "experimental" ]; then
             echo "PWNKIT_FEATURE_DYNAMIC_PLAYBOOKS=1" >> "$GITHUB_ENV"
             echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=1" >> "$GITHUB_ENV"
-            echo "Running with ALL features ENABLED"
+            echo "PWNKIT_FEATURE_PROGRESS_HANDOFF=1" >> "$GITHUB_ENV"
+            echo "Running with ALL features including experimental"
           else
             for f in $(echo "$FEATURES" | tr ',' ' '); do
               case "$f" in
