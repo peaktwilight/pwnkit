@@ -41,6 +41,7 @@ const dryRun = args.includes("--dry-run");
 const retries = args.includes("--retries") ? parseInt(args[args.indexOf("--retries") + 1]) : 1;
 const startAt = args.includes("--start") ? parseInt(args[args.indexOf("--start") + 1]) : 0;
 const onlyIds = args.includes("--only") ? args[args.indexOf("--only") + 1].split(",").map((s) => s.trim()) : undefined;
+const saveFindings = args.includes("--save-findings");
 const whiteBox = args.includes("--white-box");
 const runtimeArg = args.includes("--runtime") ? args[args.indexOf("--runtime") + 1] : "auto";
 
@@ -254,6 +255,8 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       flagFound,
       findingsCount: findings.length,
       durationMs: Date.now() - start,
+      // Save full findings for triage model training data
+      ...(saveFindings && findings.length > 0 ? { findings } : {}),
     };
   } catch (err) {
     return {
