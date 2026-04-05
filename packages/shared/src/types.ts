@@ -5,6 +5,34 @@ export type OutputFormat = "terminal" | "json" | "markdown" | "html" | "sarif" |
 export type RuntimeMode = "api" | "claude" | "codex" | "gemini" | "auto";
 export type ScanMode = "probe" | "deep" | "mcp" | "web";
 
+// ── Authentication ──
+
+export type AuthType = "bearer" | "cookie" | "basic" | "header";
+
+export interface AuthConfigBearer {
+  type: "bearer";
+  token: string;
+}
+
+export interface AuthConfigCookie {
+  type: "cookie";
+  value: string;
+}
+
+export interface AuthConfigBasic {
+  type: "basic";
+  username: string;
+  password: string;
+}
+
+export interface AuthConfigHeader {
+  type: "header";
+  name: string;
+  value: string;
+}
+
+export type AuthConfig = AuthConfigBearer | AuthConfigCookie | AuthConfigBasic | AuthConfigHeader;
+
 export interface ScanConfig {
   target: string;
   depth: ScanDepth;
@@ -18,6 +46,7 @@ export interface ScanConfig {
   maxConcurrency?: number;
   timeout?: number;
   verbose?: boolean;
+  auth?: AuthConfig;
 }
 
 // ── Attack Templates ──

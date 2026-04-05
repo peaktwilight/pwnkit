@@ -1,4 +1,4 @@
-import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
+import type { Finding, AttackResult, TargetInfo, AuthConfig } from "@pwnkit/shared";
 
 // ── Agent Roles ──
 
@@ -54,6 +54,7 @@ export interface AgentConfig {
   sessionId?: string;
   attachTargetToolsMcp?: boolean;
   dbPath?: string;
+  authConfig?: AuthConfig;
 }
 
 // ── Agent State ──
@@ -78,4 +79,5 @@ export interface ToolContext {
   targetInfo: Partial<TargetInfo>;
   scopePath?: string;
   persistFindings?: boolean;
+  authConfig?: AuthConfig;
 }

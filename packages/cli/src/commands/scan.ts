@@ -1,8 +1,48 @@
+import { readFileSync, existsSync } from "node:fs";
 import type { Command } from "commander";
 import chalk from "chalk";
-import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@pwnkit/shared";
+import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode, AuthConfig } from "@pwnkit/shared";
 import { renderReplay } from "../formatters/replay.js";
 import { runUnified } from "./run.js";
+
+/**
+ * Parse the --auth flag value into an AuthConfig object.
+ * Accepts either a JSON string or a path to a JSON file.
+ */
+function parseAuthFlag(value: string): AuthConfig {
+  let raw: string;
+  // If the value looks like a file path (no leading '{'), try reading it
+  if (!value.trimStart().startsWith("{") && existsSync(value)) {
+    raw = readFileSync(value, "utf-8");
+  } else {
+    raw = value;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      `Invalid --auth value: must be a JSON string or path to a JSON file.\n` +
+      `Examples:\n` +
+      `  --auth '{"type":"bearer","token":"xxx"}'\n` +
+      `  --auth '{"type":"cookie","value":"session=abc123"}'\n` +
+      `  --auth '{"type":"basic","username":"admin","password":"pass"}'\n` +
+      `  --auth '{"type":"header","name":"X-API-Key","value":"xxx"}'\n` +
+      `  --auth ./auth.json`,
+    );
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const validTypes = new Set(["bearer", "cookie", "basic", "header"]);
+  if (!obj || typeof obj !== "object" || !validTypes.has(obj.type as string)) {
+    throw new Error(
+      `Invalid auth config: "type" must be one of: bearer, cookie, basic, header. Got: ${JSON.stringify(obj)}`,
+    );
+  }
+
+  return obj as unknown as AuthConfig;
+}
 
 export function registerScanCommand(program: Command): void {
   program
@@ -10,8 +50,7 @@ export function registerScanCommand(program: Command): void {
     .description("Run autonomous pentest against a URL, web app, or MCP server")
     .requiredOption("--target <target>", "Target URL or mcp:// endpoint")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
-    .option("--format <format>", "Output format: terminal, json, md, html, sarif, pdf", "terminal")
-    .option("--output <path>", "Output file path (required for pdf, optional for html)")
+    .option("--format <format>", "Output format: terminal, json, md, html, sarif", "terminal")
     .option("--runtime <runtime>", "Runtime: auto (default), api, claude, codex, gemini", "auto")
     .option("--mode <mode>", "Scan mode: probe, deep, mcp, web")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
@@ -19,6 +58,7 @@ export function registerScanCommand(program: Command): void {
     .option("--api-key <key>", "API key for LLM provider")
     .option("--model <model>", "LLM model to use")
     .option("--repo <path>", "Source code path for white-box scanning (read code before attacking)")
+    .option("--auth <json>", "Auth credentials as JSON string or path to JSON file (types: bearer, cookie, basic, header)")
     .option("--verbose", "Show detailed output", false)
     .option("--replay", "Replay the last scan's results", false)
     .action(async (opts) => {
@@ -69,11 +109,15 @@ export function registerScanCommand(program: Command): void {
         process.exit(2);
       }
 
-      // Auto-detect PDF format from --output extension
-      let format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
-      const outputPath = opts.output as string | undefined;
-      if (outputPath?.endsWith(".pdf") && format !== "pdf") {
-        format = "pdf";
+      // Parse --auth flag if provided
+      let authConfig: AuthConfig | undefined;
+      if (opts.auth) {
+        try {
+          authConfig = parseAuthFlag(opts.auth as string);
+        } catch (err) {
+          console.error(chalk.red(err instanceof Error ? err.message : String(err)));
+          process.exit(2);
+        }
       }
 
       await runUnified({
@@ -81,7 +125,7 @@ export function registerScanCommand(program: Command): void {
         targetType: "url",
         mode,
         depth: opts.depth as ScanDepth,
-        format,
+        format: (opts.format === "md" ? "markdown" : opts.format) as OutputFormat,
         runtime: (opts.runtime as RuntimeMode) ?? "auto",
         timeout: parseInt(opts.timeout, 10),
         verbose: opts.verbose as boolean,
@@ -89,7 +133,7 @@ export function registerScanCommand(program: Command): void {
         apiKey: opts.apiKey as string | undefined,
         model: opts.model as string | undefined,
         repoPath: opts.repo as string | undefined,
-        reportPath: outputPath,
+        auth: authConfig,
       });
     });
 }

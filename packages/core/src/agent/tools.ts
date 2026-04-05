@@ -6,9 +6,9 @@ import { isIP } from "node:net";
 import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
+import { buildAuthHeaders } from "./prompts.js";
 import type { pwnkitDB } from "@pwnkit/db";
 import { features as featureFlags } from "./features.js";
-import { execInDocker, DockerExecutor } from "./docker-executor.js";
 
 // ── Tool Registry ──
 
@@ -505,7 +505,28 @@ export class ToolExecutor {
     return this._playwrightAvailable;
   }
 
-  /** Clean up browser and Docker resources. Call when the agent loop ends. */
+  /**
+   * Build environment variables for auth credentials, making them available
+   * to shell commands (curl, python3, etc.) via $AUTH_HEADER / $AUTH_VALUE.
+   */
+  private buildAuthEnvVars(): Record<string, string> {
+    const auth = this.ctx.authConfig;
+    if (!auth) return {};
+
+    const headers = buildAuthHeaders(auth);
+    const entries = Object.entries(headers);
+    if (entries.length === 0) return {};
+
+    const [headerName, headerValue] = entries[0];
+    return {
+      AUTH_HEADER: headerName,
+      AUTH_VALUE: headerValue,
+      // Convenience: full curl-style header flag
+      AUTH_CURL_FLAG: `-H '${headerName}: ${headerValue}'`,
+    };
+  }
+
+  /** Clean up browser resources. Call when the agent loop ends. */
   async cleanup(): Promise<void> {
     try {
       if (this._browserPage) {
@@ -518,16 +539,6 @@ export class ToolExecutor {
       }
     } catch {
       // Best-effort cleanup
-    }
-
-    // Stop Docker container if it was used
-    if (featureFlags.dockerExecutor) {
-      try {
-        const docker = DockerExecutor.getInstance();
-        await docker.stop();
-      } catch {
-        // Best-effort cleanup
-      }
     }
   }
 
@@ -585,7 +596,8 @@ export class ToolExecutor {
     const url = validateTargetUrl(this.ctx.target, args.url as string);
     const method = (args.method as string) ?? "POST";
     const body = args.body as string | undefined;
-    const headers = (args.headers as Record<string, string>) ?? {};
+    const authHeaders = buildAuthHeaders(this.ctx.authConfig);
+    const headers = { ...authHeaders, ...(args.headers as Record<string, string>) ?? {} };
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 30_000);
@@ -777,11 +789,12 @@ export class ToolExecutor {
       const timer = setTimeout(() => controller.abort(), 10_000);
 
       try {
+        const crawlAuthHeaders = buildAuthHeaders(this.ctx.authConfig);
         const res = await fetch(normalizedUrl, {
           method: "GET",
           signal: controller.signal,
           redirect: "follow",
-          headers: { "User-Agent": "pwnkit-crawler/1.0" },
+          headers: { "User-Agent": "pwnkit-crawler/1.0", ...crawlAuthHeaders },
         });
         clearTimeout(timer);
 
@@ -856,7 +869,8 @@ export class ToolExecutor {
     const rawUrl = args.url as string;
     const method = ((args.method as string) ?? "POST").toUpperCase();
     const fields = (args.fields as Record<string, string>) ?? {};
-    const extraHeaders = (args.headers as Record<string, string>) ?? {};
+    const formAuthHeaders = buildAuthHeaders(this.ctx.authConfig);
+    const extraHeaders = { ...formAuthHeaders, ...(args.headers as Record<string, string>) ?? {} };
 
     // Resolve URL relative to target
     let resolved: URL;
@@ -930,11 +944,6 @@ export class ToolExecutor {
 
     const timeoutSec = Math.min((args.timeout as number) ?? 30, 120);
 
-    // Route through Kali Docker container when feature flag is enabled
-    if (featureFlags.dockerExecutor) {
-      return this.shellExecDocker(command, timeoutSec);
-    }
-
     try {
       const { execSync } = await import("node:child_process");
       const result = execSync(command, {
@@ -942,7 +951,7 @@ export class ToolExecutor {
         maxBuffer: 1024 * 1024, // 1MB
         encoding: "utf-8",
         shell: "/bin/bash",
-        env: { ...process.env, TARGET: this.ctx.target },
+        env: { ...process.env, TARGET: this.ctx.target, ...this.buildAuthEnvVars() },
         stdio: ["pipe", "pipe", "pipe"],
       });
 
@@ -972,29 +981,6 @@ export class ToolExecutor {
       }
 
       const msg = err.killed ? "Command timed out" : (err.message ?? String(err));
-      return { success: false, output: null, error: msg.slice(0, 2_000) };
-    }
-  }
-
-  /** Execute a bash command inside the Kali Docker container. */
-  private async shellExecDocker(command: string, timeoutSec: number): Promise<ToolResult> {
-    try {
-      const result = await execInDocker(command, timeoutSec, this.ctx.target);
-      const output = (result.output ?? "").slice(0, 10_000);
-
-      this.persistToolArtifact("bash", {
-        command: command.slice(0, 500),
-        output: output.slice(0, 2_000),
-        docker: true,
-      });
-
-      if (result.timedOut) {
-        return { success: false, output: output || null, error: "Command timed out (docker)" };
-      }
-
-      return { success: true, output };
-    } catch (err: any) {
-      const msg = err.message ?? String(err);
       return { success: false, output: null, error: msg.slice(0, 2_000) };
     }
   }

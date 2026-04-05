@@ -7,6 +7,7 @@ import type {
   NativeToolDef,
   NativeRuntimeResult,
 } from "../runtime/types.js";
+import type { AuthConfig } from "@pwnkit/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext, AgentRole } from "./types.js";
 import { ToolExecutor, getToolsForRole } from "./tools.js";
 import { features } from "./features.js";
@@ -35,6 +36,8 @@ export interface NativeAgentConfig {
   sessionId?: string; // Resume from existing session
   /** Which retry attempt this is (0 = first attempt). Used by early-stop logic. */
   retryCount?: number;
+  /** Authentication credentials to inject into tool context */
+  authConfig?: AuthConfig;
 }
 
 export interface NativeAgentLoopOptions {
@@ -87,6 +90,7 @@ export async function runNativeAgentLoop(
     targetInfo: {},
     scopePath: config.scopePath,
     persistFindings: db !== null,
+    authConfig: config.authConfig,
   };
 
   const executor = new ToolExecutor(toolCtx, db);

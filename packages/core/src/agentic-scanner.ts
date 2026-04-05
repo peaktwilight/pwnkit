@@ -582,8 +582,8 @@ async function runNativeDiscovery(
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
   const systemPrompt = isWeb
-    ? webPentestDiscoveryPrompt(config.target)
-    : discoveryPrompt(config.target);
+    ? webPentestDiscoveryPrompt(config.target, config.auth)
+    : discoveryPrompt(config.target, config.auth);
   const tools = isWeb
     ? getToolsForRole("discovery", { webMode: true })
     : getToolsForRole("discovery");
@@ -597,6 +597,7 @@ async function runNativeDiscovery(
       target: config.target,
       scanId,
       sessionId: db.getSession(scanId, "discovery")?.id,
+      authConfig: config.auth,
     },
     runtime,
     db,
@@ -635,8 +636,8 @@ async function runNativeAttack(
   // White-box mode: add read_file + run_command when source code path is provided
   const hasSource = !!config.repoPath;
   const basePrompt = isWeb
-    ? shellPentestPrompt(config.target, config.repoPath, { hasBrowser })
-    : attackPrompt(config.target, targetInfo, categories);
+    ? shellPentestPrompt(config.target, config.repoPath, { hasBrowser, auth: config.auth })
+    : attackPrompt(config.target, targetInfo, categories, config.auth);
   // Append challenge hint if provided (standard practice for XBOW benchmarks)
   const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
@@ -676,6 +677,7 @@ async function runNativeAttack(
       scopePath: config.repoPath,
       sessionId: db.getSession(scanId, "attack")?.id,
       retryCount: 0,
+      authConfig: config.auth,
     },
     runtime,
     db,
@@ -722,6 +724,7 @@ async function runNativeAttack(
         scanId,
         scopePath: config.repoPath,
         retryCount: 1,
+        authConfig: config.auth,
       },
       runtime,
       db,
@@ -911,12 +914,13 @@ async function runNativeVerify(
   await runNativeAgentLoop({
     config: {
       role: "verify",
-      systemPrompt: verifyPrompt(config.target, findings),
+      systemPrompt: verifyPrompt(config.target, findings, config.auth),
       tools: getToolsForRole("verify", { hasScope: !!config.repoPath }),
       maxTurns: Math.min(findings.length * 3, 15),
       target: config.target,
       scanId,
       sessionId: db.getSession(scanId, "verify")?.id,
+      authConfig: config.auth,
     },
     runtime,
     db,
@@ -935,8 +939,8 @@ async function runLegacyDiscovery(
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
   const systemPrompt = isWeb
-    ? webPentestDiscoveryPrompt(config.target)
-    : discoveryPrompt(config.target);
+    ? webPentestDiscoveryPrompt(config.target, config.auth)
+    : discoveryPrompt(config.target, config.auth);
   const tools = isWeb
     ? getToolsForRole("discovery", { webMode: true })
     : getToolsForRole("discovery");
@@ -952,6 +956,7 @@ async function runLegacyDiscovery(
       sessionId: db?.getSession(scanId, "discovery")?.id,
       attachTargetToolsMcp: true,
       dbPath,
+      authConfig: config.auth,
     },
     runtime,
     db,
@@ -991,8 +996,8 @@ async function runLegacyAttack(
   try { await import("playwright"); hasBrowser = true; } catch { /* playwright not installed */ }
 
   const systemPrompt = isWeb
-    ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo))
-    : attackPrompt(config.target, targetInfo, categories);
+    ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo), config.auth)
+    : attackPrompt(config.target, targetInfo, categories, config.auth);
   const tools = isWeb
     ? getToolsForRole("attack", { webMode: true, hasBrowser })
     : getToolsForRole("attack", { hasBrowser });
@@ -1008,6 +1013,7 @@ async function runLegacyAttack(
       sessionId: db?.getSession(scanId, "attack")?.id,
       attachTargetToolsMcp: true,
       dbPath,
+      authConfig: config.auth,
     },
     runtime,
     db,
@@ -1045,7 +1051,7 @@ async function runLegacyVerify(
   await runAgentLoop({
     config: {
       role: "verify",
-      systemPrompt: verifyPrompt(config.target, findings),
+      systemPrompt: verifyPrompt(config.target, findings, config.auth),
       tools: getToolsForRole("verify", { hasScope: !!config.repoPath }),
       maxTurns: Math.min(findings.length * 3, 15),
       target: config.target,
@@ -1053,6 +1059,7 @@ async function runLegacyVerify(
       sessionId: db?.getSession(scanId, "verify")?.id,
       attachTargetToolsMcp: true,
       dbPath,
+      authConfig: config.auth,
     },
     runtime,
     db,
