@@ -13,6 +13,7 @@
     "xbow:dry": "tsx src/xbow-runner.ts --dry-run",
     "xbow:quick": "tsx src/xbow-runner.ts --limit 5",
     "xbow:agentic": "tsx src/xbow-runner.ts --agentic",
+    "xbow:ensemble": "tsx src/xbow-runner.ts --agentic --runtime api --models anthropic/claude-sonnet-4.6,google/gemini-2.5-pro,openai/o3",
     "xbow:whitebox": "tsx src/xbow-runner.ts --agentic --white-box",
     "autopenbench": "tsx src/autopenbench-runner.ts",
     "autopenbench:dry": "tsx src/autopenbench-runner.ts --dry-run",

@@ -44,6 +44,9 @@ const onlyIds = args.includes("--only") ? args[args.indexOf("--only") + 1].split
 const saveFindings = args.includes("--save-findings");
 const whiteBox = args.includes("--white-box");
 const runtimeArg = args.includes("--runtime") ? args[args.indexOf("--runtime") + 1] : "auto";
+const modelsArg = args.includes("--models")
+  ? args[args.indexOf("--models") + 1].split(",").map((s) => s.trim()).filter(Boolean)
+  : [];
 
 // ── Types ──
 interface XbowChallenge {
@@ -61,6 +64,7 @@ interface XbowResult {
   name: string;
   level: number;
   tags: string[];
+  model?: string;
   passed: boolean;
   flagFound: boolean;
   findingsCount: number;
@@ -83,6 +87,16 @@ interface XbowReport {
   startupFailures: number;
   scanErrors: number;
   results: XbowResult[];
+}
+
+function chooseBetterResult(a: XbowResult, b: XbowResult): XbowResult {
+  if (b.flagFound && !a.flagFound) return b;
+  if (a.flagFound && !b.flagFound) return a;
+  if (b.passed && !a.passed) return b;
+  if (a.passed && !b.passed) return a;
+  if (!!a.error !== !!b.error) return a.error ? b : a;
+  if (b.findingsCount !== a.findingsCount) return b.findingsCount > a.findingsCount ? b : a;
+  return b.durationMs < a.durationMs ? b : a;
 }
 
 // ── Load Challenges ──
@@ -204,7 +218,7 @@ function stopChallenge(challenge: XbowChallenge): void {
 }
 
 // ── Run Single Challenge ──
-async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
+async function runChallengeOnce(challenge: XbowChallenge, model?: string): Promise<XbowResult> {
   const flag = `FLAG{${randomBytes(12).toString("hex")}}`;
   const start = Date.now();
 
@@ -231,8 +245,19 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       const hint = challenge.description ? `\nChallenge hint: ${challenge.description}` : "";
       // White-box: pass source code path so agent reads code before attacking
       const repoPath = whiteBox ? challenge.path : undefined;
+      const effectiveRuntime = modelsArg.length > 0 ? "api" : runtimeArg;
       report = await agenticScan({
-        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: runtimeArg as RuntimeMode, verbose: hint ? true : false, repoPath },
+        config: {
+          target,
+          depth: "quick",
+          format: "json",
+          mode: "web",
+          timeout: 60_000,
+          runtime: effectiveRuntime as RuntimeMode,
+          model,
+          verbose: hint ? true : false,
+          repoPath,
+        },
         dbPath,
         challengeHint: hint,
       });
@@ -249,6 +274,7 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       name: challenge.name,
       level: challenge.level,
       tags: challenge.tags,
+      model,
       // XBOW uses flag extraction as the only valid pass condition.
       // Generic findings (header issues, fingerprinting) don't count.
       passed: flagFound,
@@ -264,6 +290,7 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       name: challenge.name,
       level: challenge.level,
       tags: challenge.tags,
+      model,
       passed: false,
       flagFound: false,
       findingsCount: 0,
@@ -275,8 +302,49 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
   }
 }
 
+async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
+  if (modelsArg.length === 0) {
+    return runChallengeOnce(challenge);
+  }
+
+  if (!process.env.OPENROUTER_API_KEY) {
+    return {
+      id: challenge.id,
+      name: challenge.name,
+      level: challenge.level,
+      tags: challenge.tags,
+      passed: false,
+      flagFound: false,
+      findingsCount: 0,
+      durationMs: 0,
+      error: "Multi-model mode requires OPENROUTER_API_KEY",
+    };
+  }
+
+  let best: XbowResult | null = null;
+  for (const model of modelsArg) {
+    let result = await runChallengeOnce(challenge, model);
+
+    for (let attempt = 2; attempt <= retries && !result.flagFound && !result.error; attempt++) {
+      if (!jsonOutput) {
+        process.stdout.write(`  ... ${model} retry ${attempt}/${retries}\n`);
+      }
+      result = await runChallengeOnce(challenge, model);
+    }
+
+    best = best ? chooseBetterResult(best, result) : result;
+    if (best.flagFound) break;
+  }
+
+  return best!;
+}
+
 // ── Main ──
 async function main() {
+  if (modelsArg.length > 0 && !jsonOutput) {
+    console.log(`  models: ${modelsArg.join(", ")}`);
+  }
+
   let challenges = loadChallenges();
 
   if (tagFilter) challenges = challenges.filter((c) => c.tags.includes(tagFilter));
@@ -316,7 +384,7 @@ async function main() {
     let result = await runChallenge(challenge);
 
     // Retry on failure if --retries > 1 (non-deterministic model may succeed on retry)
-    for (let attempt = 2; attempt <= retries && !result.flagFound && !result.error; attempt++) {
+    for (let attempt = 2; attempt <= retries && modelsArg.length === 0 && !result.flagFound && !result.error; attempt++) {
       if (!jsonOutput) {
         process.stdout.write(`  ... retry ${attempt}/${retries}\n`);
       }
@@ -343,7 +411,9 @@ async function main() {
   const report: XbowReport = {
     timestamp: new Date().toISOString(),
     mode: useAgentic ? "agentic" : "baseline",
-    runtime: useAgentic ? runtimeArg : "baseline",
+    runtime: useAgentic
+      ? (modelsArg.length > 0 ? `api(best-of-${modelsArg.length})` : runtimeArg)
+      : "baseline",
     whiteBox,
     retries,
     challenges: challenges.length,
