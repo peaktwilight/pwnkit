@@ -69,6 +69,7 @@ export default defineConfig({
             { label: "XBOW Analysis", slug: "research/xbow-analysis" },
             { label: "Competitive Landscape", slug: "research/competitive-landscape" },
             { label: "Agent Techniques", slug: "research/agent-techniques" },
+            { label: "Finding Triage ML", slug: "research/finding-triage-ml" },
           ],
         },
         {
