@@ -383,10 +383,53 @@ async function main() {
     console.log("");
   }
 
-  // Save results
+  // Save results — merge with existing file so partial/resumed runs accumulate
   const resultsDir = join(__dirname, "..", "results");
   mkdirSync(resultsDir, { recursive: true });
-  writeFileSync(join(resultsDir, "xbow-latest.json"), JSON.stringify(report, null, 2));
+  const latestPath = join(resultsDir, "xbow-latest.json");
+
+  if (existsSync(latestPath)) {
+    try {
+      const existing: XbowReport = JSON.parse(readFileSync(latestPath, "utf8"));
+      // Build a map of existing results keyed by challenge ID
+      const existingById = new Map(existing.results.map((r) => [r.id, r]));
+
+      // Merge: new results overwrite existing ones by ID, existing ones not in
+      // the current run are preserved
+      for (const r of report.results) {
+        existingById.set(r.id, r);
+      }
+      const mergedResults = [...existingById.values()].sort((a, b) => a.id.localeCompare(b.id));
+
+      // Recompute summary stats from merged results
+      const mergedBuildFailures = mergedResults.filter((r) => r.error === "Docker build failed").length;
+      const mergedStartupFailures = mergedResults.filter((r) => r.error === "Docker start failed or port not found").length;
+      const mergedScanErrors = mergedResults.filter((r) => r.error && r.error !== "Docker build failed" && r.error !== "Docker start failed or port not found").length;
+      const mergedBuilt = mergedResults.length - mergedBuildFailures;
+      const mergedStarted = mergedBuilt - mergedStartupFailures;
+
+      const mergedReport: XbowReport = {
+        ...report,
+        timestamp: new Date().toISOString(),
+        challenges: mergedResults.length,
+        built: mergedBuilt,
+        started: mergedStarted,
+        passed: mergedResults.filter((r) => r.passed).length,
+        flags: mergedResults.filter((r) => r.flagFound).length,
+        buildFailures: mergedBuildFailures,
+        startupFailures: mergedStartupFailures,
+        scanErrors: mergedScanErrors,
+        results: mergedResults,
+      };
+
+      writeFileSync(latestPath, JSON.stringify(mergedReport, null, 2));
+    } catch {
+      // Existing file is corrupt — overwrite it
+      writeFileSync(latestPath, JSON.stringify(report, null, 2));
+    }
+  } else {
+    writeFileSync(latestPath, JSON.stringify(report, null, 2));
+  }
 }
 
 main().catch((err) => {

@@ -114,10 +114,10 @@ jobs:
           fi
           if [ "$MODE" = "white-box" ]; then
             echo "Running WHITE-BOX benchmark... (start=$START, limit=$LIMIT, only=$ONLY)"
-            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 3 $START_FLAG $ONLY_FLAG
+            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --save-findings --limit "$LIMIT" --retries 3 $START_FLAG $ONLY_FLAG
           else
             echo "Running BLACK-BOX benchmark... (start=$START, limit=$LIMIT, only=$ONLY)"
-            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3 $START_FLAG $ONLY_FLAG
+            pnpm --filter @pwnkit/benchmark xbow --agentic --save-findings --limit "$LIMIT" --retries 3 $START_FLAG $ONLY_FLAG
           fi
         timeout-minutes: 330
 
@@ -125,7 +125,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xbow-results-${{ inputs.mode || 'black-box' }}-${{ inputs.features || 'all' }}
+          name: xbow-results-${{ inputs.mode || 'black-box' }}-${{ inputs.features || 'all' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: packages/benchmark/results/xbow-latest.json
 
       - name: Post summary

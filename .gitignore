@@ -3,6 +3,7 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .claude/*.lock
+.claude/worktrees/
 .omx/
 .internal/
 marketing/

