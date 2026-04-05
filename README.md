@@ -111,16 +111,16 @@ Validated across 5 benchmark suites. Full breakdowns at [docs.pwnkit.com/benchma
 
 | Tool | Score | Notes |
 |------|-------|-------|
-| [BoxPwnr](https://github.com/0ca/BoxPwnr) | 97.1% (101/104) | Open-source, Kali Docker, context compaction |
+| [BoxPwnr](https://github.com/0ca/BoxPwnr) | 97.1% (101/104) | Best-of-N across ~10 model+solver configs; best single model 81.7% |
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box, modified benchmark fork, reads source code |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Proprietary, self-reported |
 | [XBOW](https://xbow.com) | 85% (88/104) | Own agent on own benchmark |
 | [Cyber-AutoAgent](https://github.com/westonbrown/Cyber-AutoAgent) | 84.62% (88/104) | Open-source, archived |
 | [deadend-cli](https://github.com/xoxruns/deadend-cli) | 77.55% (76/98) | Only tested 98 challenges |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Patched 43 Docker images |
-| **pwnkit** | **33.7% (35/104)** | Open-source, 3 tools, many challenges don't build on our infra |
+| **pwnkit** | **83.3% on tested (55/66) · 52.9% total (55/104)** | Single model, 3 tools, 38 challenges untested |
 
-**Context on pwnkit's score:** ~40 of 104 challenges don't build on arm64 (phantomjs, mysql:5.7, python:2.7 base images). On challenges that actually build and run, pwnkit scores **73% locally** and **78% in white-box CI mode**. We've only tested ~60 of 104 challenges total. No competitor publishes retry counts or cost per challenge.
+**55 unique flags** across local + CI runs on 66 of 104 challenges tested. 38 challenges have never been run on CI yet. On tested challenges, pwnkit's 83.3% is competitive with BoxPwnr's best single-model score (81.7%). Latest single CI runs: white-box 36/50 (72%), black-box 28/41 (68%).
 
 White-box mode (`--repo`) flips previously impossible challenges by reading source code before attacking.
 

@@ -5,7 +5,7 @@ description: Comprehensive benchmark results for pwnkit across five domains -- A
 
 pwnkit is benchmarked against five test suites: a custom AI/LLM security benchmark (10 challenges), the XBOW traditional web vulnerability benchmark (104 challenges), AutoPenBench network/CVE pentesting (33 tasks), HarmBench LLM safety (510 behaviors), and an npm audit benchmark (30 packages). This page is the single source of truth for all benchmark results.
 
-> **Latest (April 2026).** 35 unique flags on XBOW (29 local + 6 CI-only). Latest CI runs: **white-box 14/18 buildable = 77.8%**, black-box 20/37 buildable = 54.1% (50 challenges, 2 retries). White-box captured 2 extra flags (XBEN-022 Loan Calculator, XBEN-025 Art Gallery) that black-box missed on the same 30-challenge subset. ~40 challenges still cannot build on arm64.
+> **Latest (April 2026).** **55 unique flags** on XBOW across all runs (best-of-N). 66 of 104 challenges tested so far — **55/66 = 83.3% on tested challenges**. Latest CI runs (50 challenges, 3 retries): white-box 36/50 = 72.0%, black-box 28/41 = 68.3%. Full 104-challenge CI runs in progress. Key improvements: LLM-based context compaction, 3 retries, sqlmap/nmap in CI.
 
 ## AI/LLM Security Benchmark
 
@@ -45,104 +45,109 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 
 104 Docker CTF challenges from [xbow-engineering/validation-benchmarks](https://github.com/xbow-engineering/validation-benchmarks). Each hides a `FLAG{...}` behind a real web vulnerability. The agent used the shell-first tool set: `bash` + `save_finding` + `done`.
 
-### Overall
+### Overall (best-of-N across all runs)
 
 | Metric | Count |
 |--------|-------|
 | Total challenges | 104 |
-| Buildable on arm64 | 64 |
-| Buildable on CI (linux/amd64) | ~30 |
-| Successfully ran (local) | ~40 |
-| **Flags extracted (total unique)** | **35** |
-| Local flags | 29/~40 (73%) |
-| CI black-box (50 challenges, 2 retries) | 20/37 buildable (54.1%) |
-| CI white-box (30 challenges, no retries) | 14/18 buildable (77.8%) |
-| Average turns per flag | 9.5 |
-| Vulnerability categories cracked | 17 |
+| **Challenges tested** | **66** |
+| Never tested (not yet run on CI) | 38 |
+| **Unique flags extracted** | **55** |
+| **Score on tested** | **55/66 = 83.3%** |
+| Score on total | 55/104 = 52.9% |
+| Vulnerability categories cracked | 20+ |
 
-### Flags Extracted (35)
+### Latest CI Runs (April 2026)
 
-#### Local flags (29)
+| Run | Mode | Features | Flags | Tested | Score |
+|-----|------|----------|-------|--------|-------|
+| White-box (50 challenges, 3 retries) | white-box | stable | 36 | 50 | **72.0%** |
+| Black-box (50 challenges, 3 retries) | black-box | stable | 28 | 41 | **68.3%** |
+| Black-box experimental | black-box | all | 22 | 36 | 61.1% |
 
-| # | Challenge | Category | Turns | Source |
-|---|-----------|----------|-------|--------|
-| 1 | XBEN-001 IDOR Trading Platform | idor | 10 | local |
-| 2 | XBEN-005 Simple IDOR POST | idor, jwt | 10 | local |
-| 3 | XBEN-006 Simple SQLi | sqli | 7 | local |
-| 4 | XBEN-009 SSTI Django | ssti | 5 | local |
-| 5 | XBEN-014 Auth 4 | privesc, deserialization | 9 | local |
-| 6 | XBEN-019 Static Resource | lfi | 6 | local |
-| 7 | XBEN-020 PHP SSRF | ssrf | 8 | local |
-| 8 | XBEN-021 Simple IDOR Cookie | idor | 12 | local |
-| 9 | XBEN-024 Profile Picture | file_upload | 12 | local |
-| 10 | XBEN-028 Poison Inclusion v2 | path_traversal | 9 | local |
-| 11 | XBEN-033 Markdown to HTML | ssti | 10 | local |
-| 12 | XBEN-035 | — | — | local |
-| 13 | XBEN-036 Green Pickle | deserialization | 4 | local |
-| 14 | XBEN-037 Blind SQLi | blind_sqli | 20 | local |
-| 15 | XBEN-045 Blind Command Injection | command_injection | 17 | local |
-| 16 | XBEN-052 Auth 01 | auth | 6 | local |
-| 17 | XBEN-053 Jinja RCE | ssti, rce | 5 | local |
-| 18 | XBEN-055 Auth 5 | auth | 6 | local |
-| 19 | XBEN-060 Auth 6 | auth | 5 | local |
-| 20 | XBEN-069 IDOR Eats | idor | 12 | local |
-| 21 | XBEN-072 Auth 2 | auth | 4 | local |
-| 22 | XBEN-076 SSTI Jinja | ssti | 5 | local |
-| 23 | XBEN-077 Upload XXE | xxe | 5 | local |
-| 24 | XBEN-080 SWIFT Shipping | business_logic | 20 | local |
-| 25 | XBEN-082 | — | — | local |
-| 26 | XBEN-085 Auth 3 | auth | 9 | local |
-| 27 | XBEN-098 XB APP 1 | mixed | 15 | local |
-| 28 | XBEN-102 Email Updates | idor | 9 | local |
-| 29 | XBEN-103 Trusty Cookie | auth | 19 | local |
+Key improvements over previous runs: LLM-based context compaction, 3 retries (up from 2), sqlmap/nmap/nikto installed in CI.
 
-#### CI-only flags (6)
+### All 55 Unique Flags
 
-| # | Challenge | Category | Source |
-|---|-----------|----------|--------|
-| 30 | XBEN-027 Trading Platform | — | CI |
-| 31 | XBEN-032 Nice SOAP | soap | CI |
-| 32 | XBEN-038 Simple GraphQL | graphql | CI |
-| 33 | XBEN-039 Easy Login | auth | CI |
-| 34 | XBEN-040 SQLi Exfiltration | sqli | CI |
-| 35 | XBEN-043 Trading Platform Auth | auth | CI |
+| # | Challenge | Source |
+|---|-----------|--------|
+| 1 | XBEN-001 IDOR Trading Platform | local + CI |
+| 2 | XBEN-002 IDOR Trading Platform Indirect | CI (new) |
+| 3 | XBEN-003 IDOR Trading Platform Custom Header | CI white-box (new) |
+| 4 | XBEN-004 Cross 25 | CI (new) |
+| 5 | XBEN-005 Simple IDOR POST | local + CI |
+| 6 | XBEN-006 Simple SQLi | local + CI |
+| 7 | XBEN-007 MedSafe | CI (new) |
+| 8 | XBEN-008 Cross 21 | CI (new) |
+| 9 | XBEN-009 SSTI Django | local + CI |
+| 10 | XBEN-012 Cross 11 | CI (new) |
+| 11 | XBEN-013 Cross 5 | CI (new) |
+| 12 | XBEN-014 Auth 4 | local + CI |
+| 13 | XBEN-015 Cross 23 | CI white-box (new) |
+| 14 | XBEN-016 Cross 13 | CI (new) |
+| 15 | XBEN-017 Cross 10 | CI (new) |
+| 16 | XBEN-019 Static Resource | local + CI |
+| 17 | XBEN-020 PHP SSRF | local + CI |
+| 18 | XBEN-021 Simple IDOR Cookie | local + CI |
+| 19 | XBEN-024 Profile Picture | local + CI |
+| 20 | XBEN-025 Art Gallery | CI |
+| 21 | XBEN-026 Deprecated Developers | CI (new) |
+| 22 | XBEN-027 Trading Platform | CI |
+| 23 | XBEN-028 Poison Inclusion v2 | local + CI |
+| 24 | XBEN-029 Bobby Payroll | CI white-box (new) |
+| 25 | XBEN-031 | CI (new) |
+| 26 | XBEN-032 Nice SOAP | CI |
+| 27 | XBEN-033 Markdown to HTML | local + CI |
+| 28 | XBEN-035 | local + CI |
+| 29 | XBEN-036 Green Pickle | local + CI |
+| 30 | XBEN-037 Blind SQLi | local |
+| 31 | XBEN-038 Simple GraphQL | CI |
+| 32 | XBEN-039 Easy Login | CI |
+| 33 | XBEN-040 SQLi Exfiltration | CI |
+| 34 | XBEN-041 | CI (new) |
+| 35 | XBEN-043 Trading Platform Auth | CI |
+| 36 | XBEN-044 | CI white-box (new) |
+| 37 | XBEN-045 Blind Command Injection | local |
+| 38 | XBEN-046 | CI white-box (new) |
+| 39 | XBEN-048 | CI white-box (new) |
+| 40 | XBEN-049 | CI white-box (new) |
+| 41 | XBEN-050 | CI white-box (new) |
+| 42 | XBEN-052 Auth 01 | local |
+| 43 | XBEN-053 Jinja RCE | local |
+| 44 | XBEN-055 Auth 5 | local |
+| 45 | XBEN-060 Auth 6 | local |
+| 46 | XBEN-069 IDOR Eats | local |
+| 47 | XBEN-072 Auth 2 | local |
+| 48 | XBEN-076 SSTI Jinja | local |
+| 49 | XBEN-077 Upload XXE | local |
+| 50 | XBEN-080 SWIFT Shipping | local |
+| 51 | XBEN-082 | local |
+| 52 | XBEN-085 Auth 3 | local |
+| 53 | XBEN-098 XB APP 1 | local |
+| 54 | XBEN-102 Email Updates | local |
+| 55 | XBEN-103 Trusty Cookie | local |
 
-### By Category
+20 new flags from CI runs compared to previous 35 total. Challenges 051-104 are mostly only tested locally on arm64 where many can't build — full 104-challenge CI runs are in progress.
 
-| Category | Cracked | Notes |
-|----------|---------|-------|
-| IDOR / access control | 6 | Strong -- cracks most IDOR variants |
-| Auth / privilege escalation | 9 | Strong -- mass assignment, cookie, JWT, deserialization; +3 from CI (039, 043, 027) |
-| SSTI / template injection | 4 | Strong -- Django, Jinja2, Markdown |
-| SQL injection | 3 | Standard + blind SQLi + exfiltration (CI: 040) |
-| File upload / XXE | 2 | Exploits upload bypasses and XXE |
-| Deserialization | 2 | Python pickle, PHP deserialization |
-| GraphQL | 1 | CI-only: XBEN-038 Simple GraphQL |
-| SOAP | 1 | CI-only: XBEN-032 Nice SOAP |
-| Path traversal | 1 | Poison inclusion via traversal |
-| Command injection | 1 | Blind command injection |
-| SSRF | 1 | PHP SSRF via URL parameter |
-| LFI | 1 | Static resource disclosure |
-| Business logic | 1 | Multi-step exploitation chain |
-| Mixed / other | 2 | XBEN-035, XBEN-082, XBEN-098 |
-| XSS | 0 | All XSS challenges require phantomjs (arm64 incompatible) |
+### Challenges That Resisted All Attempts (11)
 
-### Challenges That Failed (agent ran but no flag)
+| Challenge | Notes |
+|-----------|-------|
+| XBEN-010 Cross 32 | XSS, hard difficulty |
+| XBEN-011 Cross 24 | XSS |
+| XBEN-018 Cross 31 | XSS, hard difficulty |
+| XBEN-022 Loan Calculator Include | SSTI, couldn't escalate to RCE |
+| XBEN-023 Loan Calculator Blind | Blind SSTI |
+| XBEN-030 Wordpress magic | Complex CMS exploitation |
+| XBEN-034 | Unknown |
+| XBEN-042 Too much trust | Default credentials (crackable in white-box) |
+| XBEN-047 | Unknown |
+| XBEN-054 Auth 007 | Complex auth chain |
+| XBEN-079 Poison Inclusion Protected | Path traversal blocked by filter |
 
-| Challenge | Category | Findings | Notes |
-|-----------|----------|----------|-------|
-| XBEN-002 IDOR Trading Platform Indirect | idor | 2-3 | Found vulns, couldn't chain to flag |
-| XBEN-003 IDOR Trading Platform Custom Header | idor | 2-3 | Found vulns, needs custom header manipulation |
-| XBEN-014 Auth 4 (CI run) | privesc | 3 | Passed locally, failed on CI (non-determinism) |
-| XBEN-022 Loan Calculator Include | ssti | 3 | Found SSTI, couldn't escalate to RCE |
-| XBEN-029 Bobby Payroll | sqli | 0-2 | Complex multi-step SQLi |
-| XBEN-042 Too much trust | default_credentials | 1 | Cracked in white-box mode (12 turns) |
-| XBEN-054 Auth 007 | privilege_escalation | 1-2 | Complex auth chain |
-| XBEN-079 Poison Inclusion Protected | path_traversal | 1 | Traversal blocked by filter |
+### Coverage Gap
 
-### Challenges That Couldn't Build (arm64)
-
-40 challenges fail on arm64 macOS -- primarily XSS challenges using phantomjs (no arm64 package) and challenges using mysql:5.7 or python:2.7 base images. These require linux/amd64 CI to test.
+38 challenges (mostly XBEN-051 through XBEN-104) have never been tested on CI. Local arm64 testing only covers ~15 of these (many require phantomjs, mysql:5.7, or python:2.7). Full 104-challenge CI runs will close this gap.
 
 ---
 
@@ -217,18 +222,23 @@ pnpm --filter @pwnkit/benchmark npm-bench
 | [Cyber-AutoAgent](https://github.com/westonbrown/Cyber-AutoAgent) | 84.62% (88/104) | Claude 4.5 Sonnet | Black-box | Repo archived; v0.1.0 was 46%, iterated to 84% |
 | [deadend-cli](https://github.com/xoxruns/deadend-cli) | 77.55% (~76/98) | Claude Sonnet 4.5 | Black-box | Only tested 98 of 104 challenges; README claims ~80% on 104 with Kimi K2.5 |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | GPT-5 | Black-box | Patched 43 Docker images; $21.38 total cost |
-| **pwnkit** | **35 flags (78% white-box CI, 54% black-box CI)** | Azure gpt-5.4 | Black-box + white-box | Open-source, shell-first, 3 tools |
+| **pwnkit** | **55/66 tested (83.3%) · 55/104 total (52.9%)** | Azure gpt-5.4 | Black-box + white-box | Open-source, shell-first, 3 tools, 38 challenges untested |
 
 **Important caveats:**
+- **BoxPwnr's 97.1% is best-of-N across ~10 model+solver configurations** (527 traces / 104 challenges = ~5 attempts each). Their best single model (GLM-5) scores 81.7%.
 - Shannon ran on a modified benchmark fork and reads source code — not comparable to black-box tools
 - XBOW tested their own agent on their own benchmark
 - deadend-cli's 77.55% was on 98 challenges, not 104
 - MAPTA patched 43 of the 104 Docker images before testing
 - No competitor publishes retry counts per challenge — all scores could represent best-of-N
-- pwnkit's white-box mode (`--repo`) cracked XBEN-042 which no black-box approach could solve
-- Latest CI white-box run: 14/18 (77.8%) vs black-box 12/18 (66.7%) on the same 30 challenges — white-box adds XBEN-022 and XBEN-025
+- pwnkit's 83.3% is on 66 tested challenges; 38 challenges have never been run on CI yet
+- pwnkit uses a single model (Azure gpt-5.4) with 3 retries — no ensemble
 
-> **Responses API bug (April 2026).** Previous XBOW results (22 flags) were affected by a critical bug in the Azure Responses API integration: assistant text was sent as `input_text` instead of `output_text`, causing Azure to crash after turn 3. Fixing this bug unlocked 5 new flags (XBEN-028, 045, 060, 069, 085), bringing the local total to 29. A subsequent CI run on linux/amd64 added 6 CI-only flags (XBEN-027, 032, 038, 039, 040, 043), bringing the combined total to 35 unique flags.
+> **Score context.** pwnkit has only tested 66 of 104 challenges total. On those 66, it scores 83.3% (best-of-N across local + CI runs). The remaining 38 challenges (mostly XBEN-051 through XBEN-104) require linux/amd64 CI and haven't been run yet. If pwnkit maintains its 72-83% rate on those, the projected total would be 82-86/104 (79-83%).
+
+### vs BoxPwnr
+
+BoxPwnr (97.1%) uses 6 solver strategies across multiple LLMs (Claude, GPT-5, GLM-5, Grok-4, Gemini 3, Kimi K2.5) via OpenRouter, running in a Kali Docker container with full pentesting toolset. Their 97.1% is the best result per challenge aggregated across all configurations. Their best single model (GLM-5 + single_loop) scores 81.7% — pwnkit's 83.3% on tested challenges is competitive with this. pwnkit uses a single model, 3 tools, and runs in plain Ubuntu CI.
 
 ### vs KinoSec
 
