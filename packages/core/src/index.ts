@@ -54,6 +54,10 @@ export type {
 
 export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./db/schema.js";
 
+// API spec parser
+export { parseApiSpec } from "./api-spec.js";
+export type { ApiSpecSummary, ApiSpecEndpoint, ApiSpecParameter, ApiSpecAuthScheme } from "./api-spec.js";
+
 // Structured verification pipeline
 export { runStructuredVerify } from "./triage/verify-pipeline.js";
 export type { VerifyResult, StepResult, VerifyVerdict, VerifyStepName } from "./triage/verify-pipeline.js";

@@ -28,6 +28,7 @@ export interface RunOptions {
   reportPath?: string;
   repoPath?: string;
   auth?: AuthConfig;
+  apiSpecPath?: string;
   exportTarget?: string;
 }
 
@@ -80,6 +81,7 @@ export async function runUnified(opts: RunOptions): Promise<void> {
             model: opts.model,
             repoPath: opts.repoPath,
             auth: opts.auth,
+            apiSpecPath: opts.apiSpecPath,
           },
           dbPath: opts.dbPath,
           onEvent: eventHandler,

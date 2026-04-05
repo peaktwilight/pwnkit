@@ -47,6 +47,8 @@ export interface ScanConfig {
   timeout?: number;
   verbose?: boolean;
   auth?: AuthConfig;
+  /** Path to an OpenAPI 3.x / Swagger 2.0 spec file for pre-loaded endpoint knowledge */
+  apiSpecPath?: string;
 }
 
 // ── Attack Templates ──
@@ -150,6 +152,13 @@ export type WorkItemStatus = "backlog" | "todo" | "in_progress" | "blocked" | "d
 export type ArtifactKind = "request" | "response" | "analysis" | "verdicts" | "sessions" | "events";
 export type WorkerStatus = "idle" | "claiming" | "running" | "sleeping" | "stopped" | "error";
 
+export interface FindingRemediation {
+  summary: string;
+  steps: string[];
+  codeExample?: { before: string; after: string; language: string };
+  references: string[];
+}
+
 export interface Finding {
   id: string;
   templateId: string;
@@ -167,6 +176,7 @@ export interface Finding {
   confidence?: number; // 0.0–1.0 agent-assessed confidence
   cvssVector?: string; // CVSS vector string
   cvssScore?: number; // CVSS numeric score (0–10)
+  remediation?: FindingRemediation;
   timestamp: number;
 }
 

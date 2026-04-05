@@ -22,6 +22,8 @@ import type { NativeRuntime, NativeMessage, NativeContentBlock } from "./runtime
 import { isMcpTarget } from "./http.js";
 import { discoverMcpTarget, runMcpSecurityChecks } from "./mcp.js";
 import { createScanContext, finalize } from "./context.js";
+import { generateRemediation } from "./remediation.js";
+import { parseApiSpec } from "./api-spec.js";
 
 export interface AgenticScanOptions {
   config: ScanConfig;
@@ -210,6 +212,18 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
 
   let allFindings: Finding[] = [];
 
+  // Parse API spec if provided
+  let apiSpecPromptText = "";
+  if (config.apiSpecPath) {
+    try {
+      const specSummary = await parseApiSpec(config.apiSpecPath);
+      apiSpecPromptText = specSummary.promptText;
+      emit({ type: "stage:start", stage: "discovery", message: `Loaded API spec: ${specSummary.title} (${specSummary.endpoints.length} endpoints)` });
+    } catch (err) {
+      emit({ type: "stage:start", stage: "discovery", message: `Warning: failed to parse API spec: ${err instanceof Error ? err.message : String(err)}` });
+    }
+  }
+
   db.ensureCaseWorkPlan?.(scanId);
 
   // Log scan start
@@ -262,6 +276,12 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
         mcpCtx.findings.push(finding);
       }
       allFindings = [...findings];
+
+      // Attach remediation guidance to MCP findings
+      for (const finding of allFindings) {
+        finding.remediation = generateRemediation(finding);
+      }
+
       emit({ type: "stage:end", stage: "attack", message: `MCP checks complete: ${findings.length} findings` });
 
       // Persist findings
@@ -327,8 +347,8 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     });
 
     const discoveryState = useNative
-      ? await runNativeDiscovery(nativeApiRuntime, db, config, scanId, emit)
-      : await runLegacyDiscovery(legacyRuntime, db, config, scanId, emit, dbPath);
+      ? await runNativeDiscovery(nativeApiRuntime, db, config, scanId, emit, apiSpecPromptText)
+      : await runLegacyDiscovery(legacyRuntime, db, config, scanId, emit, dbPath, apiSpecPromptText);
 
     // Persist target profile
     if (discoveryState.targetInfo.type) {
@@ -390,8 +410,8 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     });
 
     const attackState = useNative
-      ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, opts.challengeHint)
-      : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, dbPath);
+      ? await runNativeAttack(nativeApiRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, opts.challengeHint, apiSpecPromptText)
+      : await runLegacyAttack(legacyRuntime, db, config, scanId, discoveryState.targetInfo, categories, maxAttackTurns, emit, dbPath, apiSpecPromptText);
 
     allFindings = [...attackState.findings];
 
@@ -455,6 +475,13 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       const dbFindings = db.getFindings(scanId);
       allFindings = dbFindings.map(dbFindingToFinding);
 
+      // Attach remediation guidance to confirmed/verified findings
+      for (const finding of allFindings) {
+        if (finding.status !== "false-positive") {
+          finding.remediation = generateRemediation(finding);
+        }
+      }
+
       db.logEvent({
         scanId,
         stage: "verify",
@@ -485,6 +512,13 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
         stage: "verify",
         message: `Verification complete: ${allFindings.filter((f) => f.status !== "false-positive").length} confirmed`,
       });
+    }
+
+    // ── Remediation: ensure all non-false-positive findings have guidance ──
+    for (const finding of allFindings) {
+      if (!finding.remediation && finding.status !== "false-positive") {
+        finding.remediation = generateRemediation(finding);
+      }
     }
 
     // ── Stage 4: Report ──
@@ -579,11 +613,15 @@ async function runNativeDiscovery(
   config: ScanConfig,
   scanId: string,
   emit: ScanListener,
+  apiSpecPromptText?: string,
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
-  const systemPrompt = isWeb
+  const basePrompt = isWeb
     ? webPentestDiscoveryPrompt(config.target, config.auth)
     : discoveryPrompt(config.target, config.auth);
+  const systemPrompt = apiSpecPromptText
+    ? basePrompt + "\n\n" + apiSpecPromptText
+    : basePrompt;
   const tools = isWeb
     ? getToolsForRole("discovery", { webMode: true })
     : getToolsForRole("discovery");
@@ -624,6 +662,7 @@ async function runNativeAttack(
   maxTurns: number,
   emit: ScanListener,
   challengeHint?: string,
+  apiSpecPromptText?: string,
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
 
@@ -635,9 +674,11 @@ async function runNativeAttack(
   // Shell-first for web targets: minimal tool set (bash + save_finding + done)
   // White-box mode: add read_file + run_command when source code path is provided
   const hasSource = !!config.repoPath;
-  const basePrompt = isWeb
+  let basePrompt = isWeb
     ? shellPentestPrompt(config.target, config.repoPath, { hasBrowser, auth: config.auth })
     : attackPrompt(config.target, targetInfo, categories, config.auth);
+  // Inject API spec knowledge if available
+  if (apiSpecPromptText) basePrompt += "\n\n" + apiSpecPromptText;
   // Append challenge hint if provided (standard practice for XBOW benchmarks)
   const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
@@ -936,11 +977,15 @@ async function runLegacyDiscovery(
   scanId: string,
   emit: ScanListener,
   dbPath?: string,
+  apiSpecPromptText?: string,
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
-  const systemPrompt = isWeb
+  const basePrompt = isWeb
     ? webPentestDiscoveryPrompt(config.target, config.auth)
     : discoveryPrompt(config.target, config.auth);
+  const systemPrompt = apiSpecPromptText
+    ? basePrompt + "\n\n" + apiSpecPromptText
+    : basePrompt;
   const tools = isWeb
     ? getToolsForRole("discovery", { webMode: true })
     : getToolsForRole("discovery");
@@ -987,6 +1032,7 @@ async function runLegacyAttack(
   maxTurns: number,
   emit: ScanListener,
   dbPath?: string,
+  apiSpecPromptText?: string,
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
 
@@ -995,9 +1041,11 @@ async function runLegacyAttack(
   // @ts-ignore — playwright is an optional dependency
   try { await import("playwright"); hasBrowser = true; } catch { /* playwright not installed */ }
 
-  const systemPrompt = isWeb
+  let baseAttackPrompt = isWeb
     ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo), config.auth)
     : attackPrompt(config.target, targetInfo, categories, config.auth);
+  if (apiSpecPromptText) baseAttackPrompt += "\n\n" + apiSpecPromptText;
+  const systemPrompt = baseAttackPrompt;
   const tools = isWeb
     ? getToolsForRole("attack", { webMode: true, hasBrowser })
     : getToolsForRole("attack", { hasBrowser });
