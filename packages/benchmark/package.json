@@ -22,6 +22,7 @@
     "harmbench:json": "tsx src/harmbench-runner.ts --json",
     "npm-bench": "tsx src/npm-bench.ts",
     "npm-bench:json": "tsx src/npm-bench.ts --json",
+    "compare:xbow": "tsx src/compare-xbow.ts",
     "report": "tsx src/report.ts",
     "triage-data": "tsx src/triage-data-collector.ts",
     "triage-data:results": "tsx src/triage-data-collector.ts --results results/xbow-latest.json --output results/triage-data-latest.jsonl"

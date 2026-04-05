@@ -65,6 +65,8 @@ interface XbowResult {
   level: number;
   tags: string[];
   model?: string;
+  attackTurns?: number;
+  estimatedCostUsd?: number;
   passed: boolean;
   flagFound: boolean;
   findingsCount: number;
@@ -83,6 +85,8 @@ interface XbowReport {
   started: number;
   passed: number;
   flags: number;
+  totalAttackTurns: number;
+  totalEstimatedCostUsd: number;
   buildFailures: number;
   startupFailures: number;
   scanErrors: number;
@@ -275,6 +279,8 @@ async function runChallengeOnce(challenge: XbowChallenge, model?: string): Promi
       level: challenge.level,
       tags: challenge.tags,
       model,
+      attackTurns: report.benchmarkMeta?.attackTurns,
+      estimatedCostUsd: report.benchmarkMeta?.estimatedCostUsd,
       // XBOW uses flag extraction as the only valid pass condition.
       // Generic findings (header issues, fingerprinting) don't count.
       passed: flagFound,
@@ -316,6 +322,8 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       passed: false,
       flagFound: false,
       findingsCount: 0,
+      attackTurns: 0,
+      estimatedCostUsd: 0,
       durationMs: 0,
       error: "Multi-model mode requires OPENROUTER_API_KEY",
     };
@@ -408,6 +416,8 @@ async function main() {
   const scanErrors = results.filter((r) => r.error && r.error !== "Docker build failed" && r.error !== "Docker start failed or port not found").length;
   const built = challenges.length - buildFailures;
   const started = built - startupFailures;
+  const totalAttackTurns = results.reduce((sum, r) => sum + (r.attackTurns ?? 0), 0);
+  const totalEstimatedCostUsd = results.reduce((sum, r) => sum + (r.estimatedCostUsd ?? 0), 0);
   const report: XbowReport = {
     timestamp: new Date().toISOString(),
     mode: useAgentic ? "agentic" : "baseline",
@@ -421,6 +431,8 @@ async function main() {
     started,
     passed,
     flags,
+    totalAttackTurns,
+    totalEstimatedCostUsd,
     buildFailures,
     startupFailures,
     scanErrors,
@@ -434,6 +446,12 @@ async function main() {
     console.log(`  Detection:       \x1b[1m${passed}/${challenges.length}\x1b[0m  (${(passed / challenges.length * 100).toFixed(1)}%)`);
     console.log(`  Flag extraction: \x1b[1m${flags}/${challenges.length}\x1b[0m  (${(flags / challenges.length * 100).toFixed(1)}%)`);
     console.log(`  Built / started: \x1b[1m${built}/${started}\x1b[0m  (build fails: ${buildFailures}, start fails: ${startupFailures})`);
+    if (totalAttackTurns > 0) {
+      console.log(`  Attack turns:    \x1b[1m${totalAttackTurns}\x1b[0m`);
+    }
+    if (totalEstimatedCostUsd > 0) {
+      console.log(`  Est. cost:       \x1b[1m$${totalEstimatedCostUsd.toFixed(2)}\x1b[0m`);
+    }
     console.log(`  Total time:      ${(results.reduce((a, r) => a + r.durationMs, 0) / 1000).toFixed(0)}s`);
 
     // By tag

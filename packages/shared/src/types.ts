@@ -326,6 +326,11 @@ export interface ScanReport {
   summary: ReportSummary;
   findings: Finding[];
   warnings: ScanWarning[];
+  benchmarkMeta?: {
+    attackTurns?: number;
+    estimatedCostUsd?: number;
+    model?: string;
+  };
 }
 
 export interface ReportSummary {

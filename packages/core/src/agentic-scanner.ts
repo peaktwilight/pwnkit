@@ -548,6 +548,11 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       summary,
       findings: allFindings.filter((f) => f.status !== "false-positive"),
       warnings: [],
+      benchmarkMeta: {
+        attackTurns: attackState.turnCount,
+        estimatedCostUsd: attackState.estimatedCostUsd,
+        model: config.model,
+      },
     };
 
     // Compute actual duration from DB
