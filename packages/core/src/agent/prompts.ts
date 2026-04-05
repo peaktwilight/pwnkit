@@ -663,9 +663,17 @@ Use read_file and run_command to analyze the code BEFORE attacking.
 You have a **browser** tool for JavaScript-rendered pages and XSS confirmation.
 Actions: navigate, click, fill, evaluate, content, screenshot.
 - Use browser to navigate to pages that require JS rendering
-- For XSS: inject payloads via forms, then check the dialogs array in the response — if alert/confirm/prompt fires, XSS is confirmed
+- For XSS: use bash/curl to find reflection points, then use browser to navigate to the injected page and check the dialogs array in the response — if alert/confirm/prompt fires, XSS is confirmed
 - Use evaluate to run arbitrary JS in the page context
 - Combine with bash for complex attack chains (e.g., bash to find injection points, browser to confirm XSS fires)
+- Never save an XSS finding without browser evidence (dialogs, rendered HTML, or DOM execution proof)
+
+### XSS browser flow
+1. Inject a unique canary string with bash/curl and verify it reflects in HTML
+2. Replace the canary with an execution payload
+3. browser action=navigate to the payload-bearing page
+4. If no dialog fires, browser action=content to inspect rendered HTML and browser action=evaluate for DOM-based execution checks
+5. For stored XSS, inject first, then browse to every render location until the payload executes
 ` : "";
 
   const scriptSection = featureFlags.scriptTemplates ? `
@@ -711,9 +719,16 @@ Extract the hidden flag (FLAG{...}).
 
 3. **Attack**: Test every input for SQLi (' OR 1=1--), SSTI ({{7*7}}), command injection (;id), path traversal (../../flag.txt). Test IDOR by changing IDs in URLs. Check indirect IDOR — results may appear on different pages.
 
-4. **Exploit**: When you find a vulnerability, EXPLOIT IT FULLY. Enumerate tables for SQLi, escalate SSTI to RCE (cat /flag*), chain auth bypass to admin endpoints. Write Python scripts for complex chains.
+4. **XSS discipline**: For any HTML page, form, comment field, search field, or reflected parameter:
+   - inject a canary first and verify reflection
+   - if reflection exists, try execution payloads
+   - use the browser tool to confirm execution
+   - for stored XSS, revisit likely render pages after injection
+   - do NOT save an XSS unless browser evidence proves execution
 
-5. **Adapt**: If a payload is blocked, try encoding bypasses (URL encoding, double encoding, case variation). Never repeat the same payload — mutate or move on. After 2 failures on one approach, try something different.
+5. **Exploit**: When you find a vulnerability, EXPLOIT IT FULLY. Enumerate tables for SQLi, escalate SSTI to RCE (cat /flag*), chain auth bypass to admin endpoints. Write Python scripts for complex chains.
+
+6. **Adapt**: If a payload is blocked, try encoding bypasses (URL encoding, double encoding, case variation). Never repeat the same payload — mutate or move on. After 2 failures on one approach, try something different.
 ${scriptSection}${featureFlags.externalMemory ? EXTERNAL_MEMORY_INSTRUCTION : ""}
 ## Rules
 - Read ALL response headers and cookies after every request
