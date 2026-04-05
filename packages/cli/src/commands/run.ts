@@ -6,7 +6,7 @@ import chalk from "chalk";
 import { VERSION } from "@pwnkit/shared";
 import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@pwnkit/shared";
 import { agenticScan, runPipeline, createRuntime } from "@pwnkit/core";
-import { formatAuditReport, formatReviewReport, formatReport } from "../formatters/index.js";
+import { formatAuditReport, formatReviewReport, formatReport, generatePdfReport } from "../formatters/index.js";
 import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 
 export interface RunOptions {
@@ -102,6 +102,14 @@ export async function runUnified(opts: RunOptions): Promise<void> {
     if (inkUI) {
       inkUI.setReport(report as any);
       await inkUI.waitForExit();
+    } else if (format === "pdf") {
+      const filePath = opts.reportPath
+        ? resolve(opts.reportPath)
+        : join(tmpdir(), `pwnkit-report-${Date.now()}.pdf`);
+      await generatePdfReport(report as any, filePath);
+      console.log(chalk.green(`PDF report saved to: ${filePath}`));
+      const openCmd = process.platform === "darwin" ? "open" : "xdg-open";
+      execFile(openCmd, [filePath], () => {});
     } else {
       const reportAny = report as any;
       const output = reportAny.targetType === "npm-package"

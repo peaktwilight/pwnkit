@@ -4,6 +4,7 @@ import { formatJson } from "./json.js";
 import { formatMarkdown } from "./markdown.js";
 import { formatHtml } from "./html.js";
 import { formatSarif } from "./sarif.js";
+export { generatePdfReport } from "./pdf.js";
 export { renderReplay, renderReplayStatic, replayDataFromReport, createReplayCollector } from "./replay.js";
 export type { ReplayData, ReplayCollector } from "./replay.js";
 
@@ -19,6 +20,10 @@ export function formatReport(report: ScanReport, format: OutputFormat): string {
       return formatHtml(report);
     case "sarif":
       return formatSarif(report);
+    case "pdf":
+      // PDF generation is async and writes directly to a file.
+      // Use generatePdfReport() instead of formatReport() for PDF output.
+      return "[PDF output requires generatePdfReport()]";
   }
 }
 

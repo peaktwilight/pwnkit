@@ -49,8 +49,10 @@
     "pnpm": ">=8"
   },
   "dependencies": {
+    "@types/pdfkit": "^0.13.9",
     "better-sqlite3": "^12.8.0",
-    "drizzle-orm": "^0.44.0"
+    "drizzle-orm": "^0.44.0",
+    "pdfkit": "^0.15.2"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

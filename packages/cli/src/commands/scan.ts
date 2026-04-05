@@ -10,7 +10,8 @@ export function registerScanCommand(program: Command): void {
     .description("Run autonomous pentest against a URL, web app, or MCP server")
     .requiredOption("--target <target>", "Target URL or mcp:// endpoint")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
-    .option("--format <format>", "Output format: terminal, json, md, html, sarif", "terminal")
+    .option("--format <format>", "Output format: terminal, json, md, html, sarif, pdf", "terminal")
+    .option("--output <path>", "Output file path (required for pdf, optional for html)")
     .option("--runtime <runtime>", "Runtime: auto (default), api, claude, codex, gemini", "auto")
     .option("--mode <mode>", "Scan mode: probe, deep, mcp, web")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
@@ -68,12 +69,19 @@ export function registerScanCommand(program: Command): void {
         process.exit(2);
       }
 
+      // Auto-detect PDF format from --output extension
+      let format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
+      const outputPath = opts.output as string | undefined;
+      if (outputPath?.endsWith(".pdf") && format !== "pdf") {
+        format = "pdf";
+      }
+
       await runUnified({
         target: opts.target,
         targetType: "url",
         mode,
         depth: opts.depth as ScanDepth,
-        format: (opts.format === "md" ? "markdown" : opts.format) as OutputFormat,
+        format,
         runtime: (opts.runtime as RuntimeMode) ?? "auto",
         timeout: parseInt(opts.timeout, 10),
         verbose: opts.verbose as boolean,
@@ -81,6 +89,7 @@ export function registerScanCommand(program: Command): void {
         apiKey: opts.apiKey as string | undefined,
         model: opts.model as string | undefined,
         repoPath: opts.repo as string | undefined,
+        reportPath: outputPath,
       });
     });
 }
