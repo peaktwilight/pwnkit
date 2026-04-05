@@ -101,7 +101,7 @@ jobs:
             echo "Running BLACK-BOX benchmark..."
             pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3
           fi
-        timeout-minutes: 180
+        timeout-minutes: 330
 
       - name: Upload results artifact
         if: always()
