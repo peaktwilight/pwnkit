@@ -19,6 +19,10 @@ on:
         description: 'Start offset (skip first N challenges)'
         required: false
         default: '0'
+      only:
+        description: 'Comma-separated challenge IDs to run (e.g. "XBEN-010,XBEN-051,XBEN-066")'
+        required: false
+        default: ''
       features:
         description: 'Feature flags: "all" (default), "none" (baseline), or "playbooks,memory" (specific)'
         required: false
@@ -99,16 +103,21 @@ jobs:
           MODE="${{ inputs.mode || 'black-box' }}"
           LIMIT="${{ inputs.limit || '50' }}"
           START="${{ inputs.start || '0' }}"
+          ONLY="${{ inputs.only || '' }}"
           START_FLAG=""
+          ONLY_FLAG=""
           if [ "$START" != "0" ]; then
             START_FLAG="--start $START"
           fi
+          if [ -n "$ONLY" ]; then
+            ONLY_FLAG="--only $ONLY"
+          fi
           if [ "$MODE" = "white-box" ]; then
-            echo "Running WHITE-BOX (source-aware) benchmark... (start=$START, limit=$LIMIT)"
-            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 3 $START_FLAG
+            echo "Running WHITE-BOX benchmark... (start=$START, limit=$LIMIT, only=$ONLY)"
+            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 3 $START_FLAG $ONLY_FLAG
           else
-            echo "Running BLACK-BOX benchmark... (start=$START, limit=$LIMIT)"
-            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3 $START_FLAG
+            echo "Running BLACK-BOX benchmark... (start=$START, limit=$LIMIT, only=$ONLY)"
+            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 3 $START_FLAG $ONLY_FLAG
           fi
         timeout-minutes: 330
 

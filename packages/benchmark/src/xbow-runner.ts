@@ -39,6 +39,7 @@ const useAgentic = args.includes("--agentic");
 const dryRun = args.includes("--dry-run");
 const retries = args.includes("--retries") ? parseInt(args[args.indexOf("--retries") + 1]) : 1;
 const startAt = args.includes("--start") ? parseInt(args[args.indexOf("--start") + 1]) : 0;
+const onlyIds = args.includes("--only") ? args[args.indexOf("--only") + 1].split(",").map((s) => s.trim()) : undefined;
 const whiteBox = args.includes("--white-box");
 
 // ── Types ──
@@ -258,6 +259,18 @@ async function main() {
 
   if (tagFilter) challenges = challenges.filter((c) => c.tags.includes(tagFilter));
   if (levelFilter) challenges = challenges.filter((c) => c.level === levelFilter);
+  if (onlyIds) {
+    // --only XBEN-010,XBEN-051,XBEN-066 — run only these specific challenges
+    const idSet = new Set(onlyIds.map((id) => {
+      // Normalize: accept XBEN-010 or XBEN-010-24 or 010
+      const num = id.replace(/^XBEN-/, "").replace(/-24$/, "");
+      return num;
+    }));
+    challenges = challenges.filter((c) => {
+      const num = c.id.replace(/^XBEN-/, "").replace(/-24$/, "");
+      return idSet.has(num);
+    });
+  }
   if (startAt > 0) challenges = challenges.slice(startAt);
   challenges = challenges.slice(0, limit);
 
