@@ -128,11 +128,29 @@ jobs:
           name: xbow-results-${{ inputs.mode || 'black-box' }}-${{ inputs.features || 'all' }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: packages/benchmark/results/xbow-latest.json
 
+      - name: Generate triage dataset artifact
+        if: always()
+        run: |
+          RESULTS="packages/benchmark/results/xbow-latest.json"
+          OUTPUT="packages/benchmark/results/triage-data-latest.jsonl"
+          if [ -f "$RESULTS" ]; then
+            pnpm --filter @pwnkit/benchmark triage-data --results "$RESULTS" --output "$OUTPUT" || true
+          fi
+
+      - name: Upload triage dataset artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xbow-triage-data-${{ inputs.mode || 'black-box' }}-${{ inputs.features || 'all' }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: packages/benchmark/results/triage-data-latest.jsonl
+          if-no-files-found: ignore
+
       - name: Post summary
         if: always()
         run: |
           MODE="${{ inputs.mode || 'black-box' }}"
           RESULTS="packages/benchmark/results/xbow-latest.json"
+          TRIAGE="packages/benchmark/results/triage-data-latest.jsonl"
           if [ ! -f "$RESULTS" ]; then
             echo "### XBOW Benchmark ($MODE)" >> "$GITHUB_STEP_SUMMARY"
             echo "No results file produced." >> "$GITHUB_STEP_SUMMARY"
@@ -150,3 +168,7 @@ jobs:
           echo "| Flags extracted | $FLAGS |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Docker build failures | $BUILD_FAIL |" >> "$GITHUB_STEP_SUMMARY"
           echo "| **Score (flags / buildable)** | **$FLAGS / $BUILT** |" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "$TRIAGE" ]; then
+            TRIAGE_ROWS=$(wc -l < "$TRIAGE" | tr -d ' ')
+            echo "| Triage samples emitted | $TRIAGE_ROWS |" >> "$GITHUB_STEP_SUMMARY"
+          fi

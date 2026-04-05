@@ -15,13 +15,16 @@
  *   tsx src/triage-data-collector.ts --db <path-to-pwnkit.db>
  *   tsx src/triage-data-collector.ts --results <xbow-latest.json>
  *   tsx src/triage-data-collector.ts --scan-dir <dir-of-scan-dbs>
+ *   tsx src/triage-data-collector.ts --results <xbow-latest.json> --output <dataset.jsonl>
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(import.meta.url);
 const args = process.argv.slice(2);
 
 interface TriageSample {
@@ -51,10 +54,38 @@ interface TriageSample {
   label_source: "flag_extraction" | "blind_verify" | "manual";
 }
 
+function resolveInputPath(path: string): string {
+  const normalized = path.startsWith("packages/benchmark/")
+    ? path.slice("packages/benchmark/".length)
+    : path;
+  const candidates = [
+    path,
+    normalized,
+    join(process.cwd(), path),
+    join(process.cwd(), normalized),
+    join(__dirname, "..", path),
+    join(__dirname, "..", normalized),
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+
+  return path;
+}
+
+function resolveOutputPath(path: string): string {
+  if (path.startsWith("/")) return path;
+  return path.startsWith("packages/benchmark/")
+    ? path.slice("packages/benchmark/".length)
+    : path;
+}
+
 // ── Collect from XBOW results JSON ──
 
 function collectFromXbowResults(resultsPath: string): TriageSample[] {
-  const data = JSON.parse(readFileSync(resultsPath, "utf8"));
+  const resolved = resolveInputPath(resultsPath);
+  const data = JSON.parse(readFileSync(resolved, "utf8"));
   const samples: TriageSample[] = [];
 
   for (const result of data.results ?? []) {
@@ -86,6 +117,7 @@ function collectFromXbowResults(resultsPath: string): TriageSample[] {
 // ── Collect from pwnkit SQLite DB ──
 
 function collectFromDb(dbPath: string): TriageSample[] {
+  const resolved = resolveInputPath(dbPath);
   // Dynamic import to avoid hard dep on better-sqlite3
   let Database: any;
   try {
@@ -95,7 +127,7 @@ function collectFromDb(dbPath: string): TriageSample[] {
     return [];
   }
 
-  const db = new Database(dbPath, { readonly: true });
+  const db = new Database(resolved, { readonly: true });
   const samples: TriageSample[] = [];
 
   try {
@@ -134,7 +166,7 @@ function collectFromDb(dbPath: string): TriageSample[] {
       });
     }
   } catch (err) {
-    console.error(`Error reading DB ${dbPath}:`, err);
+    console.error(`Error reading DB ${resolved}:`, err);
   } finally {
     db.close();
   }
@@ -146,10 +178,11 @@ function collectFromDb(dbPath: string): TriageSample[] {
 
 function collectFromScanDir(dirPath: string): TriageSample[] {
   const samples: TriageSample[] = [];
-  const files = readdirSync(dirPath).filter((f) => f.endsWith(".db"));
+  const resolvedDir = resolveInputPath(dirPath);
+  const files = readdirSync(resolvedDir).filter((f) => f.endsWith(".db"));
 
   for (const file of files) {
-    const dbPath = join(dirPath, file);
+    const dbPath = join(resolvedDir, file);
     console.error(`  Collecting from ${file}...`);
     samples.push(...collectFromDb(dbPath));
   }
@@ -234,20 +267,26 @@ async function main() {
   // Stats
   const tp = unique.filter((s) => s.label === "true_positive").length;
   const fp = unique.filter((s) => s.label === "false_positive").length;
+  const total = tp + fp;
+  const tpPct = total > 0 ? (tp / total * 100).toFixed(1) : "0.0";
+  const fpPct = total > 0 ? (fp / total * 100).toFixed(1) : "0.0";
 
   console.error(`\n=== Triage Training Data ===`);
   console.error(`  Total samples:    ${unique.length}`);
   console.error(`  True positives:   ${tp}`);
   console.error(`  False positives:  ${fp}`);
-  console.error(`  Balance:          ${(tp / (tp + fp) * 100).toFixed(1)}% TP / ${(fp / (tp + fp) * 100).toFixed(1)}% FP`);
+  console.error(`  Balance:          ${tpPct}% TP / ${fpPct}% FP`);
 
   // Output JSONL to stdout
   const outputPath = args.includes("--output") ? args[args.indexOf("--output") + 1] : undefined;
   const lines = unique.map(toTrainingFormat);
 
   if (outputPath) {
-    writeFileSync(outputPath, lines.join("\n") + "\n");
-    console.error(`  Written to: ${outputPath}`);
+    const resolvedOutput = resolveOutputPath(outputPath);
+    const dir = dirname(resolvedOutput);
+    if (dir && dir !== ".") mkdirSync(dir, { recursive: true });
+    writeFileSync(resolvedOutput, lines.length > 0 ? lines.join("\n") + "\n" : "");
+    console.error(`  Written to: ${resolvedOutput}`);
   } else {
     for (const line of lines) {
       console.log(line);
