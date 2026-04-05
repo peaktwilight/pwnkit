@@ -5,6 +5,8 @@ export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt, sourceVerify
 export { features } from "./features.js";
 export { DockerExecutor, execInDocker } from "./docker-executor.js";
 export type { DockerExecResult } from "./docker-executor.js";
+export { PtySessionManager } from "./pty-session.js";
+export type { PtySession } from "./pty-session.js";
 export { estimateCost } from "./cost.js";
 export { PLAYBOOKS, detectPlaybooks, buildPlaybookInjection } from "./playbooks.js";
 export type {

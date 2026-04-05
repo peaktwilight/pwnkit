@@ -22,6 +22,8 @@ export const features = {
   webSearch: env("PWNKIT_FEATURE_WEB_SEARCH", false),
   /** Run bash commands inside a Kali Docker container with full pentesting toolset */
   dockerExecutor: env("PWNKIT_FEATURE_DOCKER_EXECUTOR", false),
+  /** Interactive PTY sessions for exploits requiring interactivity (reverse shells, DB clients, SSH) */
+  ptySession: env("PWNKIT_FEATURE_PTY_SESSION", false),
 };
 
 function env(key: string, defaultValue: boolean): boolean {

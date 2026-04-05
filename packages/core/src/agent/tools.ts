@@ -9,6 +9,7 @@ import { sendPrompt, extractResponseText } from "../http.js";
 import { buildAuthHeaders } from "./prompts.js";
 import type { pwnkitDB } from "@pwnkit/db";
 import { features as featureFlags } from "./features.js";
+import { PtySessionManager } from "./pty-session.js";
 
 // ── Tool Registry ──
 
@@ -250,6 +251,23 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     required: ["query"],
   },
 
+  pty_session: {
+    name: "pty_session",
+    description:
+      "Manage interactive terminal sessions for exploits requiring interactivity (reverse shells, database clients, SSH). Sessions persist across tool calls, allowing multi-step interactive workflows.",
+    parameters: {
+      action: {
+        type: "string",
+        description: "Session action",
+        enum: ["create", "send", "read", "close", "list"],
+      },
+      session_name: { type: "string", description: "Session name (for create/send/read/close)" },
+      input: { type: "string", description: "Input to send to the session (for send action)" },
+      timeout: { type: "number", description: "Read timeout in ms (for read action, default 5000)" },
+    },
+    required: ["action"],
+  },
+
   done: {
     name: "done",
     description:
@@ -486,6 +504,7 @@ export class ToolExecutor {
   private _browserDialogs: string[] = [];
   private _browserConsole: string[] = [];
   private _playwrightAvailable: boolean | null = null;
+  private _ptyManager: PtySessionManager | null = null;
 
   constructor(ctx: ToolContext, db: pwnkitDB | null = null) {
     this.ctx = ctx;
@@ -526,7 +545,7 @@ export class ToolExecutor {
     };
   }
 
-  /** Clean up browser resources. Call when the agent loop ends. */
+  /** Clean up browser and PTY resources. Call when the agent loop ends. */
   async cleanup(): Promise<void> {
     try {
       if (this._browserPage) {
@@ -536,6 +555,10 @@ export class ToolExecutor {
       if (this._browser) {
         await this._browser.close().catch(() => {});
         this._browser = null;
+      }
+      if (this._ptyManager) {
+        this._ptyManager.cleanup();
+        this._ptyManager = null;
       }
     } catch {
       // Best-effort cleanup
@@ -571,6 +594,8 @@ export class ToolExecutor {
           return await this.browserAction(call.arguments);
         case "web_search":
           return await this.webSearch(call.arguments);
+        case "pty_session":
+          return await this.ptySession(call.arguments);
         case "spawn_agent":
           return await this.spawnAgent(call.arguments);
         case "done":
@@ -1361,6 +1386,107 @@ export class ToolExecutor {
     }
   }
 
+  // ── PTY session management (feature-gated) ──
+
+  private ensurePtyManager(): PtySessionManager {
+    if (!this._ptyManager) {
+      this._ptyManager = new PtySessionManager();
+    }
+    return this._ptyManager;
+  }
+
+  private async ptySession(args: Record<string, unknown>): Promise<ToolResult> {
+    if (!featureFlags.ptySession) {
+      return { success: false, output: null, error: "pty_session is disabled. Set PWNKIT_FEATURE_PTY_SESSION=1 to enable." };
+    }
+
+    const action = (args.action as string ?? "").trim();
+    const sessionName = (args.session_name as string ?? "").trim();
+    const input = args.input as string ?? "";
+    const timeout = (args.timeout as number) ?? 5000;
+
+    const mgr = this.ensurePtyManager();
+
+    try {
+      switch (action) {
+        case "create": {
+          if (!sessionName) {
+            return { success: false, output: null, error: "session_name is required for create action." };
+          }
+          const session = mgr.createSession(sessionName, {
+            env: { TARGET: this.ctx.target, ...this.buildAuthEnvVars() },
+          });
+          // Wait briefly for the shell prompt to appear
+          const initialOutput = await mgr.read(session.id, 1000);
+          return {
+            success: true,
+            output: `Session "${sessionName}" created (id: ${session.id}).\n${initialOutput}`,
+          };
+        }
+
+        case "send": {
+          if (!sessionName) {
+            return { success: false, output: null, error: "session_name is required for send action." };
+          }
+          if (!input) {
+            return { success: false, output: null, error: "input is required for send action." };
+          }
+          const session = mgr.findByName(sessionName);
+          if (!session) {
+            return { success: false, output: null, error: `No session named "${sessionName}" found.` };
+          }
+          // Drain any pending output first
+          await mgr.read(session.id, 100);
+          mgr.send(session.id, input);
+          // Wait for response
+          const output = await mgr.read(session.id, timeout);
+          return { success: true, output: output || "(no output within timeout)" };
+        }
+
+        case "read": {
+          if (!sessionName) {
+            return { success: false, output: null, error: "session_name is required for read action." };
+          }
+          const session = mgr.findByName(sessionName);
+          if (!session) {
+            return { success: false, output: null, error: `No session named "${sessionName}" found.` };
+          }
+          const output = await mgr.read(session.id, timeout);
+          return { success: true, output: output || "(no output within timeout)" };
+        }
+
+        case "close": {
+          if (!sessionName) {
+            return { success: false, output: null, error: "session_name is required for close action." };
+          }
+          const session = mgr.findByName(sessionName);
+          if (!session) {
+            return { success: false, output: null, error: `No session named "${sessionName}" found.` };
+          }
+          mgr.close(session.id);
+          return { success: true, output: `Session "${sessionName}" closed.` };
+        }
+
+        case "list": {
+          const sessions = mgr.listSessions();
+          if (sessions.length === 0) {
+            return { success: true, output: "No active sessions." };
+          }
+          const lines = sessions.map(
+            (s) => `${s.name} (${s.id}) — ${s.alive ? "alive" : "dead"} — cwd: ${s.cwd}`
+          );
+          return { success: true, output: lines.join("\n") };
+        }
+
+        default:
+          return { success: false, output: null, error: `Unknown pty_session action: "${action}". Use create, send, read, close, or list.` };
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, output: null, error: msg };
+    }
+  }
+
   // ── Web search (anti-cheat gated) ──
 
   private static WEB_SEARCH_BLOCKLIST = [
@@ -1496,7 +1622,8 @@ export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMo
   const common = ["query_findings", "done"];
   const browserTools = opts?.hasBrowser ? ["browser"] : [];
   const webSearchTools = featureFlags.webSearch ? ["web_search"] : [];
-  const networkTools = ["http_request", "crawl", "submit_form", "bash", ...browserTools, ...webSearchTools, "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const ptyTools = featureFlags.ptySession ? ["pty_session"] : [];
+  const networkTools = ["http_request", "crawl", "submit_form", "bash", ...browserTools, ...webSearchTools, ...ptyTools, "send_prompt", "save_finding", "update_finding", "update_target", ...common];
   const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {
