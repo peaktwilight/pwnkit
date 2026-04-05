@@ -2,6 +2,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+.claude/*.lock
+.omx/
 .internal/
 marketing/
 ROADMAP.md
