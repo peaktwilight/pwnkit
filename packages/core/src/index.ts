@@ -61,3 +61,7 @@ export type { ApiSpecSummary, ApiSpecEndpoint, ApiSpecParameter, ApiSpecAuthSche
 // Structured verification pipeline
 export { runStructuredVerify } from "./triage/verify-pipeline.js";
 export type { VerifyResult, StepResult, VerifyVerdict, VerifyStepName } from "./triage/verify-pipeline.js";
+
+// Remediation guidance
+export { generateRemediation, generateRemediationWithLLM } from "./remediation.js";
+export type { Remediation, RemediationCodeExample } from "./remediation.js";
