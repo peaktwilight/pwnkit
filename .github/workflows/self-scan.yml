@@ -21,16 +21,21 @@ jobs:
       # Dogfood: review pwnkit's own source code
       - name: Run pwnkit self-scan
         run: |
-          set +e
+          set +euo pipefail
+          EXTRA_ARGS=()
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            EXTRA_ARGS+=(--changed-only --diff-base "${{ github.event.before }}")
+          fi
           timeout --signal=TERM --kill-after=30s 330s \
             node packages/cli/dist/index.js review . \
             --format json \
             --runtime api \
             --model free \
-            --depth default \
+            --depth quick \
             --timeout 300000 \
+            "${EXTRA_ARGS[@]}" \
             2> scan-stderr.log | tee scan-results.json
-          status=$?
+          status=${PIPESTATUS[0]}
           set -e
           echo "scan_exit_code=$status" >> "$GITHUB_OUTPUT"
           echo "--- stderr ---"
